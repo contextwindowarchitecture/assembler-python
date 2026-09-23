@@ -53,6 +53,11 @@ ROWS = [
     ("policy-corpus", item("kb:bad-slot", "evidence.web", "Web result."), "unknown_slot"),
     ("policy-corpus", item("kb:bad-authority", "evidence.knowledge", "Old vocabulary.", authority="reference"), "unknown_authority"),
     ("policy-corpus", item("kb:bad-date", "evidence.knowledge", "Impossible date.", freshness="2026-02-30T12:00:00Z"), "invalid_structure"),
+    # Timestamps follow the portable profile in conformance/README.md, whatever a format checker allows.
+    ("policy-corpus", item("kb:leap-second", "evidence.knowledge", "A leap second.", freshness="2016-12-31T23:59:60Z"), "invalid_structure"),
+    ("policy-corpus", item("kb:space-date", "evidence.knowledge", "A space for T.", freshness="2026-09-12 15:30:00Z"), "invalid_structure"),
+    ("policy-corpus", item("kb:bare-offset", "evidence.knowledge", "An offset without a colon.", freshness="2026-09-12T15:30:00+0000"), "invalid_structure"),
+    ("policy-corpus", item("kb:newline-date", "evidence.knowledge", "A trailing newline.", freshness="2026-09-12T15:30:00Z\n"), "invalid_structure"),
     ("policy-corpus", item("kb:dup", "evidence.knowledge", "First copy."), "duplicate_item_id"),
     ("policy-corpus", item("kb:dup", "evidence.knowledge", "Second copy."), "duplicate_item_id"),
     ("policy-corpus", item("kb:wrong-slot", "state.user", "plan=enterprise", scope={"tenant": "acme"}), "producer_slot_not_allowed"),

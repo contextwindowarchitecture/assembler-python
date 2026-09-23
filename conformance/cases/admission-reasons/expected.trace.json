@@ -159,6 +159,12 @@
       "stage": "assembler"
     },
     {
+      "item_id": "kb:bare-offset",
+      "reason": "invalid_structure",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
       "item_id": "kb:dup",
       "reason": "duplicate_item_id",
       "stage": "assembler",
@@ -183,6 +189,12 @@
       "slot": "evidence.knowledge"
     },
     {
+      "item_id": "kb:leap-second",
+      "reason": "invalid_structure",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
       "item_id": "kb:low",
       "reason": "below_threshold",
       "stage": "assembler",
@@ -191,6 +203,12 @@
     {
       "item_id": "kb:missing-body",
       "reason": "missing_field:body",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
+      "item_id": "kb:newline-date",
+      "reason": "invalid_structure",
       "stage": "assembler",
       "slot": "evidence.knowledge"
     },
@@ -215,6 +233,12 @@
     {
       "item_id": "kb:revoked",
       "reason": "revoked",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
+      "item_id": "kb:space-date",
+      "reason": "invalid_structure",
       "stage": "assembler",
       "slot": "evidence.knowledge"
     },
