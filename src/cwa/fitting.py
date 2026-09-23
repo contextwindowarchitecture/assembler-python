@@ -10,6 +10,7 @@ from functools import cmp_to_key
 from typing import Callable, Iterable, Mapping
 
 from . import instants
+from .canonical import utf16
 from .contract import SLOT_DEFAULTS
 from .model import Item, Variant
 from .render import Occurrence, place
@@ -68,7 +69,7 @@ def _ranked(snapshot: Snapshot, slot: str, items: Iterable[Item]) -> list[Item]:
     keys = [_ORDER_KEYS[key] for key in _rules(snapshot, slot).get("order_by", ["-relevance", "-freshness"])]
 
     def compare(a: Item, b: Item) -> int:
-        return next((c for key in keys if (c := key(a, b))), _sign(a.id, b.id))
+        return next((c for key in keys if (c := key(a, b))), _sign(utf16(a.id), utf16(b.id)))
 
     return sorted((item for item in items if item.slot == slot), key=cmp_to_key(compare))
 

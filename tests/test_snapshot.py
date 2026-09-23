@@ -1,6 +1,6 @@
 import pytest
 
-from cwa import Snapshot, SnapshotError
+from cwa import Snapshot, SnapshotError, assemble
 
 
 @pytest.mark.parametrize("bad", ["yesterday", "2026-02-30T12:00:00Z", "2026-09-22T12:00:00"])
@@ -107,3 +107,15 @@ def test_candidates_sharing_an_id_do_not_make_the_digest_order_dependent(fixture
     corpus["items"].reverse()
     corpus["excluded"].reverse()
     assert Snapshot.from_json(fixture_snapshot).digest() == listed
+
+
+def test_producer_rows_order_by_producer_then_item_in_utf16_code_units(fixture_snapshot):
+    """conformance/README.md, Ordering: U+1F600 is D83D DE00 in UTF-16, so it sorts before U+FF5A."""
+    fixture_snapshot["batches"] += [
+        {"producer": {"id": "wiki-\uff5a", "kind": "retrieval"}, "items": [], "excluded": [
+            {"item_id": "w:\uff5a", "reason": "stale", "stage": "producer"}, {"item_id": "w:\U0001f600", "reason": "stale", "stage": "producer"}]},
+        {"producer": {"id": "wiki-\U0001f600", "kind": "retrieval"}, "items": [], "excluded": [
+            {"item_id": "v:1", "reason": "stale", "stage": "producer"}]},
+    ]
+    rows = [row["item_id"] for row in assemble(Snapshot.from_json(fixture_snapshot)).trace["excluded"] if row["stage"] == "producer"]
+    assert rows == ["memory:expired", "v:1", "w:\U0001f600", "w:\uff5a"]

@@ -534,7 +534,7 @@ flowchart LR
   R --> W["website: assembler.html matrix"]
 ```
 
-**Built so far (M0–M4):** the golden test, all twenty-four conformance cases, a shuffle test over every case (payload, trace and digest), purity guards on sockets, clocks, files, the environment and randomness (files since M5: the vendored schemas are read once, at import), and schema validation of every emitted trace. `tests/test_replay.py` (M5) stores every case's snapshot as JSON and replays it in fresh processes under three `PYTHONHASHSEED`, `TZ` and locale combinations, comparing payload, trace and digest. An import lint (M5) rejects any module in `src/cwa` that imports network, model-SDK, clock, randomness or process modules, or calls `now()`, `getenv()` and the like. Not built: hypothesis property tests and `conformance-report.json` (M5).
+**Built so far (M0–M5):** the golden test, all twenty-five conformance cases, a shuffle test over every case (payload, trace and digest), purity guards on sockets, clocks, files, the environment and randomness (files since M5: the vendored schemas are read once, at import), and schema validation of every emitted trace. `tests/test_replay.py` (M5) stores every case's snapshot as JSON and replays it in fresh processes under three `PYTHONHASHSEED`, `TZ` and locale combinations, comparing payload, trace and digest. An import lint (M5) rejects any module in `src/cwa` that imports network, model-SDK, clock, randomness or process modules, or calls `now()`, `getenv()` and the like. Not built: hypothesis property tests and `conformance-report.json` (M5).
 
 - **The golden test comes first.** Reproduce `examples/trace.json` and `examples/payload.txt` exactly. The fixture already exists and is hash-checked, so it's a free end-to-end test.
 - **Tests map to requirements.** Each conformance case declares `rules: ["R-16", "R-17"]`. A row flips to *implemented* only when every assembler-scoped clause has a passing case. That is the rule `assembler.html` already states.
@@ -576,7 +576,7 @@ flowchart LR
   T --> R["Spec: conformance report<br/>schema + matrix (D-8)"] --> RI["Runner, committed report,<br/>status gate"] --> S["status.json R-21..R-23,<br/>website import"]
 ```
 
-- **Order (D-7).** Wherever the spec orders strings, it compares UTF-16 code units, as RFC 8785 already orders member names. Only ids with characters outside the Basic Multilingual Plane notice.
+- **Order (D-7), done.** Wherever the spec orders strings, it compares UTF-16 code units, as RFC 8785 already orders member names (website `3b9bb51`). Only ids with characters outside the Basic Multilingual Plane notice. `cwa.canonical.utf16` is the sort key at every site: snapshot normalization, placement, admission, conflict and fitting rows, and the id tie-break in shedding. `ordering-astral-ids` (website `78a9d10`) passes.
 - **Snapshot digest (D-10).** The spec defines the normalization and RFC 8785 serialization this assembler already uses, so every implementation computes the same `context.snapshot_digest` and conformance compares it.
 - **Timings (D-9).** `assemble(snapshot, clock=...)` takes an optional monotonic clock from the caller. Without one, the trace has no `timings` and assembly reads no clock. `included[]` rows also gain `eligibility` (R-22).
 - **Conformance report (D-8).** A schema'd, language-neutral `conformance-report.json` records each case's outcome. This assembler commits one beside `status.json`, the website matrix imports both, and an *implemented* claim is rejected while a case tagged with its rule fails.
@@ -651,7 +651,7 @@ Result: `src/cwa/conflicts.py` resolves every group kind and every escalation ac
 - **Recovery is chosen by what was omitted for budget**, not by whether producers returned candidates (§4.5).
 - **Per-item `token_budget` caps came after the milestone closed.** The spec left them undefined, so the first M2 build ignored them. Option A is now in the spec (website `d80342d`) and built: caps apply before shedding, and a protected item over its cap refuses. R-3 now says `null` sets no per-item cap. Per-slot route allocations are deferred.
 
-**Follow-up for M5:** trace and placement ordering compare ids by code point; JavaScript's default sort uses UTF-16 code units. They differ only for ids with characters outside the Basic Multilingual Plane. Pick one in the spec (JCS already uses UTF-16) and apply it everywhere ids are sorted.
+**Follow-up for M5 (done, D-7):** trace and placement ordering compared ids by code point, while JavaScript's default sort uses UTF-16 code units. They differ only for ids with characters outside the Basic Multilingual Plane. The spec now orders every string by UTF-16 code units (website `3b9bb51`, case `ordering-astral-ids` in `78a9d10`), and `cwa.canonical.utf16` is the one sort key.
 
 **M1 status (2026-09-22): done.** Admission is implemented test-first as an ordered table of checks in `src/cwa/admission.py`, and the website's `admission-reasons` conformance case (42 candidates) passes byte for byte. `status.json` records the result: R-1 and R-2 are implemented, R-8, R-9, R-13, R-14 and R-15 are boundary-checked, and eight more requirements are in progress. It diverged from this document in five ways, each now written into the spec:
 

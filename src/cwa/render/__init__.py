@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Mapping, Protocol
 
+from ..canonical import utf16
 from ..model import Item, Profile
 from ..tokenize import Tokenizer
 from .fixture_xml import FixtureXml
@@ -36,7 +37,7 @@ class Rendered:
 def place(profile: Profile, items: Iterable[Item], marks: Mapping[str, str] | None = None) -> tuple[Occurrence, ...]:
     """One occurrence per item per placement of its slot, in profile order and by id within a placement.
     marks maps the id of each surfaced conflict member to its group id."""
-    by_id, marks = sorted(items, key=lambda item: item.id), marks or {}
+    by_id, marks = sorted(items, key=lambda item: utf16(item.id)), marks or {}
     return tuple(
         Occurrence(position, placement.slot, placement.wrap, item, marks.get(item.id))
         for position, placement in enumerate(profile.placement)

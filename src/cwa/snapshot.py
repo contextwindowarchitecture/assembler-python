@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 from . import contract
-from .canonical import canonical_json, digest
+from .canonical import canonical_json, digest, utf16
 from .model import (Budget, CapabilityGrant, ConflictGroup, Placement, ProducerBatch, ProducerExclusion, ProducerIdentity,
                     Profile, RoutePolicy)
 from .render import REGISTRY as RENDERERS, Renderer
@@ -36,12 +36,12 @@ def _normalize(document: dict[str, Any]) -> dict[str, Any]:
     {producer}#invalid-{n} trace ids stable across replays.
     """
     for batch in document["batches"]:
-        batch["items"].sort(key=lambda item: (0, usable_id(item), canonical_json(item)) if usable_id(item) else (1, "", b""))
-        batch["excluded"].sort(key=lambda row: (row["item_id"], canonical_json(row)))
-    document["batches"].sort(key=lambda batch: batch["producer"]["id"])
-    document["conflicts"].sort(key=lambda group: group["id"])
+        batch["items"].sort(key=lambda item: (0, utf16(usable_id(item)), canonical_json(item)) if usable_id(item) else (1, b"", b""))
+        batch["excluded"].sort(key=lambda row: (utf16(row["item_id"]), canonical_json(row)))
+    document["batches"].sort(key=lambda batch: utf16(batch["producer"]["id"]))
+    document["conflicts"].sort(key=lambda group: utf16(group["id"]))
     for group in document["conflicts"]:
-        group["items"].sort()
+        group["items"].sort(key=utf16)
     return document
 
 

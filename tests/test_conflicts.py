@@ -314,3 +314,19 @@ def test_conflict_policy_does_not_reach_across_authority_levels(fixture_snapshot
     result = assembled(fixture_snapshot, group("g1", "ex:long", "turn:10"))
     assert result.trace["conflicts"] == [record("g1", "instruction", ["ex:long", "turn:10"], "authority", "resolved", "ex:long")]
     assert excluded_by_conflicts(result) == []
+
+
+def test_groups_and_their_members_order_by_utf16_code_units(fixture_snapshot):
+    """conformance/README.md, Ordering: U+1F600 is D83D DE00 in UTF-16, so it sorts before U+FF5A."""
+    batch(fixture_snapshot, "policy-corpus").extend([passage("kb:\uff5a"), passage("kb:\U0001f600")])
+    result = assembled(fixture_snapshot, group("g\uff5a", "policy:v12", "turn:18"), group("g\U0001f600", "kb:\uff5a", "kb:\U0001f600"))
+    assert [(row["group_id"], row["items"]) for row in result.trace["conflicts"]] == [
+        ("g\U0001f600", ["kb:\U0001f600", "kb:\uff5a"]), ("g\uff5a", ["policy:v12", "turn:18"])]
+
+
+def test_rows_excluded_by_conflicts_order_by_utf16_code_units(fixture_snapshot):
+    """conformance/README.md, Ordering: U+1F600 is D83D DE00 in UTF-16, so it sorts before U+FF5A."""
+    wiki_producer(fixture_snapshot).extend([passage("wiki:ｚ"), passage("wiki:\U0001f600")])
+    facts(fixture_snapshot, refund_window={"precedence": ["policy-corpus", "wiki-corpus"]})
+    result = assembled(fixture_snapshot, group("f1", "wiki:ｚ", "wiki:\U0001f600", "refunds-eu:v17#p4", fact="refund.window"))
+    assert excluded_by_conflicts(result) == [("wiki:\U0001f600", "conflict_lost"), ("wiki:ｚ", "conflict_lost")]

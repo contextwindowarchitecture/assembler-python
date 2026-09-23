@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 from . import instants
+from .canonical import utf16
 from .fitting import tier
 from .model import ConflictGroup, Item
 from .snapshot import Snapshot
@@ -104,7 +105,7 @@ def resolve(snapshot: Snapshot, items: tuple[Item, ...], producers: Mapping[str,
                 refusing.append(action)
         records.append(record)
         excluded += losers
-    excluded.sort(key=lambda row: row[0].id)
+    excluded.sort(key=lambda row: utf16(row[0].id))
     gone = {item.id for item, _ in excluded}
     return Resolution(records=tuple(records), items=tuple(i for i in items if i.id not in gone), excluded=tuple(excluded),
                       marks=marks, refusing=tuple(refusing))

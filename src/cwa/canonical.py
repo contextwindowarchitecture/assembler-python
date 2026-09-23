@@ -8,6 +8,12 @@ from decimal import Decimal
 from typing import Any
 
 
+def utf16(value: str) -> bytes:
+    """Sort key that orders strings by UTF-16 code units, as RFC 8785 orders member names. Every
+    string ordering in the spec uses it (conformance/README.md, Ordering)."""
+    return value.encode("utf-16-be")
+
+
 def canonical_json(value: Any) -> bytes:
     return _encode(value).encode("utf-8")
 
@@ -32,8 +38,7 @@ def _encode(value: Any) -> str:
     if isinstance(value, (list, tuple)):
         return "[" + ",".join(_encode(v) for v in value) + "]"
     if isinstance(value, dict):
-        # JCS orders keys by UTF-16 code units, not code points.
-        keys = sorted(value, key=lambda k: k.encode("utf-16-be"))
+        keys = sorted(value, key=utf16)
         return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + _encode(value[k]) for k in keys) + "}"
     raise TypeError(f"not JSON-serializable: {type(value).__name__}")
 

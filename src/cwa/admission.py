@@ -13,6 +13,7 @@ from jsonschema import ValidationError
 
 from .contract import POLICY_FIELDS, REASONS, SLOT_DEFAULTS, validator
 from . import instants
+from .canonical import utf16
 from .fitting import TIER_RANK, slot_tier, tier
 from .model import Item, ProducerIdentity
 from .snapshot import Snapshot, usable_id
@@ -243,7 +244,7 @@ def admit(snapshot: Snapshot) -> Admission:
             producers[item.id] = batch.producer.id
     return Admission(
         items=tuple(items),
-        excluded=tuple(sorted(excluded, key=lambda e: (e.producer, e.item_id))),
-        defaults_filled=tuple(sorted(filled, key=lambda f: (f[0], POLICY_FIELDS.index(f[1])))),
+        excluded=tuple(sorted(excluded, key=lambda e: (utf16(e.producer), utf16(e.item_id)))),
+        defaults_filled=tuple(sorted(filled, key=lambda f: (utf16(f[0]), POLICY_FIELDS.index(f[1])))),
         producers=producers,
     )

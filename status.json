@@ -287,7 +287,10 @@
         "tests/test_trace.py::test_refusals_use_registered_refusal_codes",
         "tests/test_trace.py::test_producer_rows_keep_whatever_the_producer_reported",
         "tests/test_refusal.py::test_an_unresolved_conflict_is_reported_before_the_budget",
-        "tests/test_placement.py::test_an_unplaced_protected_item_is_reported_before_an_unresolved_conflict"
+        "tests/test_placement.py::test_an_unplaced_protected_item_is_reported_before_an_unresolved_conflict",
+        "tests/test_conflicts.py::test_groups_and_their_members_order_by_utf16_code_units",
+        "tests/test_conflicts.py::test_rows_excluded_by_conflicts_order_by_utf16_code_units",
+        "tests/test_snapshot.py::test_producer_rows_order_by_producer_then_item_in_utf16_code_units"
       ]
     },
     {
@@ -307,7 +310,10 @@
         "tests/test_golden.py::test_assembly_is_repeatable",
         "tests/test_conformance.py::test_input_order_never_changes_the_outcome",
         "tests/test_purity.py::test_assemble_needs_no_network_or_clock",
-        "tests/test_admission.py::test_items_without_a_usable_id_are_recorded_by_producer_and_position"
+        "tests/test_admission.py::test_items_without_a_usable_id_are_recorded_by_producer_and_position",
+        "tests/test_replay.py::test_a_stored_snapshot_replays_identically_in_a_fresh_process",
+        "tests/test_purity.py::test_the_core_imports_nothing_that_reaches_outside",
+        "tests/test_snapshot.py::test_producer_rows_order_by_producer_then_item_in_utf16_code_units"
       ]
     }
   ]
