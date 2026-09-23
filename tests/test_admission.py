@@ -356,3 +356,30 @@ def test_scope_must_match_and_required_keys_must_be_present(fixture_snapshot, sc
     fixture_snapshot["route_policy"]["slots"] = {"evidence.knowledge": {"required_scope": ["tenant"]}}
     add(fixture_snapshot, "policy-corpus", knowledge(scope=scope))
     assert exclusions(fixture_snapshot) == ([("kb:x", reason)] if reason else [])
+
+
+# R-13, R-3: the route's versioned threshold and eligibility predicate, not the item's own description.
+
+@pytest.fixture
+def with_eligibility(fixture_snapshot) -> dict:
+    fixture_snapshot["route_policy"]["slots"] = {"evidence.knowledge": {"min_relevance": 0.8, "max_age_seconds": 7776000}}
+    return fixture_snapshot
+
+
+@pytest.mark.parametrize("fields, reason", [
+    ({"relevance": 0.8}, None),
+    ({"relevance": 0.79}, "below_threshold"),
+    ({"freshness": "2026-06-24T12:00:00Z"}, None),
+    ({"freshness": "2026-06-24T11:59:59Z"}, "not_eligible"),
+    ({"relevance": 0.5, "freshness": "2026-01-01T00:00:00Z"}, "below_threshold"),
+])
+def test_threshold_and_age_eligibility(with_eligibility, fields, reason):
+    add(with_eligibility, "policy-corpus", knowledge(**fields))
+    assert exclusions(with_eligibility) == ([("kb:x", reason)] if reason else [])
+
+
+def test_an_item_without_a_score_cannot_clear_a_threshold(fixture_snapshot):
+    fixture_snapshot["route_policy"]["producers"]["crm-mcp"] = {"kind": "mcp", "slots": ["evidence.tool_results"]}
+    fixture_snapshot["route_policy"]["slots"] = {"evidence.tool_results": {"min_relevance": 0.5}}
+    add_batch(fixture_snapshot, "crm-mcp", "mcp", observation("obs:1"))
+    assert exclusions(fixture_snapshot) == [("obs:1", "below_threshold")]

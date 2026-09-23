@@ -182,11 +182,22 @@ def _scope(item: Item, ctx: _Context) -> str | None:
     return None
 
 
+def _threshold(item: Item, ctx: _Context) -> str | None:
+    # R-13: an unscored item cannot show that it clears the route's threshold.
+    minimum = _slot_rules(item, ctx).get("min_relevance")
+    return "below_threshold" if minimum is not None and (item.relevance is None or item.relevance < minimum) else None
+
+
+def _eligible(item: Item, ctx: _Context) -> str | None:
+    # State age is stale_state above; elsewhere age is part of the route's eligibility predicate (R-3).
+    return "not_eligible" if not item.slot.startswith("state.") and _older_than_allowed(item, ctx) else None
+
+
 # Checks for schema-valid items from authenticated producers, in reasons.json order.
 _CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (
     _duplicate, _slot_permission, _authority, _capability, _governance_trust, _marking,
     _protected_downgrade, _tier_upgrade, _variant_ids, _revoked, _expired, _future_freshness,
-    _stale_state, _source_prefix, _scope,
+    _stale_state, _source_prefix, _scope, _threshold, _eligible,
 )
 
 
