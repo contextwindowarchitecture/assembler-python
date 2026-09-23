@@ -7,6 +7,7 @@ those tables. The generator only checks that each table is self-consistent: the 
 realizable, and the payload fits after the last omission and not before it.
 """
 import copy, hashlib, json, os, sys
+from digest import snapshot_digest
 U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 sys.dont_write_bytecode = True  # importing fitting must not leave a __pycache__ for implementations to vendor
@@ -128,7 +129,7 @@ def build(case):
         "conflicts": [{"group_id": g["id"], "kind": "instruction", "items": sorted(g["items"], key=U16), "decided_by": "escalated", "resolution": "surfaced"}
                       for g in sorted(groups, key=lambda g: U16(g["id"]))],
         "refused": {"bool": False, "reason": None},
-        "context": {"assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": RENDERER},
+        "context": {"assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": RENDERER, "snapshot_digest": snapshot_digest(snapshot)},
         "defaults_filled": [],
     }
     out = os.path.join(WEB, "conformance/cases", name)

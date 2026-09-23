@@ -34,7 +34,8 @@
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "evidence-retrieve-narrower/v1",
     "tokenizer": "fixture-whitespace/v1",
-    "renderer": "fixture-xml/v1"
+    "renderer": "fixture-xml/v1",
+    "snapshot_digest": "94906a8d235a3e0d7e9f803843fef0b5a77923be8c96f1884ce433fdb8684bca"
   },
   "defaults_filled": [],
   "recovery": {

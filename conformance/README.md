@@ -16,7 +16,7 @@ Some cases have a generator in `generators/`. It holds a table of each candidate
 1. Validate `snapshot.json` against the snapshot schema and load it. Resolve `tokenizer` and `renderer` by ID; an implementation that does not provide one skips the case and reports it as skipped, not passed. A snapshot that fails the schema is rejected before assembly and has no trace; the refusal codes describe assemblies of valid snapshots. Conflict groups are part of that check: group ids must be unique, every item id a group names must be the id of a candidate or a producer exclusion in the snapshot, no item may belong to two groups, and a fact group's `fact` must be a key of the route's `facts`. The profile is part of it too (R-20): its `route` and `route_policy_version` must equal the route policy's `route` and `version`, it must place `governance.instructions` and `interaction.query`, and it must place `governance.output_contract` when the route sets `parser: true`.
 2. Assemble.
 3. Compare the payload byte for byte with `expected.payload.txt`, or confirm no payload when that file is absent.
-4. Compare the trace with `expected.trace.json` after removing `trace_id`, `timings` and `context.snapshot_digest`. Trace IDs and timings may differ (R-23). Snapshot digests depend on an implementation's canonical serialization, which the spec does not yet fix.
+4. Compare the trace with `expected.trace.json` after removing `trace_id` and `timings`, which may differ (R-23). `context.snapshot_digest` is compared like every other field; Snapshot digest defines it.
 
 Array order in the trace is part of the expectation:
 
@@ -42,6 +42,17 @@ A string is *blank* when every character in it is ECMAScript whitespace or a lin
 ## Ordering
 
 Wherever this document orders strings (item, producer and group ids, slot names, field names), it compares them by UTF-16 code units, the order RFC 8785 uses for member names. Shorter strings come first when one is a prefix of the other. JavaScript's default sort already compares this way. Other languages must do so explicitly; in Python, for example, sort by `s.encode("utf-16-be")`. Code-point order, the default in Python, Go and Rust, differs only when a string holds a character outside the Basic Multilingual Plane: U+1F600 sorts before U+FF5A in UTF-16 code units, and after it in code points. The `ordering-astral-ids` case checks this.
+
+## Snapshot digest
+
+`context.snapshot_digest` identifies the frozen snapshot an assembly used, so a stored snapshot can be replayed and matched to its trace (R-22, R-23). It is the lowercase SHA-256 of the UTF-8 bytes of the RFC 8785 serialization of the *normalized* snapshot. Normalizing reorders only the arrays whose order producers do not control, so the same inputs give the same digest however they arrive:
+
+- `batches` by producer id;
+- within a batch, the candidates whose `id` is a non-blank string by `id`, candidates sharing an id by the bytes of their own RFC 8785 serialization, and then every other candidate in the order the batch supplied it, since R-2 numbers those in that order;
+- a batch's `excluded` rows by `item_id`, then by the bytes of their serialization;
+- `conflicts` by `id`, and each group's `items`.
+
+Every other array keeps its order, including profile placements and route-policy lists such as `precedence` and `fitting_order`, whose order means something. Strings order as Ordering describes. A snapshot's strings must be well-formed Unicode (I-JSON, RFC 7493): a string holding an unpaired surrogate has no RFC 8785 serialization, so the snapshot is rejected before assembly. `generators/digest.py` computes the digest, and the website's tests compute it again in JavaScript.
 
 ## Refusals
 

@@ -5,6 +5,7 @@ fail an implementation. Rendering and counting follow conformance/README.md's fi
 """
 import copy, hashlib, json, os, re, sys
 NONBLANK = re.compile(r"[^\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]")  # conformance/README.md, Blank strings
+from digest import snapshot_digest
 U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 WEB = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -164,7 +165,7 @@ trace = {
     "included": included, "compressed": [],
     "excluded": [{"item_id": "m:expired", "reason": "expired", "stage": "producer"}] + [row(rid, r, slot) for _, rid, r, slot in excluded],
     "conflicts": [], "refused": {"bool": False, "reason": None},
-    "context": {"assembly_time": T, "route_policy_version": "admission/v1", "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1"},
+    "context": {"assembly_time": T, "route_policy_version": "admission/v1", "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1", "snapshot_digest": snapshot_digest(snapshot)},
     "defaults_filled": [{"item_id": i, "field": f} for i, f in sorted(filled, key=lambda x: (U16(x[0]), POLICY.index(x[1])))],
 }
 case = {"id": "admission-reasons", "rules": ["R-1", "R-2", "R-3", "R-8", "R-9", "R-10", "R-13", "R-14", "R-15", "R-16", "R-18", "R-21", "R-22"],

@@ -60,7 +60,8 @@
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "conflict-refused/v1",
     "tokenizer": "fixture-whitespace/v1",
-    "renderer": "fixture-xml/v1"
+    "renderer": "fixture-xml/v1",
+    "snapshot_digest": "422d93309d1d6408bdecadde334ce367e0796a687090703f803617c569d3a803"
   },
   "defaults_filled": []
 }

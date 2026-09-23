@@ -80,7 +80,8 @@
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "placement-unplaced-slot/v1",
     "tokenizer": "fixture-whitespace/v1",
-    "renderer": "fixture-xml/v1"
+    "renderer": "fixture-xml/v1",
+    "snapshot_digest": "491938c9392d5f2524bc286118f10f466f5f78aeb81913f5eb50a5e17c1bc6f1"
   },
   "defaults_filled": []
 }

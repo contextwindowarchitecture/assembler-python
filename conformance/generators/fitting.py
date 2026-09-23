@@ -9,6 +9,7 @@ fits after the last action and not before it, and each chosen variant is the one
 conformance/README.md's Fitting section selects.
 """
 import copy, hashlib, json, os, re, sys
+from digest import snapshot_digest
 U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 WEB = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -169,7 +170,7 @@ def build(case):
              "method": compressed[row["item_id"]]["method"], "variant_id": compressed[row["item_id"]]["id"]}
             for row in included if row["item_id"] in compressed],
         "excluded": excluded, "conflicts": [], "refused": {"bool": bool(refusal), "reason": refusal},
-        "context": {"assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1"},
+        "context": {"assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1", "snapshot_digest": snapshot_digest(snapshot)},
         "defaults_filled": [{"item_id": i, "field": f} for i, f in
                             sorted(((it["id"], f) for it, _ in rows for f in POLICY if f not in it), key=lambda x: (U16(x[0]), POLICY.index(x[1])))],
     }

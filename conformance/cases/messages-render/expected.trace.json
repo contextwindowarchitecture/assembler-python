@@ -103,7 +103,8 @@
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "messages-render/v1",
     "tokenizer": "fixture-whitespace/v1",
-    "renderer": "cwa-messages/v1"
+    "renderer": "cwa-messages/v1",
+    "snapshot_digest": "90cde5ccb0af256747e1dba55eb0c070b0c37fe03df567bfb36735481b380618"
   },
   "defaults_filled": []
 }
