@@ -305,7 +305,21 @@ flowchart TD
   CT -- yes --> H["10 · SHA-256 of payload bytes<br/>trace: included, compressed, conflicts"]
 ```
 
-Refusal precedence, used when several apply: `invalid_snapshot` > `required_slot_missing` > `protected_slot_unplaced` > `conflict_unresolved` > `protected_content_over_budget` > `evidence_required`. Every refusal emits `result: null` and `included: []`. Exclusions and conflicts found so far stay in the trace (R-17).
+**Refusals as built (M2).** An invalid snapshot is a `SnapshotError` before assembly and has no trace, so there is no `invalid_snapshot` code. Refusal precedence is the order of the refusal codes in `contract/reasons.json` (R-21): `required_slot_missing` > `conflict_unresolved` > `protected_content_over_budget` > `evidence_required`. Placement checks such as `protected_slot_unplaced` wait for M4. Every refusal emits `result: null`, `included: []` and `compressed: []`. Producer and admission rows stay in `excluded[]`, and an `evidence_required` refusal also keeps its `over_budget` rows (R-17).
+
+```mermaid
+flowchart TD
+  S[/"valid Snapshot"/] --> AD["Admission §4.1"]
+  AD --> Q{"instructions and query admitted?<br/>output_contract too, on a parser route?"}
+  Q -- no --> X1["REFUSE required_slot_missing"]
+  Q -- yes --> CF["Conflicts (M3)"]
+  CF --> P{"protected items alone<br/>fit budget.input?"}
+  P -- no --> X2["REFUSE protected_content_over_budget"]
+  P -- yes --> FIT["Fit §4.4"]
+  FIT --> E{"requires_evidence, and no evidence left<br/>or a slot below min_included?"}
+  E -- yes --> X3["REFUSE evidence_required<br/>recovery.action §4.5"]
+  E -- no --> RN["Render, count, hash"]
+```
 
 ### 4.1 Admission: precedence as built (M1)
 
@@ -415,16 +429,15 @@ The algorithm is greedy and deterministic. It is **not** optimal, since the knap
 
 **Not built yet:** per-item `token_budget` caps. The earlier design capped each item before shedding; the spec doesn't define that step yet, and no conformance case sets a cap that its item exceeds.
 
-### 4.5 R-12 recovery mapping
+### 4.5 R-12 recovery mapping (as built, M2)
 
-The spec names three actions but not when to choose each one:
+The spec names three actions but did not say when to choose each one. `conformance/README.md` now does. On a route with `requires_evidence: true`, fitting leaves too little evidence when no `evidence.knowledge` or `evidence.tool_results` item is included, or when an evidence slot has fewer included items than its `min_included`. Items count once, however many times the profile places them.
 
-| Situation after fitting | `recovery.action` |
+| Why the evidence is short | `recovery.action` |
 |---|---|
-| Producers returned no evidence candidates | `request_context` |
-| Candidates existed, all excluded at admission (threshold, scope, expiry) | `request_context` |
-| Evidence admitted, then dropped for budget, and some had no variants | `precompute_summary` |
-| Evidence admitted, and even the smallest variants do not fit | `retrieve_narrower` |
+| No evidence item was omitted for budget: producers returned none, or admission excluded them | `request_context` |
+| An evidence item omitted for budget had no variants | `precompute_summary` |
+| Every evidence item omitted for budget had variants, and they did not fit | `retrieve_narrower` |
 
 ### 4.6 Rendering
 
@@ -536,12 +549,14 @@ flowchart LR
   M4 --> M5["M5 · Hardening<br/>R-21 R-22 R-23<br/>conformance-report → website"]
 ```
 
-**M2 status (in progress, 2026-09-22): budget fitting and refusal.** Spec-first, as planned:
+**M2 status (2026-09-22): done.** Budget fitting and refusal are implemented test-first, spec first. The website gained the route-policy fields (`c0f5890`), `excluded[].slot` (`574fc6d`), and nine budget and refusal conformance cases generated from intent tables (`9e40504`). All eleven vendored cases pass byte for byte. `status.json` now claims R-4, R-12, R-16 and R-17 implemented and R-18 boundary-checked. Fitting is §4.4, refusals are §4, and the recovery mapping is §4.5. It diverged from this document in six ways, each written into the spec:
 
-1. **Route-policy schema (website `c0f5890`): done.** `parser` (R-4); `requires_evidence`, and `slots.<evidence slot>.min_included`, which the schema accepts only when the route requires evidence (R-12); per-slot `priority` and `order_by`; and a route-level `fitting_order` of `compress`/`omit` steps (R-16). With no steps, variants come before omission.
-2. **Invalid snapshots (website `c0f5890`): decided.** They stay a pre-assembly `SnapshotError` with no trace; no `invalid_snapshot` code. Refusal precedence is `contract/reasons.json` order (R-21), and `conflict_unresolved` moved ahead of the budget refusals to match the pipeline.
-3. **Conformance cases (website `9e40504`): done.** Nine cases from `conformance/generators/fitting.py`: four budget cases, `required-slot-missing`, `protected-over-budget`, and one `evidence_required` case per recovery action. `conformance/README.md` now fixes the fitting procedure and the recovery mapping (§4.4, §4.5 as specified).
-4. **Assembler: in progress.** Done so far: `excluded[].slot` on assembler rows (website `574fc6d`); refused traces (`result: null`, `included: []`, admission rows kept) and `required_slot_missing`, with `parser: true` adding `governance.output_contract` to the required slots; `protected_content_over_budget` when the protected items alone render over budget, checked before anything is shed (`src/cwa/fitting.py`); droppable items shed one at a time in shedding order (slot `priority`, then slot name, then lowest rank by `order_by` and `id`), each traced `over_budget` with its slot; then compressible items are reduced by default steps, compressing every slot before omitting from any, taking the longest variant that fits or else the shortest, with one `compressed[]` row per included occurrence. The route's `fitting_order` runs before the default steps (§4.4). Next: the evidence check, test-first.
+- **No `invalid_snapshot` refusal.** A snapshot that fails its schema is rejected before assembly and has no trace. Refusal precedence is `contract/reasons.json` order, and `conflict_unresolved` moved ahead of the budget refusals to match the pipeline.
+- **Protected content is checked before shedding.** When it can't fit, the refusal has no `over_budget` rows.
+- **"Fits" is always a whole-payload render and count.** The estimate-then-correct loop in the old §4.4 is gone. An implementation may estimate only if it reaches the same decisions.
+- **The fitting policy has a closed vocabulary.** Per-slot `priority` (lower sheds first, ties by slot name) and `order_by` (`-relevance`, `-freshness`, `freshness`; `id` is always the last key), and a route `fitting_order` of `compress`/`omit` steps. `min_included` is accepted only on evidence slots of a route that requires evidence.
+- **Recovery is chosen by what was omitted for budget**, not by whether producers returned candidates (§4.5).
+- **Per-item `token_budget` caps are not built.** The old §4.4 capped items before shedding, but the spec doesn't define that step. Specifying it is open. It belongs with R-3's "null means the route allocation", which also needs a route allocation field.
 
 **Follow-up for M5:** trace and placement ordering compare ids by code point; JavaScript's default sort uses UTF-16 code units. They differ only for ids with characters outside the Basic Multilingual Plane. Pick one in the spec (JCS already uses UTF-16) and apply it everywhere ids are sorted.
 

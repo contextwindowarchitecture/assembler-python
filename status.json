@@ -38,7 +38,7 @@
     },
     {
       "id": "R-4",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_refusal.py::test_every_assembly_needs_instructions_and_a_query",
         "tests/test_refusal.py::test_a_parser_route_also_needs_an_output_contract",
@@ -98,8 +98,19 @@
     },
     {
       "id": "R-12",
-      "status": "planned",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "tests/test_refusal.py::test_no_admitted_evidence_asks_for_context",
+        "tests/test_refusal.py::test_routes_that_do_not_require_evidence_answer_without_it",
+        "tests/test_refusal.py::test_a_tool_result_is_evidence_too",
+        "tests/test_refusal.py::test_evidence_omitted_without_variants_asks_for_a_precomputed_summary",
+        "tests/test_refusal.py::test_a_minimum_the_fitted_evidence_meets_is_not_refused",
+        "tests/test_refusal.py::test_evidence_whose_variants_did_not_fit_asks_for_narrower_retrieval",
+        "tests/test_refusal.py::test_the_minimum_counts_items_not_occurrences",
+        "tests/test_purity.py::test_assemble_needs_no_network_or_clock",
+        "tests/test_snapshot.py::test_snapshot_is_detached_from_the_callers_document",
+        "tests/test_conformance.py::test_conformance_case"
+      ]
     },
     {
       "id": "R-13",
@@ -134,7 +145,7 @@
     },
     {
       "id": "R-16",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_admission.py::test_items_cannot_downgrade_a_protected_slot",
         "tests/test_admission.py::test_items_cannot_protect_themselves",
@@ -152,27 +163,31 @@
         "tests/test_fitting.py::test_protected_items_are_never_compressed_or_omitted",
         "tests/test_fitting.py::test_a_slot_placed_twice_is_compressed_in_both_occurrences",
         "tests/test_fitting.py::test_the_routes_fitting_order_runs_before_the_default_steps",
-        "tests/test_fitting.py::test_without_a_route_order_the_same_items_are_compressed_instead"
+        "tests/test_fitting.py::test_without_a_route_order_the_same_items_are_compressed_instead",
+        "tests/test_golden.py::test_fixture_payload_hash_and_tokens"
       ]
     },
     {
       "id": "R-17",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_refusal.py::test_an_excluded_instruction_does_not_count_and_its_exclusion_stays_in_the_trace",
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_refusal.py::test_protected_content_over_budget_refuses_without_shedding",
-        "tests/test_refusal.py::test_protected_content_that_exactly_fits_is_not_refused"
+        "tests/test_refusal.py::test_protected_content_that_exactly_fits_is_not_refused",
+        "tests/test_refusal.py::test_other_routes_do_not_need_an_output_contract",
+        "tests/test_refusal.py::test_evidence_omitted_without_variants_asks_for_a_precomputed_summary"
       ]
     },
     {
       "id": "R-18",
-      "status": "in progress",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_admission.py::test_variant_ids_must_differ_from_the_parent_and_each_other",
         "tests/test_purity.py::test_assemble_needs_no_network_or_clock",
         "tests/test_fitting.py::test_compressible_items_take_the_longest_variant_that_fits_else_the_shortest",
-        "tests/test_fitting.py::test_protected_items_are_never_compressed_or_omitted"
+        "tests/test_fitting.py::test_protected_items_are_never_compressed_or_omitted",
+        "tests/test_conformance.py::test_conformance_case"
       ]
     },
     {
@@ -191,7 +206,8 @@
       "evidence": [
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason",
-        "tests/test_refusal.py::test_a_missing_required_slot_is_reported_before_the_budget"
+        "tests/test_refusal.py::test_a_missing_required_slot_is_reported_before_the_budget",
+        "tests/test_refusal.py::test_a_protected_refusal_comes_before_the_evidence_check"
       ]
     },
     {

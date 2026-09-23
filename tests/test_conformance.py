@@ -9,11 +9,7 @@ from conftest import CASES, read_json
 IGNORED = ("trace_id", "timings")
 
 # Cases whose milestone is in progress. Strict: once a case passes, pytest fails until it is removed here.
-PENDING: dict[str, str] = {
-    "evidence-precompute-summary": "M2: budget fitting and refusal",
-    "evidence-request-context": "M2: budget fitting and refusal",
-    "evidence-retrieve-narrower": "M2: budget fitting and refusal",
-}
+PENDING: dict[str, str] = {}
 
 
 def comparable(trace: dict) -> dict:

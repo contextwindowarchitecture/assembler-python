@@ -4,6 +4,7 @@ from __future__ import annotations
 import pytest
 
 from cwa import Snapshot, assemble
+from conftest import CASES, read_json
 
 
 def items(snapshot: dict, producer: str) -> list[dict]:
@@ -75,3 +76,71 @@ def test_a_missing_required_slot_is_reported_before_the_budget(fixture_snapshot)
     fixture_snapshot["budget"]["input"] = 1
     items(fixture_snapshot, "conversation").clear()
     assert_refused(assemble(Snapshot.from_json(fixture_snapshot)), "required_slot_missing")
+
+
+# R-12: a route that requires evidence never answers from nothing, and says how to recover.
+
+def evidence_case(name: str) -> dict:
+    return read_json(CASES / name / "snapshot.json")
+
+
+def recovery(snapshot: dict) -> str | None:
+    result = assemble(Snapshot.from_json(snapshot))
+    if result.refused:
+        assert_refused(result, "evidence_required")
+        return result.trace["recovery"]["action"]
+    assert "recovery" not in result.trace
+    return None
+
+
+def observation() -> dict:
+    return {"id": "obs:order-42", "slot": "evidence.tool_results", "source": "crm", "source_version": "1", "authority": "observation",
+            "trust": "unverified", "freshness": "2026-09-22T11:59:00Z", "body": "order 42: pro plan", "injection_risk": "untrusted_content"}
+
+
+def test_no_admitted_evidence_asks_for_context():
+    assert recovery(evidence_case("evidence-request-context")) == "request_context"
+
+
+def test_routes_that_do_not_require_evidence_answer_without_it():
+    snapshot = evidence_case("evidence-request-context")
+    del snapshot["route_policy"]["requires_evidence"]
+    assert recovery(snapshot) is None
+
+
+def test_a_tool_result_is_evidence_too():
+    snapshot = evidence_case("evidence-request-context")
+    snapshot["batches"].append({"producer": {"id": "crm-mcp", "kind": "mcp"}, "items": [observation()], "excluded": []})
+    assert recovery(snapshot) is None
+
+
+def test_evidence_omitted_without_variants_asks_for_a_precomputed_summary():
+    snapshot = evidence_case("evidence-precompute-summary")
+    assert recovery(snapshot) == "precompute_summary"
+    trace = assemble(Snapshot.from_json(snapshot)).trace
+    assert [(row["item_id"], row["reason"]) for row in trace["excluded"]] == [("kb:c", "over_budget"), ("kb:b", "over_budget")]
+
+
+def test_a_minimum_the_fitted_evidence_meets_is_not_refused():
+    snapshot = evidence_case("evidence-precompute-summary")
+    snapshot["route_policy"]["slots"]["evidence.knowledge"]["min_included"] = 1
+    assert recovery(snapshot) is None
+
+
+def test_evidence_whose_variants_did_not_fit_asks_for_narrower_retrieval():
+    assert recovery(evidence_case("evidence-retrieve-narrower")) == "retrieve_narrower"
+
+
+def test_the_minimum_counts_items_not_occurrences():
+    snapshot = evidence_case("evidence-precompute-summary")
+    snapshot["budget"]["input"] = 4096
+    snapshot["route_policy"]["slots"]["evidence.knowledge"]["min_included"] = 4
+    placement = snapshot["profile"]["placement"]
+    placement.insert(-1, next(p for p in placement if p["slot"] == "evidence.knowledge"))
+    assert recovery(snapshot) == "request_context"
+
+
+def test_a_protected_refusal_comes_before_the_evidence_check():
+    snapshot = evidence_case("evidence-request-context")
+    snapshot["budget"]["input"] = 10
+    assert_refused(assemble(Snapshot.from_json(snapshot)), "protected_content_over_budget")
