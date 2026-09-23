@@ -50,6 +50,10 @@ Rules:
 - **Don't guess.** If a snapshot needs behavior from a later milestone, raise `NotImplementedError` naming that milestone. Never emit a payload the spec would not allow.
 - **Reason codes come from the registry.** Exclusions and refusals use codes in `contract/data/reasons.json` (R-21). A new condition needs a new code in the website repo first.
 
+## Documentation
+
+- Use Mermaid diagrams in docs and design notes wherever a flow, ordering, structure or plan reads faster as a picture than as prose or a table. Check that every new diagram parses with Mermaid 11 before committing.
+
 ## The contract is vendored, not edited
 
 `src/cwa/contract/data/` and `conformance/` are copies of the website repo's `schema/`, `contract/` and `conformance/`, pinned by SHA-256 in `contract.lock.json`. `tests/test_contract_lock.py` fails if they are edited here. To change the spec:

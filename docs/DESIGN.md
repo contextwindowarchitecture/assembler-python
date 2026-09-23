@@ -307,28 +307,41 @@ flowchart TD
 
 Refusal precedence, used when several apply: `invalid_snapshot` > `required_slot_missing` > `protected_slot_unplaced` > `conflict_unresolved` > `protected_content_over_budget` > `evidence_required`. Every refusal emits `result: null` and `included: []`. Exclusions and conflicts found so far stay in the trace (R-17).
 
-### 4.1 Admission: fixed check order
+### 4.1 Admission: precedence as built (M1)
 
-Each exclusion row has exactly one `reason`, so check order is part of the contract. Two implementations that check in different orders emit different traces for the same bad item.
+Each exclusion row carries exactly one `reason`, so check order is part of the contract. The order is the order of `contract/reasons.json` (R-21), and `src/cwa/admission.py` runs its checks in that order. The first failing check wins, and an item that passes every check is admitted.
 
-| # | Check | Reason | Rule |
-|---|---|---|---|
-| 1 | Schema (with format checking) | `invalid_structure` (see DA-13) | R-2 |
-| 2 | Fill defaults: slot defaults ⊕ route `default_overrides` | *(records `defaults_filled`)* | R-3 |
-| 3 | Producer bound, authenticated, and allowed for this slot by the route | `producer_not_authenticated`, `producer_slot_not_allowed` | R-8, R-15 |
-| 4 | Authority allowed for the slot | `authority_not_allowed` | R-1, R-13, R-14 |
-| 5 | Capabilities: emitter is the capability policy and the id is in the grant | `capability_not_allowed` | R-15 |
-| 6 | Governance: `trust: verified`, `injection_risk: none` | `untrusted_in_governance` | R-10 |
-| 7 | Evidence and interaction marked untrusted, unless the route verified this MCP server | `untrusted_content_unmarked` | R-10, R-15 |
-| 8 | Tier: no downgrade; upgrade only if the route allows it | `protected_tier_changed`, `tier_upgrade_not_allowed` | R-16 (DA-12) |
-| 9 | Variants: unique ids, not equal to the item id | `duplicate_variant_id` | R-18 |
-| 10 | Lifetime: `revoked_by`, `expires ≤ t`, `freshness > t + skew` | `revoked`, `expired`, `future_freshness` | R-9, R-23 |
-| 11 | State currency vs `max_age` | `stale_state` | R-8 |
-| 12 | Memory source pattern | `memory_source_invalid` | R-9 |
-| 13 | Scope: every `required_scope` key present and equal | `out_of_scope` | R-2 (DA-11) |
-| 14 | Route eligibility: `min_relevance`, `max_age`, named predicates | `below_threshold`, `not_eligible` | R-3, R-13 |
+```mermaid
+flowchart TD
+  C[/"candidate<br/>(raw producer output)"/] --> P{"route lists this producer<br/>with the same kind?"}
+  P -- no --> X0["producer_not_authenticated"]
+  P -- yes --> S{"valid against<br/>context_item.schema.json?"}
+  S -- no --> X1["missing_field:* (alphabetical)<br/>unknown_slot · unknown_authority<br/>invalid_structure"]
+  S -- yes --> D["fill omitted policy fields<br/>slot defaults ⊕ route overrides<br/>→ defaults_filled"]
+  D --> I
 
-Items are canonically sorted by `(producer.id, slot, id)` before admission. Producers run in parallel and return in nondeterministic order, and the payload must not depend on that order (DA-15).
+  subgraph I["Identity and permission"]
+    direction TB
+    I1["duplicate_item_id"] --> I2["producer_slot_not_allowed<br/>(state slots: state producers only)"] --> I3["authority_not_allowed"] --> I4["capability_not_allowed"]
+  end
+  subgraph T["Trust and tier"]
+    direction TB
+    T1["untrusted_in_governance"] --> T2["untrusted_content_unmarked<br/>(unless route-verified MCP)"] --> T3["protected_tier_changed"] --> T4["tier_upgrade_not_allowed"] --> T5["duplicate_variant_id"]
+  end
+  subgraph L["Lifetime, full precision"]
+    direction TB
+    L1["revoked"] --> L2["expired<br/>expires ≤ assembly_time"] --> L3["future_freshness<br/>freshness > t + skew"] --> L4["stale_state"] --> L5["source_invalid"]
+  end
+  subgraph R["Route eligibility"]
+    direction TB
+    R1["out_of_scope"] --> R2["below_threshold"] --> R3["not_eligible"]
+  end
+  I --> T --> L --> R --> A(["admitted"])
+```
+
+Each box is one check, named by the reason it records when it fails. Producer-stage exclusions reported in the batch go straight to the trace, ahead of assembler rows. A candidate without a usable id is recorded as `{producer}#invalid-{n}`.
+
+Snapshot normalization sorts batches by producer id and items by id, so the order producers return in cannot change the payload or the digest (DA-15). Items without a usable id keep their supplied order after the rest, which keeps their recorded ids stable on replay.
 
 ### 4.2 Dedupe, supersede and diversity (assembler-owned stages 4 and 5)
 
