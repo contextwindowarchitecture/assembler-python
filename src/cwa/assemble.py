@@ -136,7 +136,8 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResu
         snapshot, admission, resolution, trace_id, fitted.omitted,
         result={"input_tokens": input_tokens, "hash": hashlib.sha256(rendered.payload).hexdigest()},
         included=[
-            {"slot": o.slot, "item_id": o.item.id, "tokens": snapshot.tokenizer.count(body), "source_version": o.item.source_version}
+            {"slot": o.slot, "item_id": o.item.id, "tokens": snapshot.tokenizer.count(body), "source_version": o.item.source_version,
+             "eligibility": o.item.eligibility}
             for o, body in zip(occurrences, rendered.bodies)
         ],
         compressed=[

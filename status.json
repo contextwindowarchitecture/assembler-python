@@ -303,7 +303,8 @@
         "tests/test_golden.py::test_defaults_filled_are_traced_as_records",
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_admission.py::test_assembler_exclusion_rows_carry_the_slot_the_candidate_names",
-        "tests/test_fitting.py::test_over_budget_rows_name_the_slot_after_the_admission_rows"
+        "tests/test_fitting.py::test_over_budget_rows_name_the_slot_after_the_admission_rows",
+        "tests/test_golden.py::test_included_rows_record_eligibility_after_defaults_are_filled"
       ]
     },
     {

@@ -22,3 +22,16 @@ def test_defaults_filled_are_traced_as_records(fixture_snapshot):
         del query[field]
     trace = assemble(Snapshot.from_json(fixture_snapshot)).trace
     assert trace["defaults_filled"] == [{"item_id": "turn:18", "field": "lineage"}, {"item_id": "turn:18", "field": "eligibility"}]
+
+
+def test_included_rows_record_eligibility_after_defaults_are_filled(fixture_snapshot):
+    """R-22: each included occurrence names its eligibility; a filled value is the route's override
+    when there is one (R-3), else the slot default."""
+    query = fixture_snapshot["batches"][3]["items"][0]
+    del query["eligibility"]
+    fixture_snapshot["route_policy"]["default_overrides"] = {"interaction.query": {"eligibility": "support-chat/v2: live turn"}}
+    rows = {row["item_id"]: row["eligibility"] for row in assemble(Snapshot.from_json(fixture_snapshot)).trace["included"]}
+    assert rows["turn:18"] == "support-chat/v2: live turn"
+    del fixture_snapshot["route_policy"]["default_overrides"]
+    rows = {row["item_id"]: row["eligibility"] for row in assemble(Snapshot.from_json(fixture_snapshot)).trace["included"]}
+    assert rows == {"policy:v12": "route-policy", "refunds-eu:v17#p4": "support-chat/v2: tenant acme; rerank at least 0.82", "turn:18": "route-policy"}
