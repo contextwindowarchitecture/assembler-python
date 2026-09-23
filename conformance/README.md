@@ -88,7 +88,7 @@ Fitting reduces the admitted items the profile places, less any that conflict re
 
 *Shedding order* takes slots by ascending `priority` (default 0), then by slot name, and within each slot takes items from the lowest rank up. Rank sorts by the slot's `order_by` keys, then by `id`, with the first item ranked highest. The default keys are `["-relevance", "-freshness"]`: higher scores rank first and unscored items last, then newer items first.
 
-Fitting decides per item. A slot the profile places twice sheds or compresses both occurrences together. Each omitted item adds one `excluded[]` row with reason `over_budget`, stage `assembler` and its slot. Each included occurrence of a compressed item adds one `compressed[]` row: `from` counts the rendered original body, `to` and `included[].tokens` count the rendered variant, and `method` and `variant_id` name the variant (R-18).
+Fitting decides per item. A slot the profile places twice sheds or compresses both occurrences together. When those placements render a body differently, as `system` and an `xml:` wrap do in `cwa-messages/v1`, the size of the item's body or of a variant, wherever this section compares one with a cap or with another, is the largest of its occurrences' renderings: a cap bounds the body however it is rendered. Each omitted item adds one `excluded[]` row with reason `over_budget`, stage `assembler` and its slot. Each included occurrence of a compressed item adds one `compressed[]` row: `from` counts the original body and `to` and `included[].tokens` the variant, each as that occurrence renders it, and `method` and `variant_id` name the variant (R-18).
 
 ## Tokenizers and renderers
 
