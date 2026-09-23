@@ -20,10 +20,10 @@ Some cases have a generator in `generators/`. It holds a table of each candidate
 
 Array order in the trace is part of the expectation:
 
-- `included[]` follows payload order.
+- `included[]` follows placement order, and `id` order within a placement. For `fixture-xml/v1` that is payload order.
 - `excluded[]` lists producer-stage rows first, ordered by producer id and then `item_id`. Assembler rows follow in pipeline order. Admission rows are ordered by producer id and then recorded `item_id`. Conflict rows follow, ordered by `item_id`, and fitting rows follow in the order items were omitted.
 - `conflicts[]` has one record per declared group, ordered by `group_id`.
-- `compressed[]` has one row per included occurrence of a compressed item, in payload order.
+- `compressed[]` has one row per included occurrence of a compressed item, in `included[]` order.
 - Assembler rows in `excluded[]` carry `slot` whenever the candidate names one of the eleven slots, even when it fails for another reason (R-22). Producer rows carry what the producer reported, which has no slot.
 - `defaults_filled[]` is ordered by `item_id`, then by field in R-3 order: `token_budget`, `variants`, `conflict_policy`, `lineage`, `eligibility`, `injection_risk`. It covers every schema-valid item from a producer the route admits, including items later excluded, because later admission checks read the filled values.
 
@@ -90,9 +90,17 @@ Fitting reduces the admitted items the profile places, less any that conflict re
 
 Fitting decides per item. A slot the profile places twice sheds or compresses both occurrences together. Each omitted item adds one `excluded[]` row with reason `over_budget`, stage `assembler` and its slot. Each included occurrence of a compressed item adds one `compressed[]` row: `from` counts the rendered original body, `to` and `included[].tokens` count the rendered variant, and `method` and `variant_id` name the variant (R-18).
 
-## Fixture tokenizer and renderer
+## Tokenizers and renderers
 
 - `fixture-whitespace/v1` counts maximal runs of characters outside the ECMAScript whitespace and line-terminator set: U+0009–U+000D, U+0020, U+00A0, U+1680, U+2000–U+200A, U+2028, U+2029, U+202F, U+205F, U+3000 and U+FEFF. This is what JavaScript's `/\S+/gu` matches. Other languages must use this set explicitly; Python's `\S`, for example, differs at U+001C–U+001F and U+FEFF. It is a test fixture, not a model tokenizer.
-- `fixture-xml/v1` renders each placed item as `<{tag} id="{id}">\n{body}\n</{tag}>\n`, where `{tag}` is the placement's `wrap` without its `xml:` prefix, in profile placement order. Within a placement it orders items by `id`. A member of a surfaced conflict group renders as `<{tag} id="{id}" conflict="{group id}">` instead, with the same body and closing tag. It escapes `&`, `<` and `>` in bodies, and additionally `"` in attribute values. It supports only `xml:` wraps. Per-item `tokens` count the rendered body; wrapper tokens appear only in `result.input_tokens`.
+- `fixture-xml/v1` renders each placed item as `<{tag} id="{id}">\n{body}\n</{tag}>\n`, where `{tag}` is the placement's `wrap` without its `xml:` prefix, in profile placement order. Within a placement it orders items by `id`. A member of a surfaced conflict group renders as `<{tag} id="{id}" conflict="{group id}">` instead, with the same body and closing tag. It escapes `&`, `<` and `>` in bodies, and additionally `"` in attribute values. It supports only `xml:` wraps, where the tag matches `[A-Za-z_][A-Za-z0-9_.-]*` (ASCII only). Per-item `tokens` count the rendered body; wrapper tokens appear only in `result.input_tokens`, which counts the whole payload text.
+- `cwa-messages/v1` renders the payload as a message request, so the platform's roles stay with the application (R-7). Its payload is the RFC 8785 serialization, in UTF-8, of an object with three members:
+  - `system`: one entry per occurrence placed with wrap `system`, in placement order and by `id` within a placement. An entry is `{"id": item id, "text": body}`, with the body unescaped, since only verified governance content with no injection risk reaches a governance slot (R-10). A member of a surfaced conflict group also has `"conflict": group id`.
+  - `tools`: one entry per occurrence placed with wrap `tools`, built the same way.
+  - `messages`: exactly one message, `{"role": "user", "content": text}`. `text` holds every occurrence placed with an `xml:` wrap, in placement order and by `id` within a placement, rendered exactly as `fixture-xml/v1` renders it, with one addition: an `interaction.history` occurrence has ` speaker="assistant"` after its `id` attribute when the item has `lineage: generated`, and ` speaker="user"` otherwise, before any `conflict` attribute. Prior turns are part of this transcript and never become messages of their own; the query is the only live user turn (R-7).
+
+  A profile is realizable only when each `wrap` is `system`, `tools` or an `xml:` wrap with a valid tag; `system` is used only on governance slots and `tools` only on `governance.capabilities`, since no other slot may take a platform role (R-7); and every `system` placement comes before every `xml:` placement, because a message request cannot put material ahead of its system text. An unrealizable profile is rejected with the snapshot, before assembly. `result.input_tokens` is the sum of the tokenizer's counts of every entry's `text` and of the message's `content`; role names, ids and JSON punctuation are not counted. Per-item `tokens` count the rendered body: unescaped in `system` and `tools`, escaped in the message. `result.hash` is the SHA-256 of the payload bytes.
+
+Wherever this document counts the payload, in `result.input_tokens` and in every test of whether the payload fits, it means the renderer's count.
 
 Implementations vendor these cases pinned by hash, so a case changes only through a reviewed edit here.

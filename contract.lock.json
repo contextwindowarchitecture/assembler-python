@@ -1,11 +1,11 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "b303ca4538aa28a5c89cddf42bcdf322cd928e4d",
+    "commit": "c131accf5a5f1311c3540030795b277f31e7ab60",
     "dirty": false
   },
   "files": {
-    "conformance/README.md": "9bcab7d850eaba9c2be4fd8a1d2f466bb9e66225ea0ec750c9270feef46fe901",
+    "conformance/README.md": "b790b5f12066a143391f23e7ee9d756a276984f9d75235b6a3ffd9908e1cd771",
     "conformance/cases/admission-reasons/case.json": "8121bb04dc13512b97d87cffb8b0cbe9979410ae7263c375ec4ca270cc8f7434",
     "conformance/cases/admission-reasons/expected.payload.txt": "de1f12669e43a8e087ab79dd36fc7b5f1bf89096613f340da6279b6f9c6e4214",
     "conformance/cases/admission-reasons/expected.trace.json": "7033c0886343f3cf392e958cf3d482af83d6d4b49e69f50594dacbd735e92972",
@@ -64,6 +64,14 @@
     "conformance/cases/fixture-three-slot/expected.payload.txt": "4cf0b083e167bb952c1ba0f9a93bf3ed3c64b178c063c259b49cdace1b86972f",
     "conformance/cases/fixture-three-slot/expected.trace.json": "0ff6292e60c19a45c2121459ad8befb58c293d0b8fb221bea51e8db5e1e427c5",
     "conformance/cases/fixture-three-slot/snapshot.json": "a370006da4784e5ce24a29fe0b58e752d36f97e0b52c10783e99fb737e5aef09",
+    "conformance/cases/messages-budget/case.json": "49f1edd7efd69ca4c73c23b1601b5219142e11c4f4f1967f644aa7864318e645",
+    "conformance/cases/messages-budget/expected.payload.txt": "42c8242bbae0c4e69033fa84f68dde8c1608128cf0d98e327df4651da2c9d176",
+    "conformance/cases/messages-budget/expected.trace.json": "a6ab10a33c4bd986cf62cbad324cb0b90ab15e6a97b863d2c57e238f9829a2f4",
+    "conformance/cases/messages-budget/snapshot.json": "e0fa0a07e50d732b15f12dec95c5bef976104e18eb9cec14dfd0bd5d6d143902",
+    "conformance/cases/messages-render/case.json": "dcfca61cec98c83e6775e076fbdeaebd85bb71ff1c77f6847017e3be40136aa9",
+    "conformance/cases/messages-render/expected.payload.txt": "d87561b5b23bfa7dbe5dd9afcda7dd303974adf9537f17c05b8a63ff0dd379ba",
+    "conformance/cases/messages-render/expected.trace.json": "98bb38336936c19d30b5e6facc778e946f616b3466376033078517c2952979d4",
+    "conformance/cases/messages-render/snapshot.json": "18971d16290ceecb2bf43761324eeb91a4ac1b485eb8bd445a1df7720f06cec6",
     "conformance/cases/placement-protected-unplaced/case.json": "404cd918fb2452a481257143f8a08e71f6978ed17e9fa9361dd1bb927a90adcd",
     "conformance/cases/placement-protected-unplaced/expected.trace.json": "e949109406e5ede5ec7db21daad33ea443c9dddecf75b0469fb904f8a8f1bb41",
     "conformance/cases/placement-protected-unplaced/snapshot.json": "b6c03f8f8d450817d5830055bc107475923ae7730c451a0ff401b9bb4f410051",
@@ -86,6 +94,7 @@
     "conformance/generators/admission-reasons.py": "2b63bfb81c0eac53bac15de501119aec5c281ac0c8fb8249c953d4300c433448",
     "conformance/generators/conflicts.py": "401c264f838304bf8cef91aa0beabafe93bd224855effe283d25f5ef3f2859a7",
     "conformance/generators/fitting.py": "2345ed9c0af63901f8bc542fe11014292ae8ebdd75568a4dccf9c8620e8fccd6",
+    "conformance/generators/messages.py": "3dc7add51c19d0e93479112cc1e62a3831fb02811f05fbf8454a4929a43bd7c2",
     "src/cwa/contract/data/assembler-scope.json": "c33e75cf955610f1d869ba152f439b4130fdd940c66a82dd3ccae3f2582f00e8",
     "src/cwa/contract/data/reasons.json": "3b574fe12e7237d5556704cb6366c2dfd7ede43caba16a008029e0d27a656ffe",
     "src/cwa/contract/data/requirements.json": "a9e7e3db750bfd6bae2c6dd5698dd31b7716bee0d15b75b43e2c1aa1da0ace6c",

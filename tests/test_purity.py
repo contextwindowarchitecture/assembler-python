@@ -7,7 +7,7 @@ import pytest
 
 from cwa import Snapshot, assemble
 from conftest import CASES, read_json
-from test_conformance import PENDING
+from test_conformance import GAPS, PENDING
 
 
 def _forbidden(*args, **kwargs):
@@ -20,7 +20,12 @@ class _NoClock(datetime.datetime):
 
 @pytest.mark.parametrize("case", sorted(p.name for p in CASES.iterdir()))
 def test_assemble_needs_no_network_or_clock(case, monkeypatch):
-    snapshot = Snapshot.from_json(read_json(CASES / case / "snapshot.json"))
+    try:
+        snapshot = Snapshot.from_json(read_json(CASES / case / "snapshot.json"))
+    except GAPS:
+        if case not in PENDING:
+            raise
+        return  # a pending case whose renderer or tokenizer does not exist yet
     monkeypatch.setattr(socket, "socket", _forbidden)
     monkeypatch.setattr(socket, "create_connection", _forbidden)
     for name in ("time", "time_ns", "monotonic", "perf_counter", "localtime", "gmtime"):
@@ -31,5 +36,5 @@ def test_assemble_needs_no_network_or_clock(case, monkeypatch):
         return
     try:
         assemble(snapshot, trace_id="t")
-    except NotImplementedError:
+    except GAPS:
         pass  # a pending case's milestone gap, not a read outside the snapshot

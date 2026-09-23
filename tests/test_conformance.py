@@ -6,13 +6,19 @@ import random
 
 import pytest
 
-from cwa import Snapshot, assemble
+from cwa import Snapshot, SnapshotError, assemble
 from conftest import CASES, read_json
 
 IGNORED = ("trace_id", "timings")
 
 # Cases whose milestone is in progress. Strict: once a case passes, pytest fails until it is removed here.
-PENDING: dict[str, str] = {}
+PENDING: dict[str, str] = {
+    "messages-budget": "M4: cwa-messages/v1",
+    "messages-render": "M4: cwa-messages/v1",
+}
+# What a pending case may raise in place of an outcome: its milestone's gap, or a missing renderer
+# or tokenizer, which conformance/README.md treats as a skipped case.
+GAPS = (NotImplementedError, SnapshotError)
 
 
 def comparable(trace: dict) -> dict:
@@ -57,10 +63,10 @@ def _outcome(case: str, document: dict) -> tuple:
     """The payload and trace, or, for a pending case, the milestone gap it raises instead."""
     try:
         result = assemble(Snapshot.from_json(document), trace_id="t")
-    except NotImplementedError as gap:
+    except GAPS as gap:
         if case not in PENDING:
             raise
-        return ("NotImplementedError", str(gap))
+        return (type(gap).__name__, str(gap))
     return (result.payload, result.trace)
 
 
