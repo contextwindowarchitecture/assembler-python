@@ -5,8 +5,8 @@ budget and counts its items (R-16, R-21), every capped slot fits its max_tokens 
 pressure never leaves a floored slot below its min_tokens (R-16), a
 deduplicated slot includes each key once (R-24), a superseding slot keeps only the latest of each
 call (R-25), a capped slot keeps at most max_per_source of each source (R-26), the trace repeats the
-budget's margin and counts every token unscaled (R-16, R-21), refusals have no payload (R-17), and a
-stored snapshot replays (R-23)."""
+budget's margin and counts every token unscaled (R-16, R-21), the fit test charges the margin rounded
+up, exactly at the boundary (R-16), refusals have no payload (R-17), and a stored snapshot replays (R-23)."""
 from __future__ import annotations
 
 import copy
@@ -297,6 +297,26 @@ def test_the_trace_repeats_the_margin_and_never_scales_a_count_by_it(document):
         for row in trace["included"]:
             assert row["tokens"] == _count(document, escape_body(bodies[row["item_id"]]))
         assert trace["result"]["input_tokens"] == sum(_count(document, text) for text in _payload_texts(document, result.payload))
+
+
+@PROPERTY
+@given(snapshots(), st.sampled_from([0, 100]) | st.integers(1, 99))
+def test_a_payload_fits_its_charged_count_exactly_and_not_one_token_less(document, margin):
+    """A payload of n tokens fits a budget.input of (n*(100+m)+99)//100 and no less (R-16). A random budget
+    rarely lands on that boundary, so this one is set there: the route's payload under an unlimited budget
+    gives n, a budget of exactly its charged count keeps that payload whole, and one token less reduces
+    it or refuses. A margin between 1 and 99 usually makes the charge fractional, where rounding shows."""
+    document["budget"]["margin_percent"] = margin
+    document["budget"]["input"] = 10**6
+    whole = assemble(Snapshot.from_json(document))
+    assume(not whole.refused)
+    n = whole.trace["result"]["input_tokens"]
+    document["budget"]["input"] = _charged(document, n)
+    exact = assemble(Snapshot.from_json(document))
+    assert exact.payload == whole.payload and exact.trace["included"] == whole.trace["included"]
+    document["budget"]["input"] -= 1
+    below = assemble(Snapshot.from_json(document))
+    assert below.refused or below.trace["result"]["input_tokens"] < n
 
 
 @PROPERTY
