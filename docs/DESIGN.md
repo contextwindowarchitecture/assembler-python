@@ -564,6 +564,16 @@ flowchart LR
   M4 --> M5["M5 · Hardening<br/>R-21 R-22 R-23<br/>conformance-report → website"]
 ```
 
+**M4 status (2026-09-22): in progress. Placement, profiles and the message renderer** (R-7, R-19, R-20). The maintainer chose the render IR (below) and asked for the two example profiles a single system prompt cannot realize to be revised to version 3. Spec first again: website `16a5cca` defines the placement checks and `b303ca4` adds three placement cases, vendored here as pending.
+
+```mermaid
+flowchart LR
+  P1["Placement spec<br/>website 16a5cca, b303ca4"] --> P2["Profile checks<br/>at the snapshot"] --> P3["slot_unplaced,<br/>protected_slot_unplaced"] --> R1["Render IR spec<br/>cwa-messages/v1"] --> R2["Message renderer<br/>R-7"] --> E["Example profiles v3"] --> G["Registry lock,<br/>deployment gate<br/>R-19, R-20"]
+```
+
+- **Profile checks happen with the snapshot** (R-20). A profile for another route, or one that does not place `governance.instructions`, `interaction.query` and, on a parser route, `governance.output_contract`, is a `SnapshotError`. It could never assemble, so it has no trace.
+- **Render IR (D-1), as chosen.** `cwa-messages/v1` will emit RFC 8785 JSON `{messages, system, tools}`. Only governance slots may use `system` or `tools` wraps (`tools` only for capabilities), and every `system` placement comes before every `xml:` placement; anything else is a `SnapshotError`. One user message holds every `xml:` occurrence in `fixture-xml/v1` grammar, with history turns marked `speaker="user"` or `speaker="assistant"` (from `lineage: generated`) and never split into their own messages (R-7). `input_tokens` is the sum of the tokenizer's counts of each system text, tool text and message content.
+
 **M3 status (2026-09-22): done. Conflicts** (R-6, R-11, and the last clause of R-3). As in M2, the spec came first. Website `89660ed` defines resolution, and `271f4c3` adds five conflict conformance cases generated from intent tables, vendored here as pending. The maintainer took the recommended option on each open question:
 
 - **Instruction groups (DA-7).** Deciding by authority excludes nothing. Among two or more peers at the top instructing authority, one `governs` and the rest `defers` excludes the deferring peers with `conflict_deferred`. Any other pattern escalates.
@@ -594,7 +604,6 @@ Result: `src/cwa/conflicts.py` resolves every group kind and every escalation ac
 
 **Stabilization (2026-09-22).** A housekeeping pass before M4 found three things, now fixed. Two candidates sharing an id could move the snapshot digest with input order. The order test never actually reordered items. And the purity test swallowed `NotImplementedError` for every case, not only pending ones. It also found the documentation drift this section and §2–§6 now correct.
 
-**Next: M4.** Registry and profiles (R-19, R-20), plus R-7, which M3 handed on: prior turns rendering as a transcript and only the query as the live user turn need the D-1 message renderer.
 
 **M2 status (2026-09-22): done.** Budget fitting and refusal are implemented test-first, spec first. The website gained the route-policy fields (`c0f5890`), `excluded[].slot` (`574fc6d`), and nine budget and refusal conformance cases generated from intent tables (`9e40504`). All eleven vendored cases pass byte for byte. Three followed: `budget-route-tiers` (website `d84bbd8`) closed a gap in the R-16 claim, since no test showed fitting honor a tier the route raised; `budget-token-caps` and `protected-over-cap` (website `adae6e1`) cover caps. `status.json` now claims R-4, R-12, R-16 and R-17 implemented and R-18 boundary-checked. Fitting is §4.4, refusals are §4, and the recovery mapping is §4.5. It diverged from this document in six ways, each written into the spec:
 

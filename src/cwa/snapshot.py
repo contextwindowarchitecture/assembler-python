@@ -68,6 +68,23 @@ def _conflict_errors(document: Mapping[str, Any]) -> list[str]:
     return problems
 
 
+def _profile_errors(profile: Profile, policy: Mapping[str, Any]) -> list[str]:
+    """R-20: the profile names the route policy it was built for and places the slots every
+    assembly on that route needs."""
+    problems = []
+    if profile.route != policy["route"]:
+        problems.append(f"profile is for route {profile.route!r}, the route policy for {policy['route']!r}")
+    if profile.route_policy_version != policy["version"]:
+        problems.append(f"profile expects route policy {profile.route_policy_version!r}, snapshot has {policy['version']!r}")
+    placed = {placement.slot for placement in profile.placement}
+    for slot in ("governance.instructions", "interaction.query"):
+        if slot not in placed:
+            problems.append(f"profile does not place {slot}")
+    if policy.get("parser", False) and "governance.output_contract" not in placed:
+        problems.append("profile does not place governance.output_contract, which the parser route requires")
+    return problems
+
+
 @dataclass(frozen=True)
 class Snapshot:
     assembly_time: str
@@ -103,8 +120,7 @@ class Snapshot:
         if renderer is not None:
             problems += renderer.profile_errors(profile)
         policy = document["route_policy"]
-        if profile.route_policy_version != policy["version"]:
-            problems.append(f"profile expects route policy {profile.route_policy_version!r}, snapshot has {policy['version']!r}")
+        problems += _profile_errors(profile, policy)
         producer_ids = [b["producer"]["id"] for b in document["batches"]]
         if duplicates := sorted({i for i in producer_ids if producer_ids.count(i) > 1}):
             problems.append(f"producer ids appear in more than one batch: {', '.join(duplicates)}")

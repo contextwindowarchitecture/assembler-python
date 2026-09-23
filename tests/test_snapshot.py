@@ -25,6 +25,33 @@ def test_unassemblable_snapshots_are_rejected_before_assembly(fixture_snapshot, 
         Snapshot.from_json(fixture_snapshot)
 
 
+def _unplace(slot: str):
+    def mutate(snapshot: dict) -> None:
+        snapshot["profile"]["placement"] = [p for p in snapshot["profile"]["placement"] if p["slot"] != slot] + [
+            {"slot": "state.user", "wrap": "xml:state.user"}]
+    return mutate
+
+
+@pytest.mark.parametrize("mutate, message", [
+    (lambda s: s["profile"].update(route="other-route"), "profile is for route 'other-route', the route policy for 'contract-fixture'"),
+    (_unplace("governance.instructions"), "profile does not place governance.instructions"),
+    (_unplace("interaction.query"), "profile does not place interaction.query"),
+    (lambda s: s["route_policy"].update(parser=True), "profile does not place governance.output_contract, which the parser route requires"),
+])
+def test_profiles_that_cannot_carry_the_route_are_rejected_before_assembly(fixture_snapshot, mutate, message):
+    """R-20: a profile places instructions and query, and the output contract on a parser route,
+    and it names the route policy it was built for."""
+    mutate(fixture_snapshot)
+    with pytest.raises(SnapshotError, match=message):
+        Snapshot.from_json(fixture_snapshot)
+
+
+def test_a_parser_route_accepts_a_profile_that_places_the_output_contract(fixture_snapshot):
+    fixture_snapshot["route_policy"]["parser"] = True
+    fixture_snapshot["profile"]["placement"].insert(1, {"slot": "governance.output_contract", "wrap": "xml:format"})
+    Snapshot.from_json(fixture_snapshot)
+
+
 def test_snapshot_is_detached_from_the_callers_document(fixture_snapshot):
     snapshot = Snapshot.from_json(fixture_snapshot)
     before = snapshot.digest()

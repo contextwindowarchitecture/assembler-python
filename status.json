@@ -235,8 +235,11 @@
     },
     {
       "id": "R-20",
-      "status": "planned",
-      "evidence": []
+      "status": "in progress",
+      "evidence": [
+        "tests/test_snapshot.py::test_profiles_that_cannot_carry_the_route_are_rejected_before_assembly",
+        "tests/test_snapshot.py::test_a_parser_route_accepts_a_profile_that_places_the_output_contract"
+      ]
     },
     {
       "id": "R-21",
