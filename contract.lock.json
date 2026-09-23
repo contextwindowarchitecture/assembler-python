@@ -1,7 +1,7 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "9e4050430c8e44d889a1b0d7399968389bf219a8",
+    "commit": "d84bbd8238a91aba99ba7f93dec25de7631b2ca9",
     "dirty": false
   },
   "files": {
@@ -22,6 +22,10 @@
     "conformance/cases/budget-route-order/expected.payload.txt": "202505cd32250fbafd6e324b9d24548ca0e31e3bc2d897ff2d334f141374baa6",
     "conformance/cases/budget-route-order/expected.trace.json": "afeb5b15733317f017b89325332f3dca387a42fe5d12bc5750f2f005b7f0fd4f",
     "conformance/cases/budget-route-order/snapshot.json": "19859bb5f61f8f046da9b42f03e5928d8035a00395443c89f74ae6be26ec48a6",
+    "conformance/cases/budget-route-tiers/case.json": "25d5a9ee771f35cf341fe141ad62df8fd175700da7aa8922048cf8998fd87612",
+    "conformance/cases/budget-route-tiers/expected.payload.txt": "c939ffa2fa3aca7763f52e61991d3a14ba2d7131e4ffead85b738783e175ce35",
+    "conformance/cases/budget-route-tiers/expected.trace.json": "ca6fefa0954896e48b167701abf5c7e7d1d84af97bd5356dde85ada52b4609fd",
+    "conformance/cases/budget-route-tiers/snapshot.json": "2e6e6375329bd326a8c008c48005fcad73b1885eab3a7172e2a0eda86f6feeca",
     "conformance/cases/budget-variant-choice/case.json": "6709818700587ec01bf856905f275e0e03f920ac27b9fde874c6c90916a1470c",
     "conformance/cases/budget-variant-choice/expected.payload.txt": "68d3c7140cf5271c5f01fce07643276b2bb168609ae98c99088dca7f71939225",
     "conformance/cases/budget-variant-choice/expected.trace.json": "dbed79aa6fe0f442dc9509e13ebff37173ce5f80bd2314e21961c2a9552199ea",
@@ -46,7 +50,7 @@
     "conformance/cases/required-slot-missing/expected.trace.json": "1b65e456456e8b87c3502b29feba4866b5ba9bff9d215cc4d3f14cf2dfb6f00e",
     "conformance/cases/required-slot-missing/snapshot.json": "30466d589b33c33095c5abe302f1c73a899a089b7831118a8f10f8d2c10a1dc2",
     "conformance/generators/admission-reasons.py": "2b63bfb81c0eac53bac15de501119aec5c281ac0c8fb8249c953d4300c433448",
-    "conformance/generators/fitting.py": "7de5a55650c1441644dad003e0fe5134cd10157db6a41f4bfbc77660ea77851f",
+    "conformance/generators/fitting.py": "58ea82fa0d24130095313eeff5a14c30c6843f802e63d7c70e68688d79188390",
     "src/cwa/contract/data/assembler-scope.json": "c33e75cf955610f1d869ba152f439b4130fdd940c66a82dd3ccae3f2582f00e8",
     "src/cwa/contract/data/reasons.json": "3227f728e8d6a91eb5c2de9bd54887fbb499f6f250fa010aea5bca322ec72f6e",
     "src/cwa/contract/data/requirements.json": "61029ddb30ae915e48fafbde00fc5cb91ed3c3d76730616ec0ce79ae534de7fa",
