@@ -399,3 +399,10 @@ def test_route_overrides_replace_slot_defaults_and_are_traced(fixture_snapshot):
     assert (by_id["kb:explicit"].token_budget, by_id["kb:explicit"].lineage) == (90, "verbatim")
     assert [f for i, f in admission.defaults_filled if i == "kb:filled"] == list(("token_budget", "variants", "conflict_policy", "lineage", "eligibility", "injection_risk"))
     assert [f for i, f in admission.defaults_filled if i == "kb:explicit"] == []
+
+
+@pytest.mark.parametrize("authority, reason", [("generated", None), ("untrusted", None), ("state", "authority_not_allowed"), ("user", "authority_not_allowed")])
+def test_memory_is_generated_or_untrusted_never_state(fixture_snapshot, authority, reason):
+    place(fixture_snapshot, "interaction.memory")
+    add(fixture_snapshot, "memory-svc", memory(authority=authority))
+    assert exclusions(fixture_snapshot) == ([("m:1", reason)] if reason else [])
