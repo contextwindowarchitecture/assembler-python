@@ -94,3 +94,23 @@ def test_state_slots_only_accept_state_producers_even_if_the_route_lists_others(
     fixture_snapshot["route_policy"]["producers"]["policy-corpus"]["slots"].append("state.user")
     add(fixture_snapshot, "policy-corpus", state_user())
     assert exclusions(fixture_snapshot) == [("user:plan", "producer_slot_not_allowed")]
+
+
+# R-2: an id must identify one item in the payload and the trace.
+
+def test_repeated_ids_exclude_every_copy(fixture_snapshot):
+    add(fixture_snapshot, "policy-corpus", knowledge(id="kb:dup", body="one"), knowledge(id="kb:dup", body="two"))
+    assert exclusions(fixture_snapshot) == [("kb:dup", "duplicate_item_id"), ("kb:dup", "duplicate_item_id")]
+
+
+def test_an_id_a_producer_already_reported_as_excluded_is_ambiguous(fixture_snapshot):
+    add(fixture_snapshot, "policy-corpus", knowledge(id="memory:expired"))
+    assert exclusions(fixture_snapshot) == [("memory:expired", "duplicate_item_id")]
+
+
+def test_ids_used_by_refused_candidates_still_count(fixture_snapshot):
+    add_batch(fixture_snapshot, "rogue", "retrieval", knowledge(id="refunds-eu:v17#p4"))
+    assert exclusions(fixture_snapshot) == [
+        ("refunds-eu:v17#p4", "duplicate_item_id"),
+        ("refunds-eu:v17#p4", "producer_not_authenticated"),
+    ]

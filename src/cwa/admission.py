@@ -5,8 +5,9 @@ contract/reasons.json order (R-21).
 """
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 from jsonschema import ValidationError
 
@@ -53,23 +54,41 @@ def _structure(candidate: Mapping[str, Any]) -> str | None:
     return min(codes, key=_rank) if codes else None
 
 
-def _slot_permission(item: Item, producer: ProducerIdentity, granted: Mapping[str, Any]) -> str | None:
+@dataclass(frozen=True, slots=True)
+class _Context:
+    snapshot: Snapshot
+    producer: ProducerIdentity
+    granted: Mapping[str, Any]
+    """The route policy's entry for this producer."""
+    id_uses: Counter[str]
+    """How often each id appears across all candidates and producer exclusions."""
+
+
+def _duplicate(item: Item, ctx: _Context) -> str | None:
+    return "duplicate_item_id" if ctx.id_uses[item.id] > 1 else None
+
+
+def _slot_permission(item: Item, ctx: _Context) -> str | None:
     # State is application-written (R-8): only state producers, whatever else a route lists.
-    if item.slot not in granted["slots"] or (item.slot.startswith("state.") and producer.kind != "state"):
+    if item.slot not in ctx.granted["slots"] or (item.slot.startswith("state.") and ctx.producer.kind != "state"):
         return "producer_slot_not_allowed"
     return None
 
 
-def _item_reason(item: Item, producer: ProducerIdentity, granted: Mapping[str, Any]) -> str | None:
-    """The first failing check for a schema-valid item, in reasons.json order."""
-    for check in (_slot_permission,):
-        if reason := check(item, producer, granted):
-            return reason
-    return None
+# Checks for schema-valid items from authenticated producers, in reasons.json order.
+_CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (_duplicate, _slot_permission)
+
+
+def _item_reason(item: Item, ctx: _Context) -> str | None:
+    return next((reason for check in _CHECKS if (reason := check(item, ctx))), None)
 
 
 def admit(snapshot: Snapshot) -> Admission:
     items, excluded, filled = [], [], []
+    id_uses = Counter(
+        [i for b in snapshot.batches for c in b.candidates if (i := usable_id(c))]
+        + [row.item_id for b in snapshot.batches for row in b.excluded]
+    )
     for batch in snapshot.batches:
         granted = snapshot.route_policy.document["producers"].get(batch.producer.id)
         authenticated = granted is not None and granted["kind"] == batch.producer.kind
@@ -86,7 +105,7 @@ def admit(snapshot: Snapshot) -> Admission:
                 continue
             item = Item.from_json(candidate)
             filled += [(item.id, field) for field in item.defaults_filled]
-            if reason := _item_reason(item, batch.producer, granted):
+            if reason := _item_reason(item, _Context(snapshot, batch.producer, granted, id_uses)):
                 excluded.append(Exclusion(batch.producer.id, item_id, reason))
                 continue
             items.append(item)
