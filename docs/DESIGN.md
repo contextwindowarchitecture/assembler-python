@@ -13,9 +13,9 @@ This document designs the Python reference assembler and tests whether the v2 dr
 
 | # | Gap | Why it blocks code |
 |---|-----|--------------------|
-| DA-1 | "Rendered payload" is undefined for multi-channel requests (`wrap: system`, `wrap: tools`) | You cannot hash "exact bytes" until you define which bytes. Two profiles cannot be realized on a single-system-prompt API. |
-| DA-2 | R-16 requires exact counts with the declared tokenizer, but R-23 forbids external reads | Some providers only offer token counting as a remote call, and the sum of per-part counts ≠ the count of the whole. |
-| DA-3 | Fitting has no defined step after "compress" | With 30 retrieved passages, a literal reading refuses routine requests. The landing demo does exactly that. |
+| DA-1 | "Rendered payload" is undefined for multi-channel requests (`wrap: system`, `wrap: tools`) | You cannot hash "exact bytes" until you define which bytes. Two profiles cannot be realized on a single-system-prompt API. **Decided** (D-1); the render IR lands with M4's message renderer. |
+| DA-2 | R-16 requires exact counts with the declared tokenizer, but R-23 forbids external reads | Some providers only offer token counting as a remote call, and the sum of per-part counts ≠ the count of the whole. **Decided** (D-3); only the exact fixture tokenizer is built. |
+| DA-3 | Fitting has no defined step after "compress" | With 30 retrieved passages, a literal reading refuses routine requests. The landing demo does exactly that. **Done** (D-2, M2). |
 | DA-4 | The published API (`assembler.html`) has no `assembly_time`, conflicts, scope, producer identity, tokenizer or renderer | The API makes R-23 impossible to meet: those inputs would be ambient. |
 | DA-5 | `assembly-sketch.txt` flattens items and producer context separately | This loses the item→producer binding that R-8 and R-15 rely on. |
 
@@ -131,6 +131,8 @@ The snapshot stores the *outcome* of authentication (producer id, kind, verified
 
 ### 2.3 Package layout
 
+This is the planned layout. As built through M3, `src/cwa/` holds `assemble.py` (pipeline, refusals and the R-12 recovery mapping), `admission.py`, `conflicts.py`, `fitting.py`, `snapshot.py`, `model.py`, `canonical.py` (RFC 8785), `instants.py`, `trace.py`, `render/` (`fixture_xml.py`), `tokenize/` (`fixture_whitespace.py`) and `contract/` (vendored data, pinned by `contract.lock.json`). There is no `evidence.py`, `policy.py`, `registry.py`, `reasons.py` or conformance runner: the reason registry and route policy are read from the vendored JSON, the registry arrives with M4, and the report with M5.
+
 ```
 cwa/
   __init__.py          assemble, Snapshot, ...
@@ -239,11 +241,11 @@ classDiagram
   Snapshot ..> Trace : assemble()
 ```
 
-`ConflictGroup.id` and `ConflictGroup.fact` are **additions**. The schema today only implies `{kind, items}`. A fact conflict cannot be looked up in route policy without a fact key (DA-9).
+`ConflictGroup.id` and `ConflictGroup.fact` came from DA-9: a fact conflict cannot be looked up in route policy without a fact key. Both are in `conflict_group.schema.json` (D-6).
 
 ### 3.1 Route policy: declarative, hashed, no code strings
 
-R-3 says the route owns the *executable* eligibility predicate. Keep it declarative so it can be hashed and replayed. Allow named Python predicates only through a registry that records `name@version`.
+R-3 says the route owns the *executable* eligibility predicate. Keep it declarative so it can be hashed and replayed. The schema has only closed vocabularies (thresholds, ages, scope keys, source prefixes); named predicates are not supported. This example validates against `route_policy.schema.json`.
 
 ```jsonc
 {
@@ -259,16 +261,16 @@ R-3 says the route owns the *executable* eligibility predicate. Keep it declarat
   },
   "slots": {
     "evidence.knowledge": {"min_relevance": 0.82, "max_age_seconds": 7776000, "required_scope": ["tenant"],
-                           "priority": 40, "max_per_source": 3, "order_by": ["-relevance", "-freshness", "id"]},
+                           "priority": 40, "order_by": ["-relevance", "-freshness"], "min_included": 1},
     "state.task":         {"max_age_seconds": 60, "required_scope": ["tenant", "task"]},
-    "interaction.memory": {"source_prefix": "turn:"},
-    "evidence.tool_results": {"supersede_by": "source"}
+    "interaction.memory": {"source_prefix": "turn:"}
   },
+  "fitting_order": [{"slot": "interaction.history", "action": "omit"}],  // R-16
   "default_overrides": {"evidence.knowledge": {"token_budget": 420}},   // R-3: versioned, traced
   "tier_upgrades": {"state.user": "protected"},                          // R-16: upgrade only, never downgrade
   "facts": {
-    "refund.window": {"precedence": ["crm-mcp", "policy-corpus"], "freshness_tiebreak": false,
-                      "on_unresolved": "surface"}
+    "refund.window": {"precedence": ["crm-mcp", "policy-corpus"], "scope": ["tenant"],
+                      "freshness_tiebreak": false, "on_unresolved": "surface"}
   },
   "on_unresolved_instruction": "refuse"
 }
@@ -278,6 +280,8 @@ R-3 says the route owns the *executable* eligibility predicate. Keep it declarat
 
 ## 4. Pipeline deep dive
 
+This is the pipeline as first designed. What is built differs: see "Refusals as built" below and §4.1–§4.5. Step 0 became a `SnapshotError` with no trace, step 2 is deferred (§4.2), step 3 runs before step 4, and step 5 waits for M4.
+
 ```mermaid
 flowchart TD
   S[/Snapshot/] --> V{"0 · Snapshot valid?<br/>pins, clock, budget, unique ids,<br/>groups reference known ids,<br/>renderer supports profile wraps"}
@@ -285,7 +289,7 @@ flowchart TD
   V -- yes --> AD["1 · Admission<br/>schema → defaults → ordered checks<br/>first failure wins"]
   PX[("producer excluded[]<br/>stage=producer")] --> EXC[("trace.excluded[]")]
   AD -- fail --> EXC
-  AD --> DD["2 · Dedupe / supersede / diversity cap"]
+  AD --> DD["2 · Dedupe / supersede / diversity cap<br/>(deferred, §4.2)"]
   DD -- dropped --> EXC
   DD --> CF["3 · Resolve declared conflict groups"]
   CF -- loser --> EXC
@@ -305,15 +309,17 @@ flowchart TD
   CT -- yes --> H["10 · SHA-256 of payload bytes<br/>trace: included, compressed, conflicts"]
 ```
 
-**Refusals as built (M2).** An invalid snapshot is a `SnapshotError` before assembly and has no trace, so there is no `invalid_snapshot` code. Refusal precedence is the order of the refusal codes in `contract/reasons.json` (R-21): `required_slot_missing` > `conflict_unresolved` > `protected_content_over_budget` > `evidence_required`. Placement checks such as `protected_slot_unplaced` wait for M4. Every refusal emits `result: null`, `included: []` and `compressed: []`. Producer and admission rows stay in `excluded[]`, and an `evidence_required` refusal also keeps its `over_budget` rows (R-17).
+**Refusals as built (M2, M3).** An invalid snapshot is a `SnapshotError` before assembly and has no trace, so there is no `invalid_snapshot` code. Refusal precedence is the order of the refusal codes in `contract/reasons.json` (R-21): `required_slot_missing` > `conflict_unresolved` > `protected_content_over_budget` > `evidence_required`. Placement checks such as `protected_slot_unplaced` wait for M4. Every refusal emits `result: null`, `included: []` and `compressed: []`. Conflicts resolve right after admission, before any refusal check, so every refused trace keeps `conflicts[]` and the producer, admission and conflict rows in `excluded[]`. An `evidence_required` refusal also keeps its `over_budget` rows (R-17).
 
 ```mermaid
 flowchart TD
   S[/"valid Snapshot"/] --> AD["Admission §4.1"]
-  AD --> Q{"instructions and query admitted?<br/>output_contract too, on a parser route?"}
+  AD --> CF["Conflicts §4.3<br/>losers excluded, all groups traced"]
+  CF --> Q{"instructions and query admitted?<br/>output_contract too, on a parser route?"}
   Q -- no --> X1["REFUSE required_slot_missing"]
-  Q -- yes --> CF["Conflicts (M3)"]
-  CF --> P{"protected items alone<br/>fit budget.input?"}
+  Q -- yes --> U{"a group escalated to<br/>refuse or request_context?"}
+  U -- yes --> X0["REFUSE conflict_unresolved"]
+  U -- no --> P{"protected items alone<br/>fit budget.input?"}
   P -- no --> X2["REFUSE protected_content_over_budget"]
   P -- yes --> FIT["Fit §4.4"]
   FIT --> E{"requires_evidence, and no evidence left<br/>or a slot below min_included?"}
@@ -357,7 +363,10 @@ Each box is one check, named by the reason it records when it fails. Producer-st
 
 Snapshot normalization sorts batches by producer id and items by id, so the order producers return in cannot change the payload or the digest (DA-15). Candidates that share an id, and producer exclusions that share an item id, sort by their RFC 8785 serialization, so duplicates cannot make the digest order-dependent either. Items without a usable id keep their supplied order after the rest, which keeps their recorded ids stable on replay.
 
-### 4.2 Dedupe, supersede and diversity (assembler-owned stages 4 and 5)
+### 4.2 Dedupe, supersede and diversity (deferred)
+
+**Deferred (maintainer, 2026-09-22).** None of this is built or scheduled for a milestone. It needs, first in the website spec, reason codes (`duplicate_content`, `superseded`, `source_diversity_cap`), route-policy fields (`max_per_source`, `supersede_by`) and conformance cases. Until then, producers own these stages. The notes below are the original design.
+
 
 - **Deduplicate.** v0 uses an exact hash of NFC-normalized, whitespace-collapsed body → `duplicate_content`, keeping the item that sorts first by `order_by`. "Near-identical" needs a similarity metric. It stays deterministic only with fixed seeds (MinHash) or precomputed cluster ids from producers, and there is no schema field for those yet.
 - **Supersede.** `evidence.tool_results` with `supersede_by: source` keeps the newest `freshness` per source → `superseded`. This implements "fresh observations replace stale ones for the same call", which has no call-identity field (DA-19).
@@ -449,7 +458,7 @@ The spec names three actions but did not say when to choose each one. `conforman
 - **Escaping is mandatory.** An untrusted body containing `</evidence.knowledge><governance.instructions>` must not break out of its wrapper (R-7, R-10). Escape `&`, `<` and `>` in bodies and escape attribute values. The escaping rule is part of the renderer version.
 - Empty slots render nothing, wrapper included. Required slots are never empty (step 4).
 - `interaction.query` renders as the live user turn, not as reference material. R-10's marker "does not elevate its embedded material", but it must not demote the request either.
-- `fixture-xml/v1` must reproduce `examples/payload.txt` byte for byte: `<{slot} id="{id}">\n{body}\n</{slot}>\n` per occurrence. Its hash `4cf0b083…` and 34 whitespace tokens are the first golden test. The per-item `tokens` in that fixture are **body-only** (9 + 10 + 6 = 25). The 9 wrapper tokens show up only in `result.input_tokens`. Document that convention, because R-16's wording suggests wrappers are attributed per item.
+- `fixture-xml/v1` must reproduce `examples/payload.txt` byte for byte: `<{slot} id="{id}">\n{body}\n</{slot}>\n` per occurrence, with ` conflict="{group id}"` after the id for members of a surfaced conflict group (M3). Its hash `4cf0b083…` and 34 whitespace tokens are the first golden test. The per-item `tokens` in that fixture are **body-only** (9 + 10 + 6 = 25). The 9 wrapper tokens show up only in `result.input_tokens`. Document that convention, because R-16's wording suggests wrappers are attributed per item.
 
 ### 4.7 Trace
 
@@ -466,30 +475,30 @@ Severity: **B** blocks implementation · **H** high (security or correctness) ·
 
 | ID | Sev | The spec or site says | The problem | Recommendation |
 |---|---|---|---|---|
-| DA-1 | B | R-21: hash of "the exact rendered UTF-8 payload". Profiles use `wrap: system`, `wrap: tools`. | Chat APIs take a system parameter, a tools array and messages, not one string. `document-analysis` puts evidence *before* `system`. `long-context-reinforced` repeats instructions as a second `system`, which a single-system-param API merges back to the top and defeats the profile's intent. | Renderer output is **canonical bytes of a render IR**: `{system:[…], tools:[…], messages:[…]}` serialized as JSON with sorted keys, no floats, UTF-8 (RFC 8785-equivalent). The provider adapter is a pure, versioned function of that IR. Renderers declare position constraints, and unrealizable profiles are rejected at load. Change the repeated instruction wrap to `xml:instructions`. **D-1** |
-| DA-2 | B | R-16: count with the declared tokenizer. R-23: no external reads. | Some providers expose counting only as a remote endpoint. BPE counts are not additive across segment boundaries. | `Tokenizer` protocol with `exact: bool` and `margin`. Estimators must declare a margin, which is recorded in `context.tokenizer`, e.g. `estimate-cl/v1+8%`. Optional remote verification runs *after* assembly, outside the pure core, and an overflow produces a new snapshot with a smaller budget. **D-3** |
-| DA-3 | B | R-16: "drop droppable before compressing compressible". Spec §4.1: compressible "may be replaced by a variant". | Nothing says what happens when the smallest variants still don't fit. The landing demo refuses. The "Budget" stage says "admit only content that fits", which implies dropping. A strict reading refuses whenever retrieval is generous. | Add Phase 3, dropping compressible items by route priority, and amend R-16 to say so explicitly. **D-2** |
+| DA-1 | B | R-21: hash of "the exact rendered UTF-8 payload". Profiles use `wrap: system`, `wrap: tools`. | Chat APIs take a system parameter, a tools array and messages, not one string. `document-analysis` puts evidence *before* `system`. `long-context-reinforced` repeats instructions as a second `system`, which a single-system-param API merges back to the top and defeats the profile's intent. | Renderer output is **canonical bytes of a render IR**: `{system:[…], tools:[…], messages:[…]}` serialized as JSON with sorted keys, no floats, UTF-8 (RFC 8785-equivalent). The provider adapter is a pure, versioned function of that IR. Renderers declare position constraints, and unrealizable profiles are rejected at load. Change the repeated instruction wrap to `xml:instructions`. **D-1** **Decided** (D-1); the render IR lands with M4's message renderer. |
+| DA-2 | B | R-16: count with the declared tokenizer. R-23: no external reads. | Some providers expose counting only as a remote endpoint. BPE counts are not additive across segment boundaries. | `Tokenizer` protocol with `exact: bool` and `margin`. Estimators must declare a margin, which is recorded in `context.tokenizer`, e.g. `estimate-cl/v1+8%`. Optional remote verification runs *after* assembly, outside the pure core, and an overflow produces a new snapshot with a smaller budget. **D-3** **Decided** (D-3); only the exact fixture tokenizer is built. |
+| DA-3 | B | R-16: "drop droppable before compressing compressible". Spec §4.1: compressible "may be replaced by a variant". | Nothing says what happens when the smallest variants still don't fit. The landing demo refuses. The "Budget" stage says "admit only content that fits", which implies dropping. A strict reading refuses whenever retrieval is generous. | Add Phase 3, dropping compressible items by route priority, and amend R-16 to say so explicitly. **D-2** **Done** (D-2, M2). |
 | DA-4 | B | `assembler.html` API: `assemble(items, profile, budget, route_policy)` | Clock, scope, conflicts, producer identity, tokenizer and renderer are absent, so they would have to be ambient, which violates R-23. | `assemble(snapshot)` (§2.2). **Done 2026-09-22** on `assembler.html`. |
 | DA-5 | H | `assembly-sketch.txt`: `items=flatten_items(batches)`, `producer_context=…` separately | After flattening, which producer emitted which item is lost. That makes R-15's "bind producer identity outside item-controlled fields" impossible. | Keep batches intact in the snapshot, with identity per batch. **Done 2026-09-22** in `assembly-sketch.txt`. |
-| DA-6 | H | R-10, R-7 | No wrapper escaping rule. Untrusted text can close the evidence tag and open a governance tag. | Mandatory escaping, versioned with the renderer. Add injection fixtures to conformance. |
-| DA-7 | H | R-11: instruction conflicts resolve "governing over user, then conflict_policy". | Resolution has no defined *payload effect*. The user query is protected and can't be excluded. It is unstated whether a deferring example is dropped. | Governing vs user: record only. Peers: exclude `defers` members unless protected. Otherwise escalate (§4.3). |
-| DA-8 | H | R-15 and contract.js check the capability grant | The per-user allow-list is dynamic, so it can't live in static route policy. | `CapabilityGrant` in the snapshot, produced by the authenticated capability policy. |
-| DA-9 | M | R-11: route policy specifies "fact identity, scope". Groups are `{kind, items}`. | There is no key to look up the fact's precedence rule. | Add `id` and `fact` to conflict-group input. Precedence matches **authenticated producer id**. |
-| DA-10 | M | Trace `conflicts[].decided_by` ∈ {tier, policy, freshness, escalated} | (a) `tier` collides with the budget `tier` field. (b) `policy` is ambiguous between route fact policy and item `conflict_policy`. (c) There is no value for a group that became moot because a member was excluded at admission. | Rename to `authority` in the next schema revision. Add `moot`. Until then, document the meanings. |
-| DA-11 | H | Item `scope` is optional, and all keys are optional | Is a missing key a wildcard? If so, an item with no `tenant` is admissible to every tenant. | Route declares `required_scope` per slot. A missing required key → `out_of_scope`. |
+| DA-6 | H | R-10, R-7 | No wrapper escaping rule. Untrusted text can close the evidence tag and open a governance tag. | Mandatory escaping, versioned with the renderer. Add injection fixtures to conformance. **Done** in M0 (bodies and attributes escaped; conflict marks too, M3). No injection conformance case yet. |
+| DA-7 | H | R-11: instruction conflicts resolve "governing over user, then conflict_policy". | Resolution has no defined *payload effect*. The user query is protected and can't be excluded. It is unstated whether a deferring example is dropped. | Governing vs user: record only. Peers: exclude `defers` members unless protected. Otherwise escalate (§4.3). **Done** (M3). |
+| DA-8 | H | R-15 and contract.js check the capability grant | The per-user allow-list is dynamic, so it can't live in static route policy. | `CapabilityGrant` in the snapshot, produced by the authenticated capability policy. **Done** (M1). |
+| DA-9 | M | R-11: route policy specifies "fact identity, scope". Groups are `{kind, items}`. | There is no key to look up the fact's precedence rule. | Add `id` and `fact` to conflict-group input. Precedence matches **authenticated producer id**. **Done** (D-6; resolved in M3). |
+| DA-10 | M | Trace `conflicts[].decided_by` ∈ {tier, policy, freshness, escalated} | (a) `tier` collides with the budget `tier` field. (b) `policy` is ambiguous between route fact policy and item `conflict_policy`. (c) There is no value for a group that became moot because a member was excluded at admission. | Rename to `authority` in the next schema revision. Add `moot`. Until then, document the meanings. **Done** (D-6). |
+| DA-11 | H | Item `scope` is optional, and all keys are optional | Is a missing key a wildcard? If so, an item with no `tenant` is admissible to every tenant. | Route declares `required_scope` per slot. A missing required key → `out_of_scope`. **Done** (M1). |
 | DA-12 | M | R-16: items MUST NOT downgrade protected | Upgrades are unrestricted. A buggy or hostile producer marks everything `protected` and forces refusals or displacement. | Only the route's `tier_upgrades` may upgrade. An item-level upgrade → `tier_upgrade_not_allowed`. This also answers "state.user (entitlements) is droppable": upgrade it per route. **Done 2026-09-22** (R-16, `contract.js` `context.tierUpgrades`). |
-| DA-13 | M | `producers.html` lists `missing_field:<name>`, `unknown_slot`, `unknown_authority` | `contract.js` emits `invalid_structure` for all of these, plus eight codes the page never lists (`revoked`, `future_freshness`, `untrusted_content_unmarked`, …). | Add a canonical `contract/reasons.json` that generates the page, contract.js and `cwa/reasons.py`. |
-| DA-14 | M | R-22 `defaults_filled: string[]`, "identify each affected item and field" | Item ids legitimately contain `#` and `:` (`refunds-eu:v17#p4`), so any `id.field` string is ambiguous. | Change the schema to `[{item_id, field}]`, or define RFC 6901-escaped `item_id/field`. |
-| DA-15 | M | R-23 lists "identical items" | It says nothing about *order*. Parallel producers return in nondeterministic order. | Canonical sort on entry. Property test: shuffling input doesn't change the hash. |
-| DA-16 | M | contract.js: `freshness > assembly_time` → excluded | Producer clock skew of milliseconds causes spurious exclusions. | Route `clock_skew_seconds` tolerance, recorded via the policy version. |
-| DA-17 | M | Website validates `format: date-time` via ajv-formats | Python `jsonschema` ignores `format` unless a `FormatChecker` is passed *and* `rfc3339-validator` is installed. `freshness: "yesterday"` would pass silently. | Pin both and add bad-timestamp conformance cases. |
-| DA-18 | M | Expiry compares `expires ≤ assembly_time` | JS `Date.parse` truncates to milliseconds, and Python keeps microseconds. `expires = 12:00:00.0005Z` is expired in JS and live in Python. | Spec: compare at full given precision, or define millisecond truncation. Add a conformance case either way. |
-| DA-19 | L | "Fresh observations replace stale ones for the same call" | No call-identity field. | `supersede_by: source` route rule (§4.2). |
-| DA-20 | M | Profile `route_policy_version` is a string. R-20 requires a version bump on change. | Nothing stops someone editing a profile or policy in place under the same version. | Lockfile pins sha256 per `(id, version)`, and a mismatch is a load error. |
-| DA-21 | M | `document-analysis` has no `governance.capabilities` or `evidence.tool_results` placement | If a protected capability is admitted on that route, the profile must not omit it (R-20). | Step 5: `protected_slot_unplaced` refusal. Unprotected → `slot_not_placed` exclusion. |
+| DA-13 | M | `producers.html` lists `missing_field:<name>`, `unknown_slot`, `unknown_authority` | `contract.js` emits `invalid_structure` for all of these, plus eight codes the page never lists (`revoked`, `future_freshness`, `untrusted_content_unmarked`, …). | Add a canonical `contract/reasons.json` that generates the page, contract.js and `cwa/reasons.py`. **Done:** `contract/reasons.json`, read directly (no `reasons.py`). |
+| DA-14 | M | R-22 `defaults_filled: string[]`, "identify each affected item and field" | Item ids legitimately contain `#` and `:` (`refunds-eu:v17#p4`), so any `id.field` string is ambiguous. | Change the schema to `[{item_id, field}]`, or define RFC 6901-escaped `item_id/field`. **Done** (D-6). |
+| DA-15 | M | R-23 lists "identical items" | It says nothing about *order*. Parallel producers return in nondeterministic order. | Canonical sort on entry. Property test: shuffling input doesn't change the hash. **Done** (M0); every conformance case is shuffle-tested, and duplicate ids no longer move the digest. |
+| DA-16 | M | contract.js: `freshness > assembly_time` → excluded | Producer clock skew of milliseconds causes spurious exclusions. | Route `clock_skew_seconds` tolerance, recorded via the policy version. **Done** (M1). |
+| DA-17 | M | Website validates `format: date-time` via ajv-formats | Python `jsonschema` ignores `format` unless a `FormatChecker` is passed *and* `rfc3339-validator` is installed. `freshness: "yesterday"` would pass silently. | Pin both and add bad-timestamp conformance cases. **Done** (M0; `kb:bad-date` in `admission-reasons`). |
+| DA-18 | M | Expiry compares `expires ≤ assembly_time` | JS `Date.parse` truncates to milliseconds, and Python keeps microseconds. `expires = 12:00:00.0005Z` is expired in JS and live in Python. | Spec: compare at full given precision, or define millisecond truncation. Add a conformance case either way. **Done:** full precision (M1; `kb:sub-ms` in `admission-reasons`). |
+| DA-19 | L | "Fresh observations replace stale ones for the same call" | No call-identity field. | `supersede_by: source` route rule (§4.2). **Deferred** with §4.2. |
+| DA-20 | M | Profile `route_policy_version` is a string. R-20 requires a version bump on change. | Nothing stops someone editing a profile or policy in place under the same version. | Lockfile pins sha256 per `(id, version)`, and a mismatch is a load error. Planned for M4. |
+| DA-21 | M | `document-analysis` has no `governance.capabilities` or `evidence.tool_results` placement | If a protected capability is admitted on that route, the profile must not omit it (R-20). | Step 5: `protected_slot_unplaced` refusal. Unprotected → `slot_not_placed` exclusion. Planned for M4. |
 | DA-22 | M | R-1: history carries `user` authority | Prior *assistant* turns are not user authority. Rendering them as native assistant messages versus a transcript block changes both authority semantics and token counts. | Assistant turns use `authority: untrusted` (R-1 allows it) and render inside a transcript block. **Done 2026-09-22** (D-5). |
 | DA-23 | L | Stages "Packetize … binding or informative", "Filter … jurisdiction", "Attribute … carry citation requirements into the output contract" | No schema fields exist for binding/informative or jurisdiction. Mutating the protected, verbatim output contract would break R-16. | Attribute = renderer emits `id` on each packet, and the route's output contract references ids. The other two are out of v0 scope. |
-| DA-24 | L | Trace schema `additionalProperties: false` | There is no place for a snapshot digest, so a trace cannot point back to its replay input. | Add optional `context.snapshot_digest`. |
+| DA-24 | L | Trace schema `additionalProperties: false` | There is no place for a snapshot digest, so a trace cannot point back to its replay input. | Add optional `context.snapshot_digest`. **Done** (D-6). |
 | DA-25 | M | R-5, and parts of R-8/11/13/14/18/19 | These cannot be verified by an assembler (§1.4). | Matrix scope column. Don't count them toward "implemented". **Done 2026-09-22:** `contract/assembler-scope.json` drives the column; the headline counts 22 checkable requirements. |
 
 ---
@@ -522,6 +531,8 @@ flowchart LR
   Purity --> R
   R --> W["website: assembler.html matrix"]
 ```
+
+**Built so far (M0–M3):** the golden test, all nineteen conformance cases, a shuffle test over every case (payload, trace and digest), purity guards on sockets and clocks, and schema validation of every emitted trace. The suite also passes under different `PYTHONHASHSEED`, `TZ` and locale values, checked by hand, not in CI. Not built: hypothesis property tests, the import lint, a fresh-process replay test, and `conformance-report.json` (M5).
 
 - **The golden test comes first.** Reproduce `examples/trace.json` and `examples/payload.txt` exactly. The fixture already exists and is hash-checked, so it's a free end-to-end test.
 - **Tests map to requirements.** Each conformance case declares `rules: ["R-16", "R-17"]`. A row flips to *implemented* only when every assembler-scoped clause has a passing case. That is the rule `assembler.html` already states.
@@ -580,6 +591,8 @@ Result: `src/cwa/conflicts.py` resolves every group kind and every escalation ac
 - **Eligibility is explicit.** A fact member is eligible only when its authenticated producer is listed in `precedence` and it carries the policy's `scope` keys. Ineligible members cannot win, and they are excluded when another member does.
 - **Conflicts resolve before every refusal check**, not after the required-slot check. Every trace records them, including a `required_slot_missing` refusal.
 - **Group checks happen at the boundary.** Overlapping groups, unknown ids and undefined facts are `SnapshotError`s, so no outcome depends on the order groups are processed in.
+
+**Stabilization (2026-09-22).** A housekeeping pass before M4 found three things, now fixed. Two candidates sharing an id could move the snapshot digest with input order. The order test never actually reordered items. And the purity test swallowed `NotImplementedError` for every case, not only pending ones. It also found the documentation drift this section and §2–§6 now correct.
 
 **Next: M4.** Registry and profiles (R-19, R-20), plus R-7, which M3 handed on: prior turns rendering as a transcript and only the query as the live user turn need the D-1 message renderer.
 
