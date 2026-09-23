@@ -6,6 +6,7 @@ import time
 import pytest
 
 from cwa import Snapshot, assemble
+from conftest import CASES, read_json
 
 
 def _forbidden(*args, **kwargs):
@@ -16,8 +17,9 @@ class _NoClock(datetime.datetime):
     now = utcnow = today = classmethod(_forbidden)
 
 
-def test_assemble_needs_no_network_or_clock(fixture_snapshot, monkeypatch):
-    snapshot = Snapshot.from_json(fixture_snapshot)
+@pytest.mark.parametrize("case", sorted(p.name for p in CASES.iterdir()))
+def test_assemble_needs_no_network_or_clock(case, monkeypatch):
+    snapshot = Snapshot.from_json(read_json(CASES / case / "snapshot.json"))
     monkeypatch.setattr(socket, "socket", _forbidden)
     monkeypatch.setattr(socket, "create_connection", _forbidden)
     for name in ("time", "time_ns", "monotonic", "perf_counter", "localtime", "gmtime"):
