@@ -136,3 +136,19 @@ def test_without_a_route_order_the_same_items_are_compressed_instead():
     del snapshot["route_policy"]["fitting_order"]
     assert omitted(snapshot) == []
     assert compressed(snapshot) == [("kb:old", "kb:old~short")]
+
+
+# budget-route-tiers: the route raises state.user to protected and governance.examples to compressible.
+
+def test_fitting_uses_the_tiers_the_route_raised():
+    snapshot = case("budget-route-tiers")
+    assert omitted(snapshot) == ["kb:faq"]
+    assert compressed(snapshot) == [("ex:1", "ex:1~short"), ("ex:2", "ex:2~short")]
+    assert "user:plan" in included(snapshot)
+
+
+def test_without_the_upgrades_the_same_items_shed_at_their_default_tiers():
+    snapshot = case("budget-route-tiers")
+    del snapshot["route_policy"]["tier_upgrades"]
+    assert omitted(snapshot) == ["kb:faq", "ex:1"]
+    assert compressed(snapshot) == []
