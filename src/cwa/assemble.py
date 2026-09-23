@@ -1,8 +1,8 @@
 """assemble(): a pure function from a frozen Snapshot to a payload and a trace.
 
-M0 walking skeleton. It places, renders, counts, hashes and traces. Admission (M1), budget fitting
-(M2) and conflict resolution (M3) are not implemented yet, so any snapshot that would need them
-raises NotImplementedError rather than producing a payload the spec would not allow.
+It admits, places, renders, counts, hashes and traces. Budget fitting (M2) and conflict resolution
+(M3) are not implemented yet, so any snapshot that would need them raises NotImplementedError
+rather than producing a payload the spec would not allow.
 """
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Any
 
+from .admission import admit
 from .render import Occurrence
 from .snapshot import Snapshot
 from .trace import validate
@@ -27,10 +28,11 @@ class AssemblyResult:
 
 
 def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResult:
-    items = [item for batch in snapshot.batches for item in batch.items]
+    admission = admit(snapshot)
+    items = admission.items
     placed = {placement.slot for placement in snapshot.profile.placement}
     if unplaced := sorted({item.slot for item in items} - placed):
-        raise NotImplementedError(f"items in unplaced slots {unplaced} need admission (M1)")
+        raise NotImplementedError(f"admitted items in unplaced slots {unplaced} need placement checks (M4)")
     if snapshot.conflicts:
         raise NotImplementedError("conflict resolution lands in M3")
 
@@ -57,7 +59,7 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResu
         "excluded": [
             {"item_id": row.item_id, "reason": row.reason, "stage": row.stage}
             for batch in snapshot.batches for row in batch.excluded
-        ],
+        ] + [{"item_id": e.item_id, "reason": e.reason, "stage": "assembler"} for e in admission.excluded],
         "conflicts": [],
         "refused": {"bool": False, "reason": None},
         "context": {
@@ -67,7 +69,7 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResu
             "renderer": snapshot.renderer.id,
             "snapshot_digest": snapshot.digest(),
         },
-        "defaults_filled": [{"item_id": item.id, "field": field} for item in sorted(items, key=lambda i: i.id) for field in item.defaults_filled],
+        "defaults_filled": [{"item_id": item_id, "field": field} for item_id, field in admission.defaults_filled],
     }
     validate(trace)
     return AssemblyResult(payload=rendered.payload, trace=trace)

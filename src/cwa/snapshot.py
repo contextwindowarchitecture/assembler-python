@@ -8,8 +8,8 @@ from typing import Any, Mapping
 
 from . import contract
 from .canonical import digest
-from .model import (Budget, CapabilityGrant, ConflictGroup, Item, Placement, ProducerBatch, ProducerExclusion,
-                    ProducerIdentity, Profile, RoutePolicy)
+from .model import (Budget, CapabilityGrant, ConflictGroup, Placement, ProducerBatch, ProducerExclusion, ProducerIdentity,
+                    Profile, RoutePolicy)
 from .render import REGISTRY as RENDERERS, Renderer
 from .tokenize import REGISTRY as TOKENIZERS, Tokenizer
 
@@ -22,10 +22,20 @@ class SnapshotError(ValueError):
         self.problems = problems
 
 
+def usable_id(candidate: Mapping[str, Any]) -> str | None:
+    """The candidate's id if it is a non-blank string (R-2)."""
+    value = candidate.get("id")
+    return value if isinstance(value, str) and value.strip() else None
+
+
 def _normalize(document: dict[str, Any]) -> dict[str, Any]:
-    """Canonical order, so producers returning in any order yield the same snapshot and payload."""
+    """Canonical order, so producers returning in any order yield the same snapshot and payload.
+
+    Items with a usable id sort by id. Items without one keep their supplied relative order after
+    them, which keeps their {producer}#invalid-{n} trace ids stable across replays.
+    """
     for batch in document["batches"]:
-        batch["items"].sort(key=lambda item: item["id"])
+        batch["items"].sort(key=lambda item: (0, usable_id(item)) if usable_id(item) else (1, ""))
         batch["excluded"].sort(key=lambda row: row["item_id"])
     document["batches"].sort(key=lambda batch: batch["producer"]["id"])
     document["conflicts"].sort(key=lambda group: group["id"])
@@ -86,8 +96,8 @@ class Snapshot:
             renderer=renderer,
             batches=tuple(
                 ProducerBatch(
-                    producer=ProducerIdentity(b["producer"]["id"], b["producer"]["kind"], b["producer"].get("verified_server", False)),
-                    items=tuple(Item.from_json(item) for item in b["items"]),
+                    producer=ProducerIdentity(b["producer"]["id"], b["producer"]["kind"]),
+                    candidates=tuple(b["items"]),
                     excluded=tuple(ProducerExclusion(**row) for row in b["excluded"]),
                 )
                 for b in document["batches"]

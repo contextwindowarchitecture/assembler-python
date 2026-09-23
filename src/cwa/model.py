@@ -71,7 +71,6 @@ class ProducerIdentity:
     """Who the application authenticated for a batch. Never read from item fields (R-15)."""
     id: str
     kind: str
-    verified_server: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,7 +83,8 @@ class ProducerExclusion:
 @dataclass(frozen=True, slots=True)
 class ProducerBatch:
     producer: ProducerIdentity
-    items: tuple[Item, ...]
+    candidates: tuple[Mapping[str, Any], ...]
+    """Raw producer output in canonical order. Admission validates each one (R-2)."""
     excluded: tuple[ProducerExclusion, ...]
 
 
