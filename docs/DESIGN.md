@@ -578,6 +578,7 @@ flowchart LR
 
 - **Order (D-7), done.** Wherever the spec orders strings, it compares UTF-16 code units, as RFC 8785 already orders member names (website `3b9bb51`). Only ids with characters outside the Basic Multilingual Plane notice. `cwa.strings.utf16` is the sort key at every site: snapshot normalization, placement, admission, conflict and fitting rows, and the id tie-break in shedding. `ordering-astral-ids` (website `78a9d10`) passes.
 - **Blank strings, done.** A trap found on the way: R-2's "non-blank" was undefined, and the schemas' `\S` pattern reads differently in JavaScript and in Python's `re` at U+001C–U+001F and U+FEFF. The spec now defines blank by the ECMAScript whitespace set and spells that set out in every pattern (website `4f465ca`). `cwa.strings.blank` decides usable ids.
+- **Timestamps (D-11), done.** `format: date-time` is library-defined: ajv-formats accepts a space for `T`, offsets without a colon and second 60, and Python's `rfc3339-validator` a trailing newline. The maintainer chose a portable profile without leap seconds: every date-time also carries an explicit pattern, and digests bound their length (website `b8fd56a`). `cwa.instants` parses only that profile.
 - **Snapshot digest (D-10).** The spec defines the normalization and RFC 8785 serialization this assembler already uses, so every implementation computes the same `context.snapshot_digest` and conformance compares it.
 - **Timings (D-9).** `assemble(snapshot, clock=...)` takes an optional monotonic clock from the caller. Without one, the trace has no `timings` and assembly reads no clock. `included[]` rows also gain `eligibility` (R-22).
 - **Conformance report (D-8).** A schema'd, language-neutral `conformance-report.json` records each case's outcome. This assembler commits one beside `status.json`, the website matrix imports both, and an *implemented* claim is rejected while a case tagged with its rule fails.
@@ -684,6 +685,7 @@ Result: `src/cwa/conflicts.py` resolves every group kind and every escalation ac
 | D-8 | What is `conformance-report.json`? | **Decided 2026-09-22:** a website schema for per-case outcomes, emitted by each implementation's runner and imported into the matrix beside `status.json`. |
 | D-9 | How does a pure core record R-22 timings? | **Decided 2026-09-22:** an optional caller-supplied clock; no clock, no timings. |
 | D-10 | Is `context.snapshot_digest` portable? | **Decided 2026-09-22:** yes. The spec fixes the snapshot normalization and RFC 8785 serialization, and conformance compares the digest. |
+| D-11 | Which timestamps are valid? (found in M5) | **Decided 2026-09-22:** RFC 3339 §5.6 without leap seconds, ASCII digits, colon offsets up to ±23:59, enforced by a pattern beside `format: date-time`. |
 
 ## 10. What to revisit as it grows
 

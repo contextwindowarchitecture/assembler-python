@@ -1,4 +1,5 @@
-"""RFC 3339 instants compared at their full stated precision (R-2).
+"""RFC 3339 instants compared at their full stated precision (R-2), in the portable profile of
+conformance/README.md, Timestamps: ASCII digits, no leap seconds, nothing after the offset.
 
 A float or datetime would round beyond microseconds; this keeps whole seconds and the fractional
 digits exactly as written, and needs no clock.
@@ -8,19 +9,18 @@ from __future__ import annotations
 import re
 from datetime import datetime, timezone
 
-_INSTANT = re.compile(r"^(\d{4}-\d{2}-\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?([Zz]|[+-]\d{2}:\d{2})$")
+_INSTANT = re.compile(r"([0-9]{4}-[0-9]{2}-[0-9]{2})[Tt]([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(?:\.([0-9]+))?"
+                      r"([Zz]|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])")
 
 
 def _parse(text: str) -> tuple[int, str]:
-    match = _INSTANT.match(text)
+    match = _INSTANT.fullmatch(text)
     if not match:
-        raise ValueError(f"not an RFC 3339 date-time: {text!r}")
+        raise ValueError(f"not a portable RFC 3339 date-time: {text!r}")
     date, hour, minute, second, fraction, offset = match.groups()
-    leap = second == "60"
     zone = "+00:00" if offset in ("Z", "z") else offset
-    moment = datetime.fromisoformat(f"{date}T{hour}:{minute}:{'59' if leap else second}{zone}")
-    whole = int((moment - datetime(1970, 1, 1, tzinfo=timezone.utc)).total_seconds()) + leap
-    return whole, fraction or ""
+    moment = datetime.fromisoformat(f"{date}T{hour}:{minute}:{second}{zone}")
+    return int((moment - datetime(1970, 1, 1, tzinfo=timezone.utc)).total_seconds()), fraction or ""
 
 
 def compare(a: str, b: str, *, b_offset_seconds: int = 0) -> int:

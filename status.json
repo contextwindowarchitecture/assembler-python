@@ -26,7 +26,8 @@
         "tests/test_snapshot.py::test_timestamps_are_format_checked",
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_strings.py::test_ecmascript_whitespace_is_blank",
-        "tests/test_strings.py::test_characters_python_or_unicode_call_space_are_not_blank"
+        "tests/test_strings.py::test_characters_python_or_unicode_call_space_are_not_blank",
+        "tests/test_instants.py::test_only_the_portable_profile_parses"
       ]
     },
     {
