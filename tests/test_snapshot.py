@@ -35,3 +35,35 @@ def test_snapshot_is_detached_from_the_callers_document(fixture_snapshot):
 
 def test_freeze_is_the_keyword_form_of_from_json(fixture_snapshot):
     assert Snapshot.freeze(**fixture_snapshot).digest() == Snapshot.from_json(fixture_snapshot).digest()
+
+
+# R-11: conflict groups must agree with the snapshot, or it is rejected before assembly.
+
+def group(id: str, *items: str, fact: str | None = None) -> dict:
+    return {"id": id, "kind": "fact" if fact else "instruction", "items": list(items), **({"fact": fact} if fact else {})}
+
+
+@pytest.mark.parametrize("groups, message", [
+    ([group("g1", "policy:v12", "nobody")], "conflict group g1 names 'nobody', which is not a candidate"),
+    ([group("g1", "policy:v12", "turn:18"), group("g2", "turn:18", "refunds-eu:v17#p4")], "'turn:18' belongs to more than one conflict group"),
+    ([group("g1", "policy:v12", "turn:18"), group("g1", "refunds-eu:v17#p4", "memory:expired")], "conflict group ids repeat: g1"),
+    ([group("g1", "refunds-eu:v17#p4", "memory:expired", fact="refund.window")], "fact 'refund.window', which the route policy does not define"),
+])
+def test_conflict_groups_must_agree_with_the_snapshot(fixture_snapshot, groups, message):
+    fixture_snapshot["conflicts"] = groups
+    with pytest.raises(SnapshotError, match=message):
+        Snapshot.from_json(fixture_snapshot)
+
+
+def test_conflict_groups_may_name_producer_exclusions_and_defined_facts(fixture_snapshot):
+    fixture_snapshot["route_policy"]["facts"] = {"refund.window": {"precedence": ["policy-corpus"], "on_unresolved": "surface"}}
+    fixture_snapshot["conflicts"] = [group("g1", "refunds-eu:v17#p4", "memory:expired", fact="refund.window")]
+    Snapshot.from_json(fixture_snapshot)
+
+
+def test_the_order_a_group_lists_its_items_does_not_change_the_snapshot(fixture_snapshot):
+    fixture_snapshot["conflicts"] = [group("g1", "turn:18", "policy:v12")]
+    listed = Snapshot.from_json(fixture_snapshot)
+    fixture_snapshot["conflicts"] = [group("g1", "policy:v12", "turn:18")]
+    assert listed.digest() == Snapshot.from_json(fixture_snapshot).digest()
+    assert listed.conflicts[0].items == ("policy:v12", "turn:18")

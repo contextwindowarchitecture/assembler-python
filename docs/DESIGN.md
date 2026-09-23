@@ -545,23 +545,33 @@ The assembler is a library, not a service. Scaling is the application's concern.
 flowchart LR
   M0["M0 · Skeleton<br/>vendored contract + manifest<br/>fixture renderer/tokenizer<br/>golden hash reproduced"] --> M1["M1 · Admission<br/>R-1 R-2 R-3 R-9 R-10<br/>R-13b R-14b R-15b R-8b"]
   M1 --> M2["M2 · Fit + refuse<br/>R-4 R-16 R-17 R-18b R-12"]
-  M2 --> M3["M3 · Conflicts + render safety<br/>R-6 R-11b R-7"]
-  M3 --> M4["M4 · Registry + profiles<br/>R-19b R-20"]
+  M2 --> M3["M3 · Conflicts<br/>R-6 R-11b R-3"]
+  M3 --> M4["M4 · Registry, profiles,<br/>message renderer<br/>R-19b R-20 R-7"]
   M4 --> M5["M5 · Hardening<br/>R-21 R-22 R-23<br/>conformance-report → website"]
 ```
 
-**M3 kickoff (next): conflicts and render safety** (R-6, R-11 boundary, R-7). Spec first, as in M2. §4.3 has the design to start from. What exists today: `conflict_group.schema.json` (`id`, `kind`, `items`, and `fact` for fact groups), the `conflict_unresolved` refusal, `decided_by` values including `moot`, and a `NotImplementedError` in `assemble.py` for any snapshot with groups.
+**M3 status (2026-09-22): in progress. Conflicts** (R-6, R-11, and the last clause of R-3). As in M2, the spec came first. Website `89660ed` defines resolution, and `271f4c3` adds five conflict conformance cases generated from intent tables, vendored here as pending. The maintainer took the recommended option on each open question:
 
-1. **Route-policy schema (website):** `facts.<key>` with `precedence` (authenticated producer ids, never `item.source`, R-15), `freshness_tiebreak` and `on_unresolved` (`surface`, `request_context` or `refuse`), plus a route-level `on_unresolved_instruction`. R-11 also asks for scope: say how members must share it.
-2. **Reasons registry (website):** add the exclusion codes §4.3 uses, `conflict_deferred` and `conflict_lost`, in pipeline order. Conflicts run after the required-slot check and before fitting, so they go ahead of `over_budget`.
-3. **Decisions to put to the maintainer, with draft wording and effects:**
-   - The payload effect of instruction groups (DA-7): governing vs user is recorded only; peers exclude `defers` members unless protected.
-   - A fixed vocabulary for `conflicts[].resolution`. It is free text today, and conformance needs exact values.
-   - Groups naming ids that were never admitted, or unknown ids: `moot` or `SnapshotError`.
-   - How `surface` marks members. `fixture-xml/v1` has no conflict attribute, and changing the renderer changes payload hashes.
-   - Whether R-7's platform-role and history-transcript clauses need a message renderer (the D-1 render IR) in M3, or stay in progress until then. Escaping is already done.
-4. **Conformance cases (website):** one generator with an intent table covering each `decided_by` path and each `on_unresolved` action, including the `conflict_unresolved` refusal.
-5. **Assembler:** `src/cwa/conflicts.py`, test-first. It replaces the M3 `NotImplementedError`, emits `conflicts[]` ordered by `group_id`, and puts conflict exclusion rows between the admission and fitting rows. It also closes R-3's last clause: `conflict_policy` applies only to eligible instruction peers.
+- **Instruction groups (DA-7).** Deciding by authority excludes nothing. Among two or more peers at the top instructing authority, one `governs` and the rest `defers` excludes the deferring peers with `conflict_deferred`. Any other pattern escalates.
+- **`conflicts[].resolution`** is a closed vocabulary tied to `decided_by` (`resolved`, `surfaced`, `context_requested`, `refused`, `moot`), with an optional `winner`.
+- **`surface`** marks each member's occurrence in `fixture-xml/v1` with `conflict="<group id>"`. No existing hash changes, because snapshots with groups could not be assembled before.
+- **R-7 moves to M4.** Its history-transcript and live-user-turn clauses need the D-1 message renderer, which M4's profile wraps need anyway. M3 covers only "no authority from wording", through conflicts and escaping.
+
+These defaults went into the spec with them:
+
+- Fact policy is `facts.<key>`: `precedence` (authenticated producer ids), `scope`, `freshness_tiebreak` and a required `on_unresolved`.
+- `on_unresolved_instruction` defaults to `refuse`.
+- No conflict excludes a protected item; such a group escalates.
+- An item belongs to at most one group.
+- Unknown ids, shared items and undefined facts are `SnapshotError`s.
+- Conflicts resolve right after admission, so every trace records them, refused or not.
+
+```mermaid
+flowchart LR
+  S1["Spec<br/>website 89660ed"] --> S2["Cases<br/>website 271f4c3"] --> V["Vendor<br/>68882a7"] --> C1["Snapshot<br/>group checks"] --> C2["Instruction<br/>groups"] --> C3["Fact<br/>groups"] --> C4["Escalation,<br/>refusal, marks"] --> ST["status.json<br/>R-6, R-11"]
+```
+
+Done so far: `Snapshot.from_json` rejects unknown, shared and duplicate group ids and undefined facts, and it sorts each group's items so their order cannot change the digest.
 
 **M2 status (2026-09-22): done.** Budget fitting and refusal are implemented test-first, spec first. The website gained the route-policy fields (`c0f5890`), `excluded[].slot` (`574fc6d`), and nine budget and refusal conformance cases generated from intent tables (`9e40504`). All eleven vendored cases pass byte for byte. Three followed: `budget-route-tiers` (website `d84bbd8`) closed a gap in the R-16 claim, since no test showed fitting honor a tier the route raised; `budget-token-caps` and `protected-over-cap` (website `adae6e1`) cover caps. `status.json` now claims R-4, R-12, R-16 and R-17 implemented and R-18 boundary-checked. Fitting is §4.4, refusals are §4, and the recovery mapping is §4.5. It diverged from this document in six ways, each written into the spec:
 

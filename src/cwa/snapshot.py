@@ -39,7 +39,32 @@ def _normalize(document: dict[str, Any]) -> dict[str, Any]:
         batch["excluded"].sort(key=lambda row: row["item_id"])
     document["batches"].sort(key=lambda batch: batch["producer"]["id"])
     document["conflicts"].sort(key=lambda group: group["id"])
+    for group in document["conflicts"]:
+        group["items"].sort()
     return document
+
+
+def _conflict_errors(document: Mapping[str, Any]) -> list[str]:
+    """Cross-references the schema cannot express (R-11): unique group ids, known item ids, no
+    item in two groups, and fact keys the route policy defines."""
+    problems = []
+    known = {usable_id(item) for batch in document["batches"] for item in batch["items"]} | {
+        row["item_id"] for batch in document["batches"] for row in batch["excluded"]}
+    ids = [group["id"] for group in document["conflicts"]]
+    if repeated := sorted({i for i in ids if ids.count(i) > 1}):
+        problems.append(f"conflict group ids repeat: {', '.join(repeated)}")
+    owner: dict[str, str] = {}
+    facts = document["route_policy"].get("facts", {})
+    for group in document["conflicts"]:
+        for item_id in group["items"]:
+            if item_id not in known:
+                problems.append(f"conflict group {group['id']} names {item_id!r}, which is not a candidate or producer exclusion")
+            elif item_id in owner:
+                problems.append(f"{item_id!r} belongs to more than one conflict group: {owner[item_id]}, {group['id']}")
+            owner.setdefault(item_id, group["id"])
+        if group["kind"] == "fact" and group["fact"] not in facts:
+            problems.append(f"conflict group {group['id']} names fact {group['fact']!r}, which the route policy does not define")
+    return problems
 
 
 @dataclass(frozen=True)
@@ -82,6 +107,7 @@ class Snapshot:
         producer_ids = [b["producer"]["id"] for b in document["batches"]]
         if duplicates := sorted({i for i in producer_ids if producer_ids.count(i) > 1}):
             problems.append(f"producer ids appear in more than one batch: {', '.join(duplicates)}")
+        problems += _conflict_errors(document)
         if problems:
             raise SnapshotError(problems)
 
