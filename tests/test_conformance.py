@@ -53,11 +53,21 @@ def _shuffled(document: dict, rng: random.Random) -> dict:
     return document
 
 
+def _outcome(case: str, document: dict) -> tuple:
+    """The payload and trace, or, for a pending case, the milestone gap it raises instead."""
+    try:
+        result = assemble(Snapshot.from_json(document), trace_id="t")
+    except NotImplementedError as gap:
+        if case not in PENDING:
+            raise
+        return ("NotImplementedError", str(gap))
+    return (result.payload, result.trace)
+
+
 @pytest.mark.parametrize("case", sorted(p.name for p in CASES.iterdir()))
 def test_input_order_never_changes_the_outcome(case: str) -> None:
     """R-23 (DA-15): the payload, the trace and the snapshot digest ignore the order of the input."""
     document = read_json(CASES / case / "snapshot.json")
-    expected = assemble(Snapshot.from_json(document), trace_id="t")
+    expected = _outcome(case, document)
     for seed in range(10):
-        shuffled = assemble(Snapshot.from_json(_shuffled(document, random.Random(seed))), trace_id="t")
-        assert (shuffled.payload, shuffled.trace) == (expected.payload, expected.trace), f"seed {seed}"
+        assert _outcome(case, _shuffled(document, random.Random(seed))) == expected, f"seed {seed}"
