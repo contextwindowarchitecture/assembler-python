@@ -64,6 +64,6 @@ Rules:
 
 1. Change the website repo and run its `npm test`.
 2. Commit there on branch `assembler-v0.0.1`, following the same commit rules: incremental, Conventional Commits, `-s`, never push. This is standing permission; no need to ask.
-3. Re-vendor here and commit the lock update: `build(contract): vendor website <short-sha>`.
+3. Re-vendor here and commit the lock update: `build(contract): vendor website <short-sha>`. If the new contract makes existing code fail with an error `PENDING` cannot hold (anything but `NotImplementedError`, `SnapshotError` or `TraceError`), no vendor-only commit can pass: vendor and fix in one commit, and say why in its body.
 
 Re-vendor only from a committed website state. The lock records `"dirty": true` otherwise.
