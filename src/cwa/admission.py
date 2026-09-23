@@ -87,8 +87,19 @@ def _authority(item: Item, ctx: _Context) -> str | None:
     return None
 
 
+def _capability(item: Item, ctx: _Context) -> str | None:
+    # R-15: permission comes from the authenticated capability policy's grant, never from item fields.
+    if item.slot != "governance.capabilities":
+        return None
+    grant = ctx.snapshot.capabilities
+    if (grant is None or ctx.producer.kind != "capability_policy" or ctx.producer.id != grant.policy_producer
+            or item.id not in grant.allowed_ids):
+        return "capability_not_allowed"
+    return None
+
+
 # Checks for schema-valid items from authenticated producers, in reasons.json order.
-_CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (_duplicate, _slot_permission, _authority)
+_CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (_duplicate, _slot_permission, _authority, _capability)
 
 
 def _item_reason(item: Item, ctx: _Context) -> str | None:

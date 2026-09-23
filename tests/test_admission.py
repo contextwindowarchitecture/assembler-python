@@ -157,3 +157,45 @@ def test_prior_model_turns_must_be_untrusted(fixture_snapshot):
     add(fixture_snapshot, "conversation", turn("turn:17a", lineage="generated"), turn("turn:17b", lineage="generated", authority="untrusted"))
     assert exclusions(fixture_snapshot) == [("turn:17a", "authority_not_allowed")]
     assert "turn:17b" in included(fixture_snapshot)
+
+
+def tool(id: str, **fields) -> dict:
+    item = {"id": id, "slot": "governance.capabilities", "source": "capability-policy:support-chat@v3", "source_version": "v3",
+            "authority": "governing", "trust": "verified", "freshness": "2026-09-20T08:00:00Z", "injection_risk": "none",
+            "body": f"{id.split(':')[-1]}(order_id: string)"}
+    item.update(fields)
+    return item
+
+
+@pytest.fixture
+def with_tools(fixture_snapshot) -> dict:
+    fixture_snapshot["route_policy"]["producers"].update({
+        "cap-policy": {"kind": "capability_policy", "slots": ["governance.capabilities"]},
+        "crm-mcp": {"kind": "mcp", "slots": ["governance.capabilities"]},
+    })
+    fixture_snapshot["capabilities"] = {"policy_producer": "cap-policy", "allow_list_version": "v3", "allowed_ids": ["cap:issue_refund"]}
+    return place(fixture_snapshot, "governance.capabilities")
+
+
+# R-15: only the authenticated capability policy admits tools, and only those on its allow-list.
+
+def test_the_capability_policy_admits_allowed_tools(with_tools):
+    add_batch(with_tools, "cap-policy", "capability_policy", tool("cap:issue_refund"))
+    assert exclusions(with_tools) == []
+    assert "cap:issue_refund" in included(with_tools)
+
+
+def test_tools_off_the_allow_list_are_refused(with_tools):
+    add_batch(with_tools, "cap-policy", "capability_policy", tool("cap:delete_account"))
+    assert exclusions(with_tools) == [("cap:delete_account", "capability_not_allowed")]
+
+
+def test_an_adapter_cannot_place_a_tool_even_when_the_route_grants_it_the_slot(with_tools):
+    add_batch(with_tools, "crm-mcp", "mcp", tool("cap:issue_refund", source="capability-policy:forged"))
+    assert exclusions(with_tools) == [("cap:issue_refund", "capability_not_allowed")]
+
+
+def test_without_a_capability_grant_no_tool_is_admitted(with_tools):
+    del with_tools["capabilities"]
+    add_batch(with_tools, "cap-policy", "capability_policy", tool("cap:issue_refund"))
+    assert exclusions(with_tools) == [("cap:issue_refund", "capability_not_allowed")]
