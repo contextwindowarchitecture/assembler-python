@@ -9,7 +9,10 @@ from conftest import CASES, read_json
 IGNORED = ("trace_id", "timings")
 
 # Cases whose milestone is in progress. Strict: once a case passes, pytest fails until it is removed here.
-PENDING: dict[str, str] = {}
+PENDING: dict[str, str] = {
+    "budget-token-caps": "M2: token_budget caps",
+    "protected-over-cap": "M2: token_budget caps",
+}
 
 
 def comparable(trace: dict) -> dict:

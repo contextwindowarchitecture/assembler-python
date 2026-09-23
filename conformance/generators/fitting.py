@@ -1,7 +1,8 @@
 """Builds the budget-fitting and refusal conformance cases from tables of intended outcomes.
 
-Each case lists its candidates, the admission reason for any it excludes, and the fitting
-actions it intends, in order: ("omit", id) or ("compress", id, variant_id). Expected traces and
+Each case lists its candidates, the admission reason for any it excludes, the token_budget cap
+actions it intends ("caps"), and the budget-pressure actions it intends ("actions"), each in order:
+("omit", id) or ("compress", id, variant_id). Expected traces and
 payloads come from those tables, not from a fitting algorithm, so the cases can fail an
 implementation. The generator only checks that each table agrees with the budget: the payload
 fits after the last action and not before it, and each chosen variant is the one
@@ -92,15 +93,35 @@ def build(case):
     admitted = {it["id"]: it for it, r in rows if r == "admit"}
     kept = {i: (it, it["body"]) for i, it in admitted.items()}
     fits = lambda state: tokens(placement, state) <= budget
-    refusal, recovery, actions = case.get("refuse"), case.get("recovery"), case.get("actions", [])
+    refusal, recovery, actions, caps = case.get("refuse"), case.get("recovery"), case.get("actions", []), case.get("caps", [])
+    rank = {"droppable": 0, "compressible": 1, "protected": 2}
+    upgrades = policy.get("tier_upgrades", {})
+    tier = lambda it: it.get("tier") or max(DEFAULTS[it["slot"]]["tier"], upgrades.get(it["slot"], "droppable"), key=rank.get)
+    size = lambda body: count(esc(body))
+    over_cap = lambda it: it["token_budget"] is not None and size(it["body"]) > it["token_budget"]
+    protected = {i: v for i, v in kept.items() if tier(v[0]) == "protected"}
 
     if refusal == "protected_content_over_budget":
-        protected = {i: v for i, v in kept.items() if (v[0].get("tier") or DEFAULTS[v[0]["slot"]]["tier"]) == "protected"}
-        assert not fits(protected), f"{name}: protected items alone fit"
-    if refusal not in ("required_slot_missing", "protected_content_over_budget"):
-        assert fits(kept) == (not actions), f"{name}: the admitted items {'fit' if fits(kept) else 'do not fit'} before fitting"
-
+        assert not fits(protected) or any(over_cap(v[0]) for v in protected.values()), f"{name}: protected items fit"
     compressed = {}
+    if refusal not in ("required_slot_missing", "protected_content_over_budget"):
+        assert not any(over_cap(v[0]) for v in protected.values()), f"{name}: a protected item exceeds its cap"
+        assert {i for i, it in admitted.items() if over_cap(it)} == {a[1] for a in caps}, f"{name}: caps must list exactly the items over their cap"
+        for action in caps:
+            it = admitted[action[1]]
+            within = [v for v in it["variants"] if size(v["body"]) <= it["token_budget"]]
+            if action[0] == "omit":
+                assert tier(it) == "droppable" or not within, f"{name}: {it['id']} has a variant within its cap"
+                del kept[it["id"]]
+                excluded.append({"item_id": it["id"], "reason": "over_budget", "stage": "assembler", "slot": it["slot"]})
+            else:
+                assert tier(it) == "compressible", f"{name}: only compressible items take a variant for their cap"
+                chosen = max(within, key=lambda v: (size(v["body"]), -it["variants"].index(v)))
+                assert chosen["id"] == action[2], f"{name}: {it['id']} should take {chosen['id']} for its cap"
+                kept[it["id"]] = (it, chosen["body"])
+                compressed[it["id"]] = chosen
+        assert fits(kept) == (not actions), f"{name}: the items {'fit' if fits(kept) else 'do not fit'} before budget pressure"
+
     for n, action in enumerate(actions):
         it = admitted[action[1]]
         if action[0] == "omit":
@@ -108,8 +129,8 @@ def build(case):
             excluded.append({"item_id": it["id"], "reason": "over_budget", "stage": "assembler", "slot": it["slot"]})
             compressed.pop(it["id"], None)
         else:
-            original = count(esc(it["body"]))
-            shorter = [v for v in it["variants"] if count(esc(v["body"])) < original]
+            current = count(esc(kept[it["id"]][1]))
+            shorter = [v for v in it["variants"] if count(esc(v["body"])) < current]
             chosen = next(v for v in shorter if v["id"] == action[2])
             with_variant = lambda v: fits({**kept, it["id"]: (it, v["body"])})
             size = lambda v: count(esc(v["body"]))
@@ -250,6 +271,38 @@ CASES = [
             (item("turn:18", "interaction.query", QUERY), "admit"),
         ],
         "actions": [("omit", "kb:faq"), ("compress", "ex:1", "ex:1~short"), ("compress", "ex:2", "ex:2~short")],
+    },
+    {
+        "id": "budget-token-caps",
+        "rules": ["R-3", "R-16", "R-18", "R-21", "R-22"],
+        "description": "Items over their token_budget are reduced before shedding: a compressible item takes its longest variant within the cap or is omitted, a droppable item is omitted; budget pressure then takes a still shorter variant, and from counts the original body.",
+        "budget": 52,
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("ex:1", "governance.examples", "Example: refunds within thirty days are approved.", token_budget=4), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within thirty days of purchase when no prior refund was issued.",
+                  relevance=0.9, token_budget=12, variants=[variant("kb:a~mid", "Pro plans refund in full within thirty days of purchase."),
+                                                           variant("kb:a~short", "Pro: full refund, 30 days.")]), "admit"),
+            (item("kb:b", "evidence.knowledge", "Annual plans refund pro rata for unused months, less any discount.", relevance=0.7,
+                  token_budget=6, variants=[variant("kb:b~mid", "Annual plans refund pro rata for unused months.")]), "admit"),
+            (item("turn:17", "interaction.history", "I bought the Pro plan on the first of September and it does not fit my team.",
+                  variants=[variant("turn:17~sum", "User bought Pro on 1 September.", "summary")]), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "caps": [("omit", "kb:b"), ("compress", "kb:a", "kb:a~mid"), ("omit", "ex:1")],
+        "actions": [("compress", "kb:a", "kb:a~short")],
+    },
+    {
+        "id": "protected-over-cap",
+        "rules": ["R-16", "R-17", "R-21"],
+        "description": "A protected item whose body exceeds its own token_budget refuses the assembly, although the payload fits budget.input; nothing is truncated or shed, and the knowledge item over its own cap gets no row.",
+        "budget": 4096,
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT, token_budget=5), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within 30 days.", relevance=0.9, token_budget=4), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "refuse": "protected_content_over_budget",
     },
     {
         "id": "required-slot-missing",
