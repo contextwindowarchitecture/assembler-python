@@ -124,7 +124,7 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResu
 
     occurrences = place(snapshot.profile, fitted.items, resolution.marks)
     rendered = snapshot.renderer.render(occurrences)
-    input_tokens = snapshot.tokenizer.count(rendered.payload.decode("utf-8"))
+    input_tokens = rendered.tokens(snapshot.tokenizer)
 
     return AssemblyResult(payload=rendered.payload, trace=_trace(
         snapshot, admission, resolution, trace_id, fitted.omitted,

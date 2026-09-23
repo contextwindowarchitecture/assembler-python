@@ -31,7 +31,7 @@ def tier(snapshot: Snapshot, item: Item) -> str:
 
 def tokens(snapshot: Snapshot, items: Iterable[Item], marks: Mapping[str, str] | None = None) -> int:
     rendered = snapshot.renderer.render(place(snapshot.profile, items, marks))
-    return snapshot.tokenizer.count(rendered.payload.decode("utf-8"))
+    return rendered.tokens(snapshot.tokenizer)
 
 
 def body_tokens(snapshot: Snapshot, item: Item) -> int:

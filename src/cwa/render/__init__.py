@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Iterable, Mapping, Protocol
 
 from ..model import Item, Profile
+from ..tokenize import Tokenizer
 from .fixture_xml import FixtureXml
 
 
@@ -24,6 +25,11 @@ class Rendered:
     payload: bytes
     bodies: tuple[str, ...]
     """Each occurrence's rendered body, in order, for per-item token attribution."""
+    texts: tuple[str, ...]
+    """The texts the tokenizer counts; the payload's size is the sum of their counts."""
+
+    def tokens(self, tokenizer: Tokenizer) -> int:
+        return sum(tokenizer.count(text) for text in self.texts)
 
 
 def place(profile: Profile, items: Iterable[Item], marks: Mapping[str, str] | None = None) -> tuple[Occurrence, ...]:

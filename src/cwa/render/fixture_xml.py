@@ -40,4 +40,5 @@ class FixtureXml:
             tag = occurrence.wrap.removeprefix("xml:")
             conflict = f' conflict="{_escape_attribute(occurrence.conflict)}"' if occurrence.conflict else ""
             parts.append(f'<{tag} id="{_escape_attribute(occurrence.item.id)}"{conflict}>\n{body}\n</{tag}>\n')
-        return Rendered(payload="".join(parts).encode("utf-8"), bodies=bodies)
+        text = "".join(parts)
+        return Rendered(payload=text.encode("utf-8"), bodies=bodies, texts=(text,))
