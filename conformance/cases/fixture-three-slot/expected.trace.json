@@ -17,19 +17,22 @@
       "slot": "governance.instructions",
       "item_id": "policy:v12",
       "tokens": 9,
-      "source_version": "v12"
+      "source_version": "v12",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "refunds-eu:v17#p4",
       "tokens": 10,
-      "source_version": "2026-09-10"
+      "source_version": "2026-09-10",
+      "eligibility": "support-chat/v2: tenant acme; rerank at least 0.82"
     },
     {
       "slot": "interaction.query",
       "item_id": "turn:18",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     }
   ],
   "compressed": [],

@@ -17,73 +17,85 @@
       "slot": "governance.instructions",
       "item_id": "policy:v12",
       "tokens": 10,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "state.task",
       "item_id": "task:8821",
       "tokens": 5,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "kb:channel-1",
       "tokens": 7,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "kb:limit",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "kb:price-1",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "kb:price-2",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "kb:status",
       "tokens": 8,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "kb:window",
       "tokens": 8,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "wiki:channel-2",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.tool_results",
       "item_id": "obs:fee-b",
       "tokens": 3,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.tool_results",
       "item_id": "obs:stage",
       "tokens": 4,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "interaction.query",
       "item_id": "turn:18",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     }
   ],
   "compressed": [],

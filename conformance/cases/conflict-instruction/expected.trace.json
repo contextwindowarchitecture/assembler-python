@@ -17,79 +17,92 @@
       "slot": "governance.instructions",
       "item_id": "policy:cite",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "governance.instructions",
       "item_id": "policy:format",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "governance.instructions",
       "item_id": "policy:nocite",
       "tokens": 5,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "governance.instructions",
       "item_id": "policy:plain",
       "tokens": 4,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "governance.instructions",
       "item_id": "policy:tone",
       "tokens": 5,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "governance.instructions",
       "item_id": "policy:v12",
       "tokens": 10,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "governance.examples",
       "item_id": "ex:short",
       "tokens": 4,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "governance.output_contract",
       "item_id": "contract:json",
       "tokens": 8,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "kb:a",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "kb:inject",
       "tokens": 10,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.tool_results",
       "item_id": "obs:order-42",
       "tokens": 7,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "interaction.history",
       "item_id": "turn:10",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "interaction.query",
       "item_id": "turn:18",
       "tokens": 9,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     }
   ],
   "compressed": [],

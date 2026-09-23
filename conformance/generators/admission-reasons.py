@@ -4,8 +4,9 @@ Expected results come from the INTENT column, not from admission logic, so the c
 fail an implementation. Rendering and counting follow conformance/README.md's fixture rules.
 """
 import copy, hashlib, json, os, re, sys
+sys.dont_write_bytecode = True  # importing digest must not leave a __pycache__ for implementations to vendor
+from digest import snapshot_digest  # noqa: E402
 NONBLANK = re.compile(r"[^\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]")  # conformance/README.md, Blank strings
-from digest import snapshot_digest
 U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 WEB = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -155,7 +156,8 @@ for slot in placement:
     for it in sorted((i for i in admitted if i["slot"] == slot), key=lambda i: U16(i["id"])):
         body = esc(it["body"])
         parts.append(f'<{slot} id="{esc(it["id"]).replace(chr(34), "&quot;")}">\n{body}\n</{slot}>\n')
-        included.append({"slot": slot, "item_id": it["id"], "tokens": len(WS.findall(body)), "source_version": it["source_version"]})
+        included.append({"slot": slot, "item_id": it["id"], "tokens": len(WS.findall(body)), "source_version": it["source_version"],
+                             "eligibility": it.get("eligibility", DEFAULTS[it["slot"]]["eligibility"])})
 payload = "".join(parts).encode()
 trace = {
     "trace_id": "admission-reasons",

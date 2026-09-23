@@ -9,10 +9,10 @@ no protected item is excluded, moot means fewer than two members, and the refusa
 follow from the groups' resolutions. Budgets are generous, so fitting never acts.
 """
 import copy, hashlib, json, os, sys
-from digest import snapshot_digest
 U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 sys.dont_write_bytecode = True  # importing fitting must not leave a __pycache__ for implementations to vendor
+from digest import snapshot_digest  # noqa: E402
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fitting import DEFAULTS, PLACEMENT, SCOPE, T, count, esc, item  # noqa: E402
 
@@ -35,7 +35,8 @@ def render(kept, marks):
             if it["id"] in marks:
                 attrs += f' conflict="{esc(marks[it["id"]]).replace(chr(34), "&quot;")}"'
             parts.append(f"<{slot}{attrs}>\n{b}\n</{slot}>\n")
-            included.append({"slot": slot, "item_id": it["id"], "tokens": count(b), "source_version": it["source_version"]})
+            included.append({"slot": slot, "item_id": it["id"], "tokens": count(b), "source_version": it["source_version"],
+                             "eligibility": it.get("eligibility", DEFAULTS[it["slot"]]["eligibility"])})
     return "".join(parts).encode(), included
 
 

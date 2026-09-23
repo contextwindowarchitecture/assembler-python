@@ -14,7 +14,22 @@ from conftest import CASES, read_json
 IGNORED = ("trace_id", "timings")
 
 # Cases whose milestone is in progress. Strict: once a case passes, pytest fails until it is removed here.
-PENDING: dict[str, str] = {}
+PENDING: dict[str, str] = {
+    "admission-reasons": "M5: included rows do not carry eligibility yet",
+    "budget-droppable-order": "M5: included rows do not carry eligibility yet",
+    "budget-omit-after-variants": "M5: included rows do not carry eligibility yet",
+    "budget-route-order": "M5: included rows do not carry eligibility yet",
+    "budget-route-tiers": "M5: included rows do not carry eligibility yet",
+    "budget-token-caps": "M5: included rows do not carry eligibility yet",
+    "budget-variant-choice": "M5: included rows do not carry eligibility yet",
+    "conflict-fact": "M5: included rows do not carry eligibility yet",
+    "conflict-instruction": "M5: included rows do not carry eligibility yet",
+    "fixture-three-slot": "M5: included rows do not carry eligibility yet",
+    "messages-budget": "M5: included rows do not carry eligibility yet",
+    "messages-render": "M5: included rows do not carry eligibility yet",
+    "ordering-astral-ids": "M5: included rows do not carry eligibility yet",
+    "placement-unplaced-slot": "M5: included rows do not carry eligibility yet",
+}
 # What a pending case may raise in place of an outcome: its milestone's gap, a trace the newer
 # schema rejects, or a missing renderer or tokenizer, which conformance/README.md treats as a
 # skipped case.

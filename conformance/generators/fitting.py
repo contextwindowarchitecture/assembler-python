@@ -9,7 +9,8 @@ fits after the last action and not before it, and each chosen variant is the one
 conformance/README.md's Fitting section selects.
 """
 import copy, hashlib, json, os, re, sys
-from digest import snapshot_digest
+sys.dont_write_bytecode = True  # importing digest must not leave a __pycache__ for implementations to vendor
+from digest import snapshot_digest  # noqa: E402
 U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 WEB = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -62,7 +63,8 @@ def render(placement, kept):
         for it, body in sorted((v for v in kept.values() if v[0]["slot"] == slot), key=lambda v: U16(v[0]["id"])):
             b = esc(body)
             parts.append(f'<{slot} id="{esc(it["id"]).replace(chr(34), "&quot;")}">\n{b}\n</{slot}>\n')
-            included.append({"slot": slot, "item_id": it["id"], "tokens": count(b), "source_version": it["source_version"]})
+            included.append({"slot": slot, "item_id": it["id"], "tokens": count(b), "source_version": it["source_version"],
+                             "eligibility": it.get("eligibility", DEFAULTS[it["slot"]]["eligibility"])})
     return "".join(parts).encode(), included
 
 

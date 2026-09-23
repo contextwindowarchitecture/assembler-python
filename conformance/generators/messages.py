@@ -7,10 +7,10 @@ those tables. The generator only checks that each table is self-consistent: the 
 realizable, and the payload fits after the last omission and not before it.
 """
 import copy, hashlib, json, os, sys
-from digest import snapshot_digest
 U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 sys.dont_write_bytecode = True  # importing fitting must not leave a __pycache__ for implementations to vendor
+from digest import snapshot_digest  # noqa: E402
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fitting import DEFAULTS, POLICY, SCOPE, T, count, esc  # noqa: E402
 
@@ -69,7 +69,8 @@ def render(placement, kept, marks):
                 if conflict:
                     attrs += f' conflict="{attr(conflict["conflict"])}"'
                 parts.append(f"<{wrap[4:]}{attrs}>\n{body}\n</{wrap[4:]}>\n")
-            included.append({"slot": slot, "item_id": it["id"], "tokens": count(body), "source_version": it["source_version"]})
+            included.append({"slot": slot, "item_id": it["id"], "tokens": count(body), "source_version": it["source_version"],
+                             "eligibility": it.get("eligibility", DEFAULTS[it["slot"]]["eligibility"])})
     content = "".join(parts)
     payload = canonical({"messages": [{"role": "user", "content": content}], "system": system, "tools": tools})
     return payload, sum(count(e["text"]) for e in system + tools) + count(content), included

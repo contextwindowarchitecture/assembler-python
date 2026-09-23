@@ -17,79 +17,92 @@
       "slot": "governance.instructions",
       "item_id": "policy:v12",
       "tokens": 9,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "governance.capabilities",
       "item_id": "cap:issue_refund",
       "tokens": 4,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "state.user",
       "item_id": "user:plan",
       "tokens": 1,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "state.task",
       "item_id": "task:8821",
       "tokens": 2,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "kb:ok",
       "tokens": 10,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "kb:skew-ok",
       "tokens": 5,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "kb:sub-ms",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.tool_results",
       "item_id": "obs:docs",
       "tokens": 4,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.tool_results",
       "item_id": "obs:order-42",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "interaction.memory",
       "item_id": "m:ok",
       "tokens": 4,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "interaction.history",
       "item_id": "turn:17",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "interaction.history",
       "item_id": "turn:17b",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "interaction.query",
       "item_id": "turn:18",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     }
   ],
   "compressed": [],

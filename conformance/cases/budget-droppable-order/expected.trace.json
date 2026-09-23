@@ -17,25 +17,29 @@
       "slot": "governance.instructions",
       "item_id": "policy:v12",
       "tokens": 10,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "governance.examples",
       "item_id": "ex:2",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "evidence.knowledge",
       "item_id": "kb:a",
       "tokens": 8,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     },
     {
       "slot": "interaction.query",
       "item_id": "turn:18",
       "tokens": 6,
-      "source_version": "1"
+      "source_version": "1",
+      "eligibility": "route-policy"
     }
   ],
   "compressed": [],
