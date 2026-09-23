@@ -20,7 +20,10 @@ Repository = "https://github.com/contextwindowarchitecture/assembler"
 Specification = "https://contextwindowarchitecture.io/spec.html"
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = [
+    "hypothesis>=6.168.1",
+    "pytest>=8",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cwa"]
