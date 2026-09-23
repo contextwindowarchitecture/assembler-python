@@ -152,3 +152,29 @@ def test_without_the_upgrades_the_same_items_shed_at_their_default_tiers():
     del snapshot["route_policy"]["tier_upgrades"]
     assert omitted(snapshot) == ["kb:faq", "ex:1"]
     assert compressed(snapshot) == []
+
+
+# budget-token-caps: kb:b (11 tokens, cap 6) has no variant within its cap; kb:a (16, cap 12) takes kb:a~mid (10);
+# ex:1 (7, cap 4) is droppable. After the caps the payload is 55 tokens against a budget of 52.
+
+def test_items_over_their_cap_are_reduced_in_shedding_order_before_budget_pressure():
+    snapshot = case("budget-token-caps")
+    assert omitted(snapshot) == ["kb:b", "ex:1"]
+    trace = assemble(Snapshot.from_json(snapshot)).trace
+    assert trace["compressed"] == [
+        {"slot": "evidence.knowledge", "item_id": "kb:a", "from": 16, "to": 5, "method": "extract", "variant_id": "kb:a~short"}]
+
+
+def test_caps_apply_even_when_the_payload_fits():
+    snapshot = case("budget-token-caps")
+    snapshot["budget"]["input"] = 4096
+    assert omitted(snapshot) == ["kb:b", "ex:1"]
+    assert compressed(snapshot) == [("kb:a", "kb:a~mid")]
+
+
+def test_an_item_exactly_at_its_cap_is_untouched():
+    snapshot = case("budget-token-caps")
+    snapshot["budget"]["input"] = 4096
+    candidate(snapshot, "kb:b")["token_budget"] = 11
+    assert omitted(snapshot) == ["ex:1"]
+    assert "kb:b" in included(snapshot)

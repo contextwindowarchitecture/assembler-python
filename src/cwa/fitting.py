@@ -109,19 +109,34 @@ class Fitted:
     refusal: str | None = None
 
 
+def _over_cap(snapshot: Snapshot, item: Item) -> bool:
+    return item.token_budget is not None and body_tokens(snapshot, item) > item.token_budget
+
+
 def fit(snapshot: Snapshot, items: tuple[Item, ...]) -> Fitted:
     fits = lambda selection: tokens(snapshot, selection) <= snapshot.budget.input
-    if not fits(i for i in items if tier(snapshot, i) == "protected"):
+    protected = [i for i in items if tier(snapshot, i) == "protected"]
+    if any(_over_cap(snapshot, i) for i in protected) or not fits(protected):
         # R-17: refuse before shedding anything, so the trace has no over_budget rows.
         return Fitted(items=(), refusal="protected_content_over_budget")
     kept = {item.id: item for item in items}
     omitted: list[Item] = []
+    compressed: dict[str, Compression] = {}
+    # R-16: token_budget caps hold whether or not the payload fits.
+    for item in _shedding_order(snapshot, (i for i in items if i not in protected and _over_cap(snapshot, i))):
+        within = [(n, index, variant) for index, variant in enumerate(item.variants)
+                  if (n := body_tokens(snapshot, replace(item, body=variant.body))) <= item.token_budget]
+        if tier(snapshot, item) == "compressible" and within:
+            variant = max(within, key=lambda s: (s[0], -s[1]))[2]
+            kept[item.id] = replace(item, body=variant.body)
+            compressed[item.id] = Compression(variant, body_tokens(snapshot, item))
+        else:
+            omitted.append(kept.pop(item.id))
     # R-16: every droppable item goes, one at a time, before any compressible item is reduced.
-    for item in _shedding_order(snapshot, (i for i in items if tier(snapshot, i) == "droppable")):
+    for item in _shedding_order(snapshot, [i for i in kept.values() if tier(snapshot, i) == "droppable"]):
         if fits(kept.values()):
             break
         omitted.append(kept.pop(item.id))
-    compressed: dict[str, Compression] = {}
     for slot, action in _steps(snapshot):
         for item in reversed(_ranked(snapshot, slot, (i for i in kept.values() if tier(snapshot, i) == "compressible"))):
             if fits(kept.values()):
@@ -129,22 +144,23 @@ def fit(snapshot: Snapshot, items: tuple[Item, ...]) -> Fitted:
             if action == "omit":
                 omitted.append(kept.pop(item.id))
                 compressed.pop(item.id, None)
-            elif compression := _compress(snapshot, item, kept, fits):
-                kept[item.id] = replace(item, body=compression.variant.body)
-                compressed[item.id] = compression
+            elif variant := _compress(snapshot, item, kept, fits):
+                original = compressed[item.id].original_tokens if item.id in compressed else body_tokens(snapshot, item)
+                kept[item.id] = replace(item, body=variant.body)
+                compressed[item.id] = Compression(variant, original)
     # Only protected items can remain once every step has run, and those fit.
     assert fits(kept.values())
     return Fitted(items=tuple(kept.values()), omitted=tuple(omitted), compressed=compressed)
 
 
-def _compress(snapshot: Snapshot, item: Item, kept: Mapping[str, Item], fits: Callable[[Iterable[Item]], bool]) -> Compression | None:
-    """The longest supplied variant shorter than the body that makes the payload fit, else the shortest;
-    earlier variants win ties. None when no variant is shorter (R-16, R-18)."""
-    original = body_tokens(snapshot, item)
+def _compress(snapshot: Snapshot, item: Item, kept: Mapping[str, Item], fits: Callable[[Iterable[Item]], bool]) -> Variant | None:
+    """The longest supplied variant shorter than the current body that makes the payload fit, else the
+    shortest; earlier variants win ties. None when no variant is shorter (R-16, R-18)."""
+    current = body_tokens(snapshot, item)
     shorter = [(n, index, variant) for index, variant in enumerate(item.variants)
-               if (n := body_tokens(snapshot, replace(item, body=variant.body))) < original]
+               if (n := body_tokens(snapshot, replace(item, body=variant.body))) < current]
     if not shorter:
         return None
     fitting = (v for _, _, v in sorted(shorter, key=lambda s: (-s[0], s[1]))
                if fits({**kept, item.id: replace(item, body=v.body)}.values()))
-    return Compression(next(fitting, min(shorter, key=lambda s: (s[0], s[1]))[2]), original)
+    return next(fitting, min(shorter, key=lambda s: (s[0], s[1]))[2])

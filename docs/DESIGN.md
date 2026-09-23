@@ -402,9 +402,10 @@ The unit of accounting is the **occurrence**, not the item. A slot placed twice 
 
 ```mermaid
 flowchart TD
-  A[/"admitted items the profile places"/] --> P{"protected items alone<br/>fit budget.input?"}
+  A[/"admitted items the profile places"/] --> P{"protected items within their caps<br/>and alone fit budget.input?"}
   P -- no --> R1["REFUSE protected_content_over_budget<br/>nothing shed, no over_budget rows"]
-  P -- yes --> D["1 · Droppable<br/>omit one at a time in shedding order<br/>until it fits"]
+  P -- yes --> K["0 · Caps, even if it fits<br/>over token_budget: compressible → longest variant<br/>within the cap, else omit; droppable → omit"]
+  K --> D["1 · Droppable<br/>omit one at a time in shedding order<br/>until it fits"]
   D --> F1{fits?}
   F1 -- yes --> OK([fitted])
   F1 -- no --> S["2 · Route steps<br/>fitting_order, in the route's order"]
@@ -415,7 +416,7 @@ flowchart TD
 
 Every "fits?" renders and counts the **whole** payload with the snapshot's tokenizer, and every step stops as soon as the payload fits. A step visits one slot's compressible items, lowest rank first:
 
-- **compress** selects a supplied variant whose rendered body is shorter than the item's body: the longest that makes the payload fit, else the shortest, with the earlier variant winning ties (R-18). An item without a shorter variant is skipped.
+- **compress** selects a supplied variant whose rendered body is shorter than the item's current body (its own, or the variant its cap chose): the longest that makes the payload fit, else the shortest, with the earlier variant winning ties (R-18). An item without a shorter variant is skipped.
 - **omit** removes the item, compressed or not, and traces it `over_budget` with its slot.
 
 Protected items appear in no step. An item's tier is its own `tier`, else its slot's default raised by `tier_upgrades`, so an item that volunteers `droppable` sheds in phase 1.
@@ -427,7 +428,7 @@ flowchart LR
 
 The algorithm is greedy and deterministic. It is **not** optimal, since the knapsack version is NP-hard, and the spec does not ask for optimal. **Cost:** each decision re-renders and recounts the payload, so fitting is quadratic in the number of items shed. That is fine for a reference; a faster implementation may estimate, as long as it reaches the same decisions.
 
-**Not built yet:** per-item `token_budget` caps. The earlier design capped each item before shedding; the spec doesn't define that step yet, and no conformance case sets a cap that its item exceeds.
+**Caps (option A, 2026-09-22).** `token_budget` caps an item's rendered body. Caps are enforced in shedding order before any budget pressure, whether or not the payload fits, and a protected item over its cap refuses. `null` sets no per-item cap. Per-slot route allocations, which R-3 once implied, are deferred.
 
 ### 4.5 R-12 recovery mapping (as built, M2)
 
@@ -549,14 +550,14 @@ flowchart LR
   M4 --> M5["M5 · Hardening<br/>R-21 R-22 R-23<br/>conformance-report → website"]
 ```
 
-**M2 status (2026-09-22): done.** Budget fitting and refusal are implemented test-first, spec first. The website gained the route-policy fields (`c0f5890`), `excluded[].slot` (`574fc6d`), and nine budget and refusal conformance cases generated from intent tables (`9e40504`). All eleven vendored cases pass byte for byte; a twelfth, `budget-route-tiers` (website `d84bbd8`), later closed a gap in the R-16 claim: no test showed fitting honor a tier the route raised. `status.json` now claims R-4, R-12, R-16 and R-17 implemented and R-18 boundary-checked. Fitting is §4.4, refusals are §4, and the recovery mapping is §4.5. It diverged from this document in six ways, each written into the spec:
+**M2 status (2026-09-22): done.** Budget fitting and refusal are implemented test-first, spec first. The website gained the route-policy fields (`c0f5890`), `excluded[].slot` (`574fc6d`), and nine budget and refusal conformance cases generated from intent tables (`9e40504`). All eleven vendored cases pass byte for byte. Three followed: `budget-route-tiers` (website `d84bbd8`) closed a gap in the R-16 claim, since no test showed fitting honor a tier the route raised; `budget-token-caps` and `protected-over-cap` (website `adae6e1`) cover caps. `status.json` now claims R-4, R-12, R-16 and R-17 implemented and R-18 boundary-checked. Fitting is §4.4, refusals are §4, and the recovery mapping is §4.5. It diverged from this document in six ways, each written into the spec:
 
 - **No `invalid_snapshot` refusal.** A snapshot that fails its schema is rejected before assembly and has no trace. Refusal precedence is `contract/reasons.json` order, and `conflict_unresolved` moved ahead of the budget refusals to match the pipeline.
 - **Protected content is checked before shedding.** When it can't fit, the refusal has no `over_budget` rows.
 - **"Fits" is always a whole-payload render and count.** The estimate-then-correct loop in the old §4.4 is gone. An implementation may estimate only if it reaches the same decisions.
 - **The fitting policy has a closed vocabulary.** Per-slot `priority` (lower sheds first, ties by slot name) and `order_by` (`-relevance`, `-freshness`, `freshness`; `id` is always the last key), and a route `fitting_order` of `compress`/`omit` steps. `min_included` is accepted only on evidence slots of a route that requires evidence.
 - **Recovery is chosen by what was omitted for budget**, not by whether producers returned candidates (§4.5).
-- **Per-item `token_budget` caps are not built.** The old §4.4 capped items before shedding, but the spec doesn't define that step. Specifying it is open. It belongs with R-3's "null means the route allocation", which also needs a route allocation field.
+- **Per-item `token_budget` caps came after the milestone closed.** The spec left them undefined, so the first M2 build ignored them. Option A is now in the spec (website `d80342d`) and built: caps apply before shedding, and a protected item over its cap refuses. R-3 now says `null` sets no per-item cap. Per-slot route allocations are deferred.
 
 **Follow-up for M5:** trace and placement ordering compare ids by code point; JavaScript's default sort uses UTF-16 code units. They differ only for ids with characters outside the Basic Multilingual Plane. Pick one in the spec (JCS already uses UTF-16) and apply it everywhere ids are sorted.
 

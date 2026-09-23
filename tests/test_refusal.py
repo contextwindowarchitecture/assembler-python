@@ -144,3 +144,15 @@ def test_a_protected_refusal_comes_before_the_evidence_check():
     snapshot = evidence_case("evidence-request-context")
     snapshot["budget"]["input"] = 10
     assert_refused(assemble(Snapshot.from_json(snapshot)), "protected_content_over_budget")
+
+
+def test_a_protected_item_over_its_own_cap_refuses_although_the_payload_fits(fixture_snapshot):
+    items(fixture_snapshot, "policy-registry")[0]["token_budget"] = 8  # its body renders 9 tokens
+    result = assemble(Snapshot.from_json(fixture_snapshot))
+    assert_refused(result, "protected_content_over_budget")
+    assert [row["reason"] for row in result.trace["excluded"]] == ["expired"]
+
+
+def test_a_protected_item_exactly_at_its_cap_is_kept(fixture_snapshot):
+    items(fixture_snapshot, "policy-registry")[0]["token_budget"] = 9
+    assert not assemble(Snapshot.from_json(fixture_snapshot)).refused

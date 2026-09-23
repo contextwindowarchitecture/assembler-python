@@ -33,7 +33,9 @@
       "evidence": [
         "tests/test_admission.py::test_route_overrides_replace_slot_defaults_and_are_traced",
         "tests/test_golden.py::test_defaults_filled_are_traced_as_records",
-        "tests/test_admission.py::test_threshold_and_age_eligibility"
+        "tests/test_admission.py::test_threshold_and_age_eligibility",
+        "tests/test_fitting.py::test_caps_apply_even_when_the_payload_fits",
+        "tests/test_fitting.py::test_an_item_exactly_at_its_cap_is_untouched"
       ]
     },
     {
@@ -166,7 +168,10 @@
         "tests/test_fitting.py::test_without_a_route_order_the_same_items_are_compressed_instead",
         "tests/test_golden.py::test_fixture_payload_hash_and_tokens",
         "tests/test_fitting.py::test_fitting_uses_the_tiers_the_route_raised",
-        "tests/test_fitting.py::test_without_the_upgrades_the_same_items_shed_at_their_default_tiers"
+        "tests/test_fitting.py::test_without_the_upgrades_the_same_items_shed_at_their_default_tiers",
+        "tests/test_fitting.py::test_items_over_their_cap_are_reduced_in_shedding_order_before_budget_pressure",
+        "tests/test_fitting.py::test_caps_apply_even_when_the_payload_fits",
+        "tests/test_fitting.py::test_an_item_exactly_at_its_cap_is_untouched"
       ]
     },
     {
@@ -178,7 +183,9 @@
         "tests/test_refusal.py::test_protected_content_over_budget_refuses_without_shedding",
         "tests/test_refusal.py::test_protected_content_that_exactly_fits_is_not_refused",
         "tests/test_refusal.py::test_other_routes_do_not_need_an_output_contract",
-        "tests/test_refusal.py::test_evidence_omitted_without_variants_asks_for_a_precomputed_summary"
+        "tests/test_refusal.py::test_evidence_omitted_without_variants_asks_for_a_precomputed_summary",
+        "tests/test_refusal.py::test_a_protected_item_over_its_own_cap_refuses_although_the_payload_fits",
+        "tests/test_refusal.py::test_a_protected_item_exactly_at_its_cap_is_kept"
       ]
     },
     {
