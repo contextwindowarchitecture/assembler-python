@@ -139,4 +139,14 @@ A registry holds the profiles and route policies an application assembles with, 
 
 `registry/` holds the published example profiles, four conformance route policies and a lock that pins them, so that implementations can check they compute the same digests. `generators/registry.py` builds it.
 
+## Reporting results
+
+An implementation reports a run as `conformance-report.json`, valid against `schema/conformance_report.schema.json`. The report names the implementation and the website commit its cases came from, and holds one entry per directory under `cases/`, ordered by id, with the `rules` from that case's `case.json` and one outcome:
+
+- `passed`: the payload and trace match, as Running a case describes;
+- `failed`: anything else, including an exception or a trace the schema rejects. `detail` says what differed;
+- `skipped`: the implementation does not provide the case's tokenizer or renderer. `detail` names it.
+
+Only `passed` counts. A trace that validates against `schema/trace.schema.json` but differs from the expected one has failed: schema validation alone is not conformance (R-21). The Assembler page imports the reference assembler's report beside its `status.json`.
+
 Implementations vendor these cases pinned by hash, so a case changes only through a reviewed edit here.

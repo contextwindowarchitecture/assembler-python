@@ -1,11 +1,11 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "ce40ef5863d55065de2e2482350b27ab151c3689",
+    "commit": "c9027ec3f222b69e4c27e8b8334c865715edda42",
     "dirty": false
   },
   "files": {
-    "conformance/README.md": "00fd690336a98b0f8f3a4eed5f53c19de57e1a3c2c86fd81f8476460ef241cc6",
+    "conformance/README.md": "529ba4e4bfad258f0867135567f1d8123eaa87fc5bbc235e03ec8bdb3a69b271",
     "conformance/cases/admission-reasons/case.json": "8121bb04dc13512b97d87cffb8b0cbe9979410ae7263c375ec4ca270cc8f7434",
     "conformance/cases/admission-reasons/expected.payload.txt": "de1f12669e43a8e087ab79dd36fc7b5f1bf89096613f340da6279b6f9c6e4214",
     "conformance/cases/admission-reasons/expected.trace.json": "ff29bd43f671a24545f98308854034d78905c8b7ca788e297c21a002c055603a",
@@ -108,6 +108,7 @@
     "src/cwa/contract/data/reasons.json": "3b574fe12e7237d5556704cb6366c2dfd7ede43caba16a008029e0d27a656ffe",
     "src/cwa/contract/data/requirements.json": "a9e7e3db750bfd6bae2c6dd5698dd31b7716bee0d15b75b43e2c1aa1da0ace6c",
     "src/cwa/contract/data/schema/conflict_group.schema.json": "06b6df97c84474371194b7f8758c3264d61c96b4a50ca1e865bff3e811365b89",
+    "src/cwa/contract/data/schema/conformance_report.schema.json": "1bbf8ac949ff4772cf33a10a16f24cdc2338aa4d6e9ba001edeaf0ab46cd82f4",
     "src/cwa/contract/data/schema/context_item.schema.json": "14e268918562758a2ebf5f4b7dbd1e849cc9bdc4ced0af8518df9d0d4e1343a8",
     "src/cwa/contract/data/schema/producer_batch.schema.json": "1f52f9c09ad85e59bfabb32cfa7989916265151779154e2e03c31d4464fbc74b",
     "src/cwa/contract/data/schema/profile.schema.json": "d26e1ff8205ff8ec5f1a8369136b5053a7553adece9c6cf84d8a1ec2e07f4b30",
