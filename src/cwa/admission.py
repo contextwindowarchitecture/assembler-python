@@ -13,7 +13,7 @@ from jsonschema import ValidationError
 
 from .contract import POLICY_FIELDS, REASONS, SLOT_DEFAULTS, validator
 from . import instants
-from .fitting import TIER_RANK, slot_tier
+from .fitting import TIER_RANK, slot_tier, tier
 from .model import Item, ProducerIdentity
 from .snapshot import Snapshot, usable_id
 
@@ -192,11 +192,18 @@ def _eligible(item: Item, ctx: _Context) -> str | None:
     return "not_eligible" if not item.slot.startswith("state.") and _older_than_allowed(item, ctx) else None
 
 
+def _placed(item: Item, ctx: _Context) -> str | None:
+    # R-20: a protected item stays admitted even when unplaced, so that assembly refuses rather than drop it.
+    if item.slot not in {p.slot for p in ctx.snapshot.profile.placement} and tier(ctx.snapshot, item) != "protected":
+        return "slot_unplaced"
+    return None
+
+
 # Checks for schema-valid items from authenticated producers, in reasons.json order.
 _CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (
     _duplicate, _slot_permission, _authority, _capability, _governance_trust, _marking,
     _protected_downgrade, _tier_upgrade, _variant_ids, _revoked, _expired, _future_freshness,
-    _stale_state, _source_prefix, _scope, _threshold, _eligible,
+    _stale_state, _source_prefix, _scope, _threshold, _eligible, _placed,
 )
 
 

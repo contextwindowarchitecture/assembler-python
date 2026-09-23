@@ -1,6 +1,6 @@
 """assemble(): a pure function from a frozen Snapshot to a payload and a trace.
 
-It admits, resolves declared conflicts, checks required slots, fits the budget, checks evidence,
+It admits (placement last), resolves declared conflicts, checks required slots and placement, fits the budget, checks evidence,
 places, renders, counts, hashes and traces.
 """
 from __future__ import annotations
@@ -64,6 +64,9 @@ def _refusal(snapshot: Snapshot, resolution: Resolution) -> tuple[str | None, Fi
     items = resolution.items
     if _missing_required(snapshot, items):
         return "required_slot_missing", None, None
+    # R-20: admission keeps an item in an unplaced slot only when it is protected.
+    if any(item.slot not in {p.slot for p in snapshot.profile.placement} for item in items):
+        return "protected_slot_unplaced", None, None
     if resolution.refusing:
         # R-11: more context helps only if every refusing group asked for it.
         asked = all(action == "request_context" for action in resolution.refusing)
@@ -111,9 +114,6 @@ def _trace(snapshot: Snapshot, admission: Admission, resolution: Resolution, tra
 def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResult:
     admission = admit(snapshot)
     items = admission.items
-    placed = {placement.slot for placement in snapshot.profile.placement}
-    if unplaced := sorted({item.slot for item in items} - placed):
-        raise NotImplementedError(f"admitted items in unplaced slots {unplaced} need placement checks (M4)")
     # Conflicts resolve before any refusal check, so every trace records them (R-11).
     resolution = resolve(snapshot, items, admission.producers)
     reason, fitted, recovery = _refusal(snapshot, resolution)

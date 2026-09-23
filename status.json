@@ -238,7 +238,13 @@
       "status": "in progress",
       "evidence": [
         "tests/test_snapshot.py::test_profiles_that_cannot_carry_the_route_are_rejected_before_assembly",
-        "tests/test_snapshot.py::test_a_parser_route_accepts_a_profile_that_places_the_output_contract"
+        "tests/test_snapshot.py::test_a_parser_route_accepts_a_profile_that_places_the_output_contract",
+        "tests/test_placement.py::test_items_in_slots_the_profile_does_not_place_are_excluded_with_their_slot",
+        "tests/test_placement.py::test_every_earlier_admission_check_comes_before_placement",
+        "tests/test_placement.py::test_a_protected_item_in_an_unplaced_slot_refuses_rather_than_being_dropped",
+        "tests/test_placement.py::test_a_missing_required_slot_is_reported_before_an_unplaced_protected_item",
+        "tests/test_placement.py::test_an_unplaced_protected_item_is_reported_before_an_unresolved_conflict",
+        "tests/test_conformance.py::test_conformance_case"
       ]
     },
     {
@@ -248,7 +254,8 @@
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason",
         "tests/test_refusal.py::test_a_missing_required_slot_is_reported_before_the_budget",
-        "tests/test_refusal.py::test_a_protected_refusal_comes_before_the_evidence_check"
+        "tests/test_refusal.py::test_a_protected_refusal_comes_before_the_evidence_check",
+        "tests/test_placement.py::test_a_missing_required_slot_is_reported_before_an_unplaced_protected_item"
       ]
     },
     {

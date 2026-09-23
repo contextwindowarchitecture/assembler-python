@@ -309,7 +309,7 @@ flowchart TD
   CT -- yes --> H["10 · SHA-256 of payload bytes<br/>trace: included, compressed, conflicts"]
 ```
 
-**Refusals as built (M2, M3).** An invalid snapshot is a `SnapshotError` before assembly and has no trace, so there is no `invalid_snapshot` code. Refusal precedence is the order of the refusal codes in `contract/reasons.json` (R-21): `required_slot_missing` > `conflict_unresolved` > `protected_content_over_budget` > `evidence_required`. Placement checks such as `protected_slot_unplaced` wait for M4. Every refusal emits `result: null`, `included: []` and `compressed: []`. Conflicts resolve right after admission, before any refusal check, so every refused trace keeps `conflicts[]` and the producer, admission and conflict rows in `excluded[]`. An `evidence_required` refusal also keeps its `over_budget` rows (R-17).
+**Refusals as built (M2–M4).** An invalid snapshot is a `SnapshotError` before assembly and has no trace, so there is no `invalid_snapshot` code; that includes a profile that does not place the required slots (M4). Refusal precedence is the order of the refusal codes in `contract/reasons.json` (R-21): `required_slot_missing` > `protected_slot_unplaced` > `conflict_unresolved` > `protected_content_over_budget` > `evidence_required`. An unprotected item in a slot the profile does not place never reaches the refusal checks: admission excludes it with `slot_unplaced` (§4.1). Every refusal emits `result: null`, `included: []` and `compressed: []`. Conflicts resolve right after admission, before any refusal check, so every refused trace keeps `conflicts[]` and the producer, admission and conflict rows in `excluded[]`. An `evidence_required` refusal also keeps its `over_budget` rows (R-17).
 
 ```mermaid
 flowchart TD
@@ -317,7 +317,9 @@ flowchart TD
   AD --> CF["Conflicts §4.3<br/>losers excluded, all groups traced"]
   CF --> Q{"instructions and query admitted?<br/>output_contract too, on a parser route?"}
   Q -- no --> X1["REFUSE required_slot_missing"]
-  Q -- yes --> U{"a group escalated to<br/>refuse or request_context?"}
+  Q -- yes --> PL{"an admitted protected item<br/>in a slot the profile does not place?"}
+  PL -- yes --> XP["REFUSE protected_slot_unplaced"]
+  PL -- no --> U{"a group escalated to<br/>refuse or request_context?"}
   U -- yes --> X0["REFUSE conflict_unresolved"]
   U -- no --> P{"protected items alone<br/>fit budget.input?"}
   P -- no --> X2["REFUSE protected_content_over_budget"]
@@ -354,7 +356,7 @@ flowchart TD
   end
   subgraph R["Route eligibility"]
     direction TB
-    R1["out_of_scope"] --> R2["below_threshold"] --> R3["not_eligible"]
+    R1["out_of_scope"] --> R2["below_threshold"] --> R3["not_eligible"] --> R4["slot_unplaced<br/>(protected items stay admitted, M4)"]
   end
   I --> T --> L --> R --> A(["admitted"])
 ```
@@ -572,6 +574,7 @@ flowchart LR
 ```
 
 - **Profile checks happen with the snapshot** (R-20). A profile for another route, or one that does not place `governance.instructions`, `interaction.query` and, on a parser route, `governance.output_contract`, is a `SnapshotError`. It could never assemble, so it has no trace.
+- **Placement is the last admission check** (R-20). An item in a slot the profile does not place is excluded with `slot_unplaced`, after every other check. A protected item is kept instead, and assembly refuses with `protected_slot_unplaced` right after `required_slot_missing`. Placement no longer raises `NotImplementedError`, and the three placement cases pass.
 - **Render IR (D-1), as chosen.** `cwa-messages/v1` will emit RFC 8785 JSON `{messages, system, tools}`. Only governance slots may use `system` or `tools` wraps (`tools` only for capabilities), and every `system` placement comes before every `xml:` placement; anything else is a `SnapshotError`. One user message holds every `xml:` occurrence in `fixture-xml/v1` grammar, with history turns marked `speaker="user"` or `speaker="assistant"` (from `lineage: generated`) and never split into their own messages (R-7). `input_tokens` is the sum of the tokenizer's counts of each system text, tool text and message content.
 
 **M3 status (2026-09-22): done. Conflicts** (R-6, R-11, and the last clause of R-3). As in M2, the spec came first. Website `89660ed` defines resolution, and `271f4c3` adds five conflict conformance cases generated from intent tables, vendored here as pending. The maintainer took the recommended option on each open question:
