@@ -132,6 +132,18 @@
     "text": "The route's eligibility predicate rejected the item, for example because it was observed longer ago than its slot's max_age_seconds."
   },
   {
+    "code": "conflict_deferred",
+    "kind": "exclusion",
+    "rule": "R-11",
+    "text": "The item is a peer instruction with conflict_policy defers, and the one peer in its declared conflict group that governs prevailed. A protected item is never excluded this way; its group escalates."
+  },
+  {
+    "code": "conflict_lost",
+    "kind": "exclusion",
+    "rule": "R-6",
+    "text": "Route fact policy chose another member of the item's declared fact conflict group, by authenticated producer precedence or an allowed freshness tie-break. A protected item is never excluded this way; its group escalates."
+  },
+  {
     "code": "over_budget",
     "kind": "exclusion",
     "rule": "R-16",
@@ -153,7 +165,7 @@
     "code": "conflict_unresolved",
     "kind": "refusal",
     "rule": "R-11",
-    "text": "A declared conflict group has no unique supported resolution and route policy says to refuse or request context."
+    "text": "A declared conflict group has no unique supported resolution, and route policy says to refuse or request context. The trace records recovery.action request_context when every such group asked for context."
   },
   {
     "code": "protected_content_over_budget",

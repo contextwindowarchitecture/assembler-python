@@ -142,6 +142,7 @@
     },
     "conflicts": {
       "type": "array",
+      "description": "Declared conflict groups. Group ids are unique, every item id names a candidate or producer exclusion in this snapshot, no item belongs to two groups, and each fact group's fact is a key of route_policy.facts (R-11). The schema cannot express these cross-references; an assembler checks them before assembly.",
       "items": {
         "$ref": "conflict_group.schema.json"
       }

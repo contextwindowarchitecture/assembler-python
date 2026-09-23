@@ -1,0 +1,209 @@
+{
+  "trace_id": "conflict-fact",
+  "profile": {
+    "id": "conflict-fixture",
+    "version": 1
+  },
+  "budget": {
+    "input": 4000,
+    "reserved_output": 1024
+  },
+  "result": {
+    "input_tokens": 117,
+    "hash": "27fe148f69899fc6c7614d2d3a4d5f5a9aa70e1215bcc28a2054d66af1e0e60e"
+  },
+  "included": [
+    {
+      "slot": "governance.instructions",
+      "item_id": "policy:v12",
+      "tokens": 10,
+      "source_version": "1"
+    },
+    {
+      "slot": "state.task",
+      "item_id": "task:8821",
+      "tokens": 5,
+      "source_version": "1"
+    },
+    {
+      "slot": "evidence.knowledge",
+      "item_id": "kb:channel-1",
+      "tokens": 7,
+      "source_version": "1"
+    },
+    {
+      "slot": "evidence.knowledge",
+      "item_id": "kb:limit",
+      "tokens": 6,
+      "source_version": "1"
+    },
+    {
+      "slot": "evidence.knowledge",
+      "item_id": "kb:price-1",
+      "tokens": 6,
+      "source_version": "1"
+    },
+    {
+      "slot": "evidence.knowledge",
+      "item_id": "kb:price-2",
+      "tokens": 6,
+      "source_version": "1"
+    },
+    {
+      "slot": "evidence.knowledge",
+      "item_id": "kb:status",
+      "tokens": 8,
+      "source_version": "1"
+    },
+    {
+      "slot": "evidence.knowledge",
+      "item_id": "kb:window",
+      "tokens": 8,
+      "source_version": "1"
+    },
+    {
+      "slot": "evidence.knowledge",
+      "item_id": "wiki:channel-2",
+      "tokens": 6,
+      "source_version": "1"
+    },
+    {
+      "slot": "evidence.tool_results",
+      "item_id": "obs:fee-b",
+      "tokens": 3,
+      "source_version": "1"
+    },
+    {
+      "slot": "evidence.tool_results",
+      "item_id": "obs:stage",
+      "tokens": 4,
+      "source_version": "1"
+    },
+    {
+      "slot": "interaction.query",
+      "item_id": "turn:18",
+      "tokens": 6,
+      "source_version": "1"
+    }
+  ],
+  "compressed": [],
+  "excluded": [
+    {
+      "item_id": "kb:limit-old",
+      "reason": "expired",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
+      "item_id": "kb:fee",
+      "reason": "conflict_lost",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
+      "item_id": "obs:fee-a",
+      "reason": "conflict_lost",
+      "stage": "assembler",
+      "slot": "evidence.tool_results"
+    },
+    {
+      "item_id": "obs:status",
+      "reason": "conflict_lost",
+      "stage": "assembler",
+      "slot": "evidence.tool_results"
+    },
+    {
+      "item_id": "wiki:window",
+      "reason": "conflict_lost",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    }
+  ],
+  "conflicts": [
+    {
+      "group_id": "f-freshness",
+      "kind": "fact",
+      "items": [
+        "kb:fee",
+        "obs:fee-a",
+        "obs:fee-b"
+      ],
+      "decided_by": "freshness",
+      "resolution": "resolved",
+      "winner": "obs:fee-b"
+    },
+    {
+      "group_id": "f-ineligible",
+      "kind": "fact",
+      "items": [
+        "kb:channel-1",
+        "wiki:channel-2"
+      ],
+      "decided_by": "escalated",
+      "resolution": "surfaced"
+    },
+    {
+      "group_id": "f-moot",
+      "kind": "fact",
+      "items": [
+        "kb:limit",
+        "kb:limit-old"
+      ],
+      "decided_by": "moot",
+      "resolution": "moot"
+    },
+    {
+      "group_id": "f-precedence",
+      "kind": "fact",
+      "items": [
+        "kb:window",
+        "wiki:window"
+      ],
+      "decided_by": "policy",
+      "resolution": "resolved",
+      "winner": "kb:window"
+    },
+    {
+      "group_id": "f-protected",
+      "kind": "fact",
+      "items": [
+        "obs:stage",
+        "task:8821"
+      ],
+      "decided_by": "escalated",
+      "resolution": "surfaced"
+    },
+    {
+      "group_id": "f-scope",
+      "kind": "fact",
+      "items": [
+        "kb:status",
+        "obs:status"
+      ],
+      "decided_by": "policy",
+      "resolution": "resolved",
+      "winner": "kb:status"
+    },
+    {
+      "group_id": "f-tie",
+      "kind": "fact",
+      "items": [
+        "kb:price-1",
+        "kb:price-2"
+      ],
+      "decided_by": "escalated",
+      "resolution": "surfaced"
+    }
+  ],
+  "refused": {
+    "bool": false,
+    "reason": null
+  },
+  "context": {
+    "assembly_time": "2026-09-22T12:00:00Z",
+    "route_policy_version": "conflict-fact/v1",
+    "tokenizer": "fixture-whitespace/v1",
+    "renderer": "fixture-xml/v1"
+  },
+  "defaults_filled": []
+}

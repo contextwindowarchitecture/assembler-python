@@ -244,8 +244,14 @@
           },
           "resolution": {
             "type": "string",
-            "minLength": 1,
-            "pattern": "\\S"
+            "enum": [
+              "resolved",
+              "surfaced",
+              "context_requested",
+              "refused",
+              "moot"
+            ],
+            "description": "resolved when authority or policy decided the group; surfaced, context_requested or refused when it escalated, following the route's on_unresolved action; moot when fewer than two members were admitted (R-11)."
           },
           "decided_by": {
             "type": "string",
@@ -261,6 +267,12 @@
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"
+          },
+          "winner": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "The member that prevailed, when one did. One of items."
           }
         },
         "required": [
@@ -269,7 +281,98 @@
           "resolution",
           "decided_by"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "decided_by": {
+                  "const": "moot"
+                }
+              },
+              "required": [
+                "decided_by"
+              ]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "resolution": {
+                  "const": "moot"
+                }
+              }
+            },
+            "else": {
+              "type": "object",
+              "properties": {
+                "resolution": {
+                  "not": {
+                    "const": "moot"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "decided_by": {
+                  "const": "escalated"
+                }
+              },
+              "required": [
+                "decided_by"
+              ]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "resolution": {
+                  "enum": [
+                    "surfaced",
+                    "context_requested",
+                    "refused"
+                  ]
+                }
+              }
+            },
+            "else": {
+              "type": "object",
+              "properties": {
+                "resolution": {
+                  "not": {
+                    "enum": [
+                      "surfaced",
+                      "context_requested",
+                      "refused"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "required": [
+                "winner"
+              ],
+              "properties": {
+                "winner": true
+              }
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "resolution": {
+                  "const": "resolved"
+                }
+              }
+            }
+          }
+        ]
       }
     },
     "refused": {

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://contextwindowarchitecture.io/schema/conflict_group.schema.json",
   "title": "CWA conflict group",
-  "description": "An application-declared conflict among items. The assembler resolves declared groups; it never discovers contradictions by interpreting prose.",
+  "description": "An application-declared conflict among items. The assembler resolves declared groups; it never discovers contradictions by interpreting prose. Every item id must name a candidate or producer exclusion in the snapshot, an item belongs to at most one group, and a fact group's fact must be a key of the route policy's facts; a snapshot that breaks these is rejected before assembly.",
   "type": "object",
   "additionalProperties": false,
   "required": [

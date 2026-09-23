@@ -1,0 +1,11 @@
+{
+  "id": "conflict-instruction",
+  "rules": [
+    "R-3",
+    "R-6",
+    "R-7",
+    "R-11",
+    "R-21"
+  ],
+  "description": "Instruction groups: authority records without excluding, one governing peer excludes the peers that defer, evidence never instructs, and a group with two governing peers or a protected deferring peer is surfaced and marked."
+}

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://contextwindowarchitecture.io/schema/route_policy.schema.json",
   "title": "CWA route policy",
-  "description": "Versioned, application-owned policy for one route. Admission, fitting and refusal read it, and it travels inside the snapshot (R-23). Later milestones add conflict fields.",
+  "description": "Versioned, application-owned policy for one route. Admission, conflict resolution, fitting and refusal read it, and it travels inside the snapshot (R-23).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -33,6 +33,14 @@
     "requires_evidence": {
       "type": "boolean",
       "description": "Assembly refuses with evidence_required when fitting leaves no evidence.knowledge or evidence.tool_results item, or fewer items in an evidence slot than its min_included (R-12). Default false."
+    },
+    "on_unresolved_instruction": {
+      "enum": [
+        "surface",
+        "request_context",
+        "refuse"
+      ],
+      "description": "What assembly does with an instruction conflict group that has no unique supported resolution (R-11): surface keeps every member and marks it in the payload, request_context and refuse refuse with conflict_unresolved. Default refuse."
     },
     "producers": {
       "type": "object",
@@ -165,6 +173,63 @@
               "compress",
               "omit"
             ]
+          }
+        }
+      }
+    },
+    "facts": {
+      "type": "object",
+      "description": "Factual precedence, keyed by the fact key that fact conflict groups name (R-6, R-11). Instruction authority never ranks facts.",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "precedence",
+          "on_unresolved"
+        ],
+        "properties": {
+          "precedence": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "description": "Producers whose claims about this fact are eligible, by the identity the application authenticated, most authoritative first. A member from any other producer is ineligible: it cannot win and is excluded when another member does. item.source never counts (R-15)."
+          },
+          "scope": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "tenant",
+                "user",
+                "session",
+                "task",
+                "locale",
+                "step"
+              ]
+            },
+            "description": "Scope keys a member must carry to be eligible. Admission already requires every key an item carries to equal the request's value, so eligible members share this scope. Default []."
+          },
+          "freshness_tiebreak": {
+            "type": "boolean",
+            "description": "When several eligible members share the highest-ranked producer, the single newest by freshness wins, comparing instants at full precision. Without it, or when the newest is tied, the group escalates. Default false."
+          },
+          "on_unresolved": {
+            "enum": [
+              "surface",
+              "request_context",
+              "refuse"
+            ],
+            "description": "What assembly does when this fact's policy cannot pick a unique winner: surface keeps every member and marks it in the payload, request_context and refuse refuse with conflict_unresolved (R-11)."
           }
         }
       }
