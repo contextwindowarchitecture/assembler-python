@@ -30,7 +30,7 @@ Rules:
 ## Commits
 
 - **Commit incrementally**, without being asked, at each green step: one behavior, or one refactor, per commit. Every commit must pass the full suite, so history stays bisectable. Don't commit a red test on its own; the test and the code that satisfies it go together.
-- **Never push.** This repository has no remote workflow; commits stay local.
+- **Never push.** The remote is `origin` (https://github.com/contextwindowarchitecture/assembler), but agents don't push, open pull requests, or fetch-and-rebase. The maintainer publishes commits.
 - **Use [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/):** `type(scope): summary` in the imperative mood, lower case, no trailing period, at most 72 characters.
   - Types: `feat`, `fix`, `test`, `refactor`, `perf`, `docs`, `build`, `chore`, `ci`.
   - Scopes: `admission`, `defaults`, `conflicts`, `fitting`, `render`, `tokenize`, `snapshot`, `trace`, `canonical`, `contract`, `conformance`, `design`.
