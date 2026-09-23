@@ -5,14 +5,14 @@
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from functools import cmp_to_key
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Mapping
 
 from . import instants
 from .contract import SLOT_DEFAULTS
-from .model import Item
-from .render import place
+from .model import Item, Variant
+from .render import Occurrence, place
 from .snapshot import Snapshot
 
 TIER_RANK = {"droppable": 0, "compressible": 1, "protected": 2}
@@ -32,6 +32,13 @@ def tier(snapshot: Snapshot, item: Item) -> str:
 def tokens(snapshot: Snapshot, items: Iterable[Item]) -> int:
     rendered = snapshot.renderer.render(place(snapshot.profile, items))
     return snapshot.tokenizer.count(rendered.payload.decode("utf-8"))
+
+
+def body_tokens(snapshot: Snapshot, item: Item) -> int:
+    """Tokens in the item's rendered body, as included[].tokens counts it."""
+    placement = next(p for p in snapshot.profile.placement if p.slot == item.slot)
+    rendered = snapshot.renderer.render((Occurrence(0, placement.slot, placement.wrap, item),))
+    return snapshot.tokenizer.count(rendered.bodies[0])
 
 
 def _sign(a: object, b: object) -> int:
@@ -76,11 +83,26 @@ def _shedding_order(snapshot: Snapshot, items: Iterable[Item]) -> list[Item]:
     return [item for slot in _slots_in_shedding_order(snapshot) for item in reversed(_ranked(snapshot, slot, items))]
 
 
+def _steps(snapshot: Snapshot) -> list[tuple[str, str]]:
+    """Compress each slot, then omit each slot, both in shedding order (R-16)."""
+    order = _slots_in_shedding_order(snapshot)
+    return [(slot, "compress") for slot in order] + [(slot, "omit") for slot in order]
+
+
+@dataclass(frozen=True, slots=True)
+class Compression:
+    variant: Variant
+    original_tokens: int
+
+
 @dataclass(frozen=True, slots=True)
 class Fitted:
     items: tuple[Item, ...]
+    """Kept items; a compressed item carries its variant's body under its own id."""
     omitted: tuple[Item, ...] = ()
     """Items omitted for budget, in the order they were omitted."""
+    compressed: Mapping[str, Compression] = field(default_factory=dict)
+    """The variant each kept, compressed item uses, by item id (R-18)."""
     refusal: str | None = None
 
 
@@ -96,6 +118,30 @@ def fit(snapshot: Snapshot, items: tuple[Item, ...]) -> Fitted:
         if fits(kept.values()):
             break
         omitted.append(kept.pop(item.id))
-    if not fits(kept.values()):
-        raise NotImplementedError("reducing compressible items lands later in M2")
-    return Fitted(items=tuple(kept.values()), omitted=tuple(omitted))
+    compressed: dict[str, Compression] = {}
+    for slot, action in _steps(snapshot):
+        for item in reversed(_ranked(snapshot, slot, (i for i in kept.values() if tier(snapshot, i) == "compressible"))):
+            if fits(kept.values()):
+                break
+            if action == "omit":
+                omitted.append(kept.pop(item.id))
+                compressed.pop(item.id, None)
+            elif compression := _compress(snapshot, item, kept, fits):
+                kept[item.id] = replace(item, body=compression.variant.body)
+                compressed[item.id] = compression
+    # Only protected items can remain once every step has run, and those fit.
+    assert fits(kept.values())
+    return Fitted(items=tuple(kept.values()), omitted=tuple(omitted), compressed=compressed)
+
+
+def _compress(snapshot: Snapshot, item: Item, kept: Mapping[str, Item], fits: Callable[[Iterable[Item]], bool]) -> Compression | None:
+    """The longest supplied variant shorter than the body that makes the payload fit, else the shortest;
+    earlier variants win ties. None when no variant is shorter (R-16, R-18)."""
+    original = body_tokens(snapshot, item)
+    shorter = [(n, index, variant) for index, variant in enumerate(item.variants)
+               if (n := body_tokens(snapshot, replace(item, body=variant.body))) < original]
+    if not shorter:
+        return None
+    fitting = (v for _, _, v in sorted(shorter, key=lambda s: (-s[0], s[1]))
+               if fits({**kept, item.id: replace(item, body=v.body)}.values()))
+    return Compression(next(fitting, min(shorter, key=lambda s: (s[0], s[1]))[2]), original)

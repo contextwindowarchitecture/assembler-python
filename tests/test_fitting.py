@@ -70,3 +70,54 @@ def test_over_budget_rows_name_the_slot_after_the_admission_rows():
         {"item_id": "kb:a", "reason": "below_threshold", "stage": "assembler", "slot": "evidence.knowledge"},
         {"item_id": "user:plan", "reason": "over_budget", "stage": "assembler", "slot": "state.user"},
     ]
+
+
+def compressed(snapshot: dict) -> list[tuple[str, str]]:
+    trace = assemble(Snapshot.from_json(snapshot)).trace
+    return [(row["item_id"], row["variant_id"]) for row in trace["compressed"]]
+
+
+# budget-variant-choice: after ex:1 goes, neither of kb:b's variants fits, so it takes the shortest; kb:a~mid
+# fits, so kb:a takes it over the shorter kb:a~short. History is never reached.
+
+def test_compressible_items_take_the_longest_variant_that_fits_else_the_shortest():
+    trace = assemble(Snapshot.from_json(case("budget-variant-choice"))).trace
+    assert trace["compressed"] == [
+        {"slot": "evidence.knowledge", "item_id": "kb:a", "from": 23, "to": 10, "method": "extract", "variant_id": "kb:a~mid"},
+        {"slot": "evidence.knowledge", "item_id": "kb:b", "from": 15, "to": 3, "method": "extract", "variant_id": "kb:b~short"},
+    ]
+    assert [(row["item_id"], row["tokens"]) for row in trace["included"] if row["slot"] == "evidence.knowledge"] == [("kb:a", 10), ("kb:b", 3)]
+    assert [row["item_id"] for row in trace["excluded"]] == ["ex:1"]
+
+
+def test_variants_with_equal_counts_prefer_the_earlier_one():
+    snapshot = case("budget-variant-choice")
+    candidate(snapshot, "kb:b")["variants"].insert(0, {"id": "kb:b~alt", "body": "Annual: prorated refunds.", "method": "extract",
+                                                      "lineage": "extracted"})
+    assert ("kb:b", "kb:b~alt") in compressed(snapshot)
+
+
+# budget-omit-after-variants: history (priority 0) sheds before knowledge (priority 1), oldest turn first.
+
+def test_every_compress_step_runs_before_any_omission():
+    snapshot = case("budget-omit-after-variants")
+    assert compressed(snapshot) == [("kb:a", "kb:a~short")]
+    assert omitted(snapshot) == ["turn:14", "turn:15"]
+
+
+def test_protected_items_are_never_compressed_or_omitted():
+    snapshot = case("budget-omit-after-variants")
+    candidate(snapshot, "policy:v12")["variants"] = [{"id": "policy:v12~short", "body": "Cite evidence.", "method": "extract",
+                                                      "lineage": "extracted"}]
+    assert compressed(snapshot) == [("kb:a", "kb:a~short")]
+    assert "policy:v12" in included(snapshot)
+
+
+def test_a_slot_placed_twice_is_compressed_in_both_occurrences():
+    snapshot = case("budget-variant-choice")
+    snapshot["profile"]["placement"].insert(-1, {"slot": "evidence.knowledge", "wrap": "xml:evidence.knowledge"})
+    snapshot["budget"]["input"] = 90
+    trace = assemble(Snapshot.from_json(snapshot)).trace
+    rows = [(row["item_id"], row["variant_id"], row["to"]) for row in trace["compressed"]]
+    assert rows == [("kb:a", "kb:a~mid", 10), ("kb:b", "kb:b~short", 3)] * 2
+    assert [row["tokens"] for row in trace["included"] if row["slot"] == "evidence.knowledge"] == [10, 3, 10, 3]

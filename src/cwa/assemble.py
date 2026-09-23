@@ -100,4 +100,9 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResu
             {"slot": o.slot, "item_id": o.item.id, "tokens": snapshot.tokenizer.count(body), "source_version": o.item.source_version}
             for o, body in zip(occurrences, rendered.bodies)
         ],
+        compressed=[
+            {"slot": o.slot, "item_id": o.item.id, "from": c.original_tokens, "to": snapshot.tokenizer.count(body),
+             "method": c.variant.method, "variant_id": c.variant.id}
+            for o, body in zip(occurrences, rendered.bodies) if (c := fitted.compressed.get(o.item.id))
+        ],
     ))

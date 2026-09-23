@@ -43,7 +43,8 @@
         "tests/test_refusal.py::test_every_assembly_needs_instructions_and_a_query",
         "tests/test_refusal.py::test_a_parser_route_also_needs_an_output_contract",
         "tests/test_refusal.py::test_other_routes_do_not_need_an_output_contract",
-        "tests/test_conformance.py::test_conformance_case"
+        "tests/test_conformance.py::test_conformance_case",
+        "tests/test_fitting.py::test_protected_items_are_never_compressed_or_omitted"
       ]
     },
     {
@@ -144,7 +145,12 @@
         "tests/test_fitting.py::test_unscored_items_rank_below_scored_ones",
         "tests/test_fitting.py::test_an_item_that_volunteers_droppable_sheds_with_the_droppable_items",
         "tests/test_fitting.py::test_over_budget_rows_name_the_slot_after_the_admission_rows",
-        "tests/test_conformance.py::test_conformance_case"
+        "tests/test_conformance.py::test_conformance_case",
+        "tests/test_fitting.py::test_compressible_items_take_the_longest_variant_that_fits_else_the_shortest",
+        "tests/test_fitting.py::test_variants_with_equal_counts_prefer_the_earlier_one",
+        "tests/test_fitting.py::test_every_compress_step_runs_before_any_omission",
+        "tests/test_fitting.py::test_protected_items_are_never_compressed_or_omitted",
+        "tests/test_fitting.py::test_a_slot_placed_twice_is_compressed_in_both_occurrences"
       ]
     },
     {
@@ -162,7 +168,9 @@
       "status": "in progress",
       "evidence": [
         "tests/test_admission.py::test_variant_ids_must_differ_from_the_parent_and_each_other",
-        "tests/test_purity.py::test_assemble_needs_no_network_or_clock"
+        "tests/test_purity.py::test_assemble_needs_no_network_or_clock",
+        "tests/test_fitting.py::test_compressible_items_take_the_longest_variant_that_fits_else_the_shortest",
+        "tests/test_fitting.py::test_protected_items_are_never_compressed_or_omitted"
       ]
     },
     {
