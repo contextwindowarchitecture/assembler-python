@@ -416,10 +416,11 @@ The unit of accounting is the **occurrence**, not the item. A slot placed twice 
 
 ```mermaid
 flowchart TD
-  A[/"admitted items the profile places"/] --> P{"protected items within their caps<br/>and alone fit budget.input?"}
+  A[/"admitted items the profile places"/] --> P{"protected items within their caps<br/>and their slots' max_tokens,<br/>and alone fit budget.input?"}
   P -- no --> R1["REFUSE protected_content_over_budget<br/>nothing shed, no over_budget rows"]
   P -- yes --> K["0 · Caps, even if it fits<br/>over token_budget: compressible → longest variant<br/>within the cap, else omit; droppable → omit"]
-  K --> D["1 · Droppable<br/>omit one at a time in shedding order<br/>until it fits"]
+  K --> SC["0b · Slot caps, even if it fits<br/>each slot with max_tokens, in shedding order:<br/>phases 1–3 on that slot's items alone<br/>until the slot is within its cap"]
+  SC --> D["1 · Droppable<br/>omit one at a time in shedding order<br/>until it fits"]
   D --> F1{fits?}
   F1 -- yes --> OK([fitted])
   F1 -- no --> S["2 · Route steps<br/>fitting_order, in the route's order"]
@@ -442,7 +443,9 @@ flowchart LR
 
 The algorithm is greedy and deterministic. It is **not** optimal, since the knapsack version is NP-hard, and the spec does not ask for optimal. **Cost:** each decision re-renders and recounts the payload, so fitting is quadratic in the number of items shed. That is fine for a reference; a faster implementation may estimate, as long as it reaches the same decisions.
 
-**Caps (option A, 2026-09-22).** `token_budget` caps an item's rendered body. Caps are enforced in shedding order before any budget pressure, whether or not the payload fits, and a protected item over its cap refuses. `null` sets no per-item cap. Per-slot route allocations, which R-3 once implied, are deferred.
+**Caps (option A, 2026-09-22).** `token_budget` caps an item's rendered body. Caps are enforced in shedding order before any budget pressure, whether or not the payload fits, and a protected item over its cap refuses. `null` sets no per-item cap.
+
+**Slot caps (M6, D-12).** A route's `slots.<slot>.max_tokens` caps a slot's *size*: the sum of `included[].tokens` over its rows, so every occurrence counts, each as it renders (`fitting.slot_tokens`). An item cap bounds the *largest* rendering of one body; a slot cap bounds the *sum* of the slot's renderings. After item caps, each capped slot in shedding order runs the same phases as budget pressure, restricted to its own items and with "the slot is within its cap" in place of "fits": its droppable items, then its `fitting_order` steps, then its default compress and omit steps. `fit()` runs both through one `_shed(done, slots)`. Protected items alone over a slot cap refuse before anything is shed. A slot without `max_tokens` has no cap, and floors are not modelled.
 
 ### 4.5 R-12 recovery mapping (as built, M2)
 
@@ -518,8 +521,9 @@ flowchart LR
   subgraph Property["hypothesis"]
     P1[shuffle input → same hash]
     P2[protected bytes never change]
-    P3[drop happens before compress]
+    P3[drop happens before compress<br/>under budget pressure]
     P4[included tokens ≤ input_tokens ≤ budget]
+    P5[each capped slot ≤ max_tokens]
   end
   subgraph Purity
     U1[sockets disabled]
@@ -534,7 +538,7 @@ flowchart LR
   R --> W["website: assembler.html matrix"]
 ```
 
-**Built so far (M0–M5):** the golden test, all twenty-five conformance cases, a shuffle test over every case (payload, trace and digest), purity guards on sockets, clocks, files, the environment and randomness (files since M5: the vendored schemas are read once, at import), and schema validation of every emitted trace. `tests/test_replay.py` (M5) stores every case's snapshot as JSON and replays it in fresh processes under three `PYTHONHASHSEED`, `TZ` and locale combinations, comparing payload, trace and digest. An import lint (M5) rejects any module in `src/cwa` that imports network, model-SDK, clock, randomness or process modules, or calls `now()`, `getenv()` and the like. `conformance-report.json` (M5) records each case's outcome for the website, and a test fails when it is stale. `tests/test_properties.py` (after M5) runs P1–P4 with hypothesis over generated snapshots, plus two more: a refusal has no payload and a payload carries its hash, and a stored snapshot replays to the same outcome. The generator varies item counts per tier, bodies and ids with escapable and astral characters, variants, budgets, slot priorities, `order_by`, `fitting_order` and both renderers, and checks that admission accepts everything it builds. A targeted mutation broke each property's guarantee in turn, and each was caught by its property alone.
+**Built so far (M0–M6):** the golden test, all twenty-eight conformance cases, a shuffle test over every case (payload, trace and digest), purity guards on sockets, clocks, files, the environment and randomness (files since M5: the vendored schemas are read once, at import), and schema validation of every emitted trace. `tests/test_replay.py` (M5) stores every case's snapshot as JSON and replays it in fresh processes under three `PYTHONHASHSEED`, `TZ` and locale combinations, comparing payload, trace and digest. An import lint (M5) rejects any module in `src/cwa` that imports network, model-SDK, clock, randomness or process modules, or calls `now()`, `getenv()` and the like. `conformance-report.json` (M5) records each case's outcome for the website, and a test fails when it is stale. `tests/test_properties.py` (after M5) runs P1–P5 with hypothesis over generated snapshots, plus two more: a refusal has no payload and a payload carries its hash, and a stored snapshot replays to the same outcome. The generator varies item counts per tier, bodies and ids with escapable and astral characters, variants, budgets, slot priorities, `order_by`, `fitting_order`, both renderers and, on about half the routes, `max_tokens` on any of five slots, one of them protected. It checks that admission accepts everything it builds. P3 holds only on routes without slot caps (M6): a cap sheds its own slot's items, so another slot may keep its droppable items. A targeted mutation broke each property's guarantee in turn, and each was caught by its property alone.
 
 - **The golden test comes first.** Reproduce `examples/trace.json` and `examples/payload.txt` exactly. The fixture already exists and is hash-checked, so it's a free end-to-end test.
 - **Tests map to requirements.** Each conformance case declares `rules: ["R-16", "R-17"]`. A row flips to *implemented* only when every assembler-scoped clause has a passing case. That is the rule `assembler.html` already states.
@@ -567,12 +571,14 @@ flowchart LR
   M5 --> M6["M6 · Per-slot budgets<br/>route max_tokens<br/>R-3 R-16 R-17"]
 ```
 
-**M6 status (2026-09-22): in progress. Per-slot route budgets** (R-3, R-16, R-17). The maintainer asked for the per-slot allocations M2 deferred to be planned and built, as a ceiling only, with a protected item that pushes its slot over the cap refusing under the existing `protected_content_over_budget` (D-12). Spec first: website `e01eb52` adds the route field `slots.<slot>.max_tokens`, the R-3 and R-16 text and a new Fitting step, and `0526686` adds three cases, vendored here as pending. `tests/test_status.py` rejects a claim while a case tagged with it fails, so until the cases pass `status.json` holds the requirements they tag (R-3, R-16, R-17, R-18, R-21 and R-22) at *in progress*.
+**M6 status (2026-09-23): done. Per-slot route budgets** (R-3, R-16, R-17). The maintainer asked for the per-slot allocations M2 deferred to be planned and built, as a ceiling only, with a protected item that pushes its slot over the cap refusing under the existing `protected_content_over_budget` (D-12). Spec first: website `e01eb52` adds the route field `slots.<slot>.max_tokens`, the R-3 and R-16 text and a new Fitting step, and `0526686` adds three cases, vendored here as pending. `tests/test_status.py` rejects a claim while a case tagged with it fails, so while the cases were pending `status.json` held the requirements they tag (R-3, R-16, R-17, R-18, R-21 and R-22) at *in progress*.
 
 ```mermaid
 flowchart LR
   S["Spec: max_tokens,<br/>R-3 and R-16 text,<br/>Fitting step 3"] --> C["Cases: slot caps,<br/>cap before pressure,<br/>protected over slot cap"] --> V["Vendor; cases pending,<br/>claims in progress"] --> I["Implement slot caps<br/>in fitting.py"] --> R["Restore claims,<br/>report, website import"]
 ```
+
+Result: all twenty-eight vendored cases pass, and the six claims are back, so every checkable requirement is claimed again: 14 implemented and 8 boundary-checked. The slot-cap semantics are in §4.4. Beyond the cases, unit tests pin a slot exactly at its cap, a slot without one, slot shedding order, a route step inside a slot cap and, with the message renderer, a slot size that sums each occurrence's own rendering. A new property (P5, §6) checks every capped slot on generated routes. A targeted mutation of each rule (one occurrence counted, no caps, caps in name order, caps after budget pressure, no protected refusal) was caught. One choice the build forced is now in the spec: a slot's size is the sum of `included[].tokens`, not the largest rendering that item caps use, because a slot cap bounds a share of the payload rather than one body.
 
 **M5 status (2026-09-22): done. Hardening** (R-21, R-22, R-23). The maintainer took the recommended option on all four open questions (D-7 to D-10, §9), and on D-11, which the work turned up. Spec first again: each spec change lands in the website, is vendored, and fails here before it is implemented.
 
@@ -662,7 +668,7 @@ Result: `src/cwa/conflicts.py` resolves every group kind and every escalation ac
 - **"Fits" is always a whole-payload render and count.** The estimate-then-correct loop in the old §4.4 is gone. An implementation may estimate only if it reaches the same decisions.
 - **The fitting policy has a closed vocabulary.** Per-slot `priority` (lower sheds first, ties by slot name) and `order_by` (`-relevance`, `-freshness`, `freshness`; `id` is always the last key), and a route `fitting_order` of `compress`/`omit` steps. `min_included` is accepted only on evidence slots of a route that requires evidence.
 - **Recovery is chosen by what was omitted for budget**, not by whether producers returned candidates (§4.5).
-- **Per-item `token_budget` caps came after the milestone closed.** The spec left them undefined, so the first M2 build ignored them. Option A is now in the spec (website `d80342d`) and built: caps apply before shedding, and a protected item over its cap refuses. R-3 now says `null` sets no per-item cap. Per-slot route allocations are deferred.
+- **Per-item `token_budget` caps came after the milestone closed.** The spec left them undefined, so the first M2 build ignored them. Option A is now in the spec (website `d80342d`) and built: caps apply before shedding, and a protected item over its cap refuses. R-3 now says `null` sets no per-item cap. Per-slot route allocations were deferred then, and M6 built them as `max_tokens`.
 
 **Follow-up for M5 (done, D-7):** trace and placement ordering compared ids by code point, while JavaScript's default sort uses UTF-16 code units. They differ only for ids with characters outside the Basic Multilingual Plane. The spec now orders every string by UTF-16 code units (website `3b9bb51`, case `ordering-astral-ids` in `78a9d10`), and `cwa.strings.utf16` is the one sort key.
 

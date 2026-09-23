@@ -32,7 +32,7 @@
     },
     {
       "id": "R-3",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_admission.py::test_route_overrides_replace_slot_defaults_and_are_traced",
         "tests/test_golden.py::test_defaults_filled_are_traced_as_records",
@@ -190,7 +190,7 @@
     },
     {
       "id": "R-16",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_admission.py::test_items_cannot_downgrade_a_protected_slot",
         "tests/test_admission.py::test_items_cannot_protect_themselves",
@@ -218,12 +218,20 @@
         "tests/test_messages.py::test_the_payload_is_canonical_json_and_its_size_is_the_sum_of_its_texts",
         "tests/test_properties.py::test_protected_bytes_never_change",
         "tests/test_properties.py::test_droppable_items_go_before_any_compressible_item_is_reduced",
-        "tests/test_properties.py::test_included_tokens_fit_within_the_payload_and_the_payload_within_the_budget"
+        "tests/test_properties.py::test_included_tokens_fit_within_the_payload_and_the_payload_within_the_budget",
+        "tests/test_fitting.py::test_slots_over_their_max_tokens_shed_their_own_items_although_the_payload_fits",
+        "tests/test_fitting.py::test_a_slot_exactly_at_its_max_tokens_is_untouched",
+        "tests/test_fitting.py::test_a_slot_without_max_tokens_has_no_cap",
+        "tests/test_fitting.py::test_without_a_route_step_a_capped_slot_takes_variants_before_omitting",
+        "tests/test_fitting.py::test_capped_slots_shed_in_slot_shedding_order",
+        "tests/test_fitting.py::test_slot_caps_run_before_budget_pressure",
+        "tests/test_messages.py::test_a_slot_cap_sums_each_occurrences_own_rendering",
+        "tests/test_properties.py::test_every_capped_slot_fits_its_max_tokens"
       ]
     },
     {
       "id": "R-17",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_refusal.py::test_an_excluded_instruction_does_not_count_and_its_exclusion_stays_in_the_trace",
         "tests/test_conformance.py::test_conformance_case",
@@ -234,12 +242,14 @@
         "tests/test_refusal.py::test_a_protected_item_over_its_own_cap_refuses_although_the_payload_fits",
         "tests/test_refusal.py::test_a_protected_item_exactly_at_its_cap_is_kept",
         "tests/test_properties.py::test_protected_bytes_never_change",
-        "tests/test_properties.py::test_a_refusal_has_no_payload_and_a_payload_carries_its_hash"
+        "tests/test_properties.py::test_a_refusal_has_no_payload_and_a_payload_carries_its_hash",
+        "tests/test_refusal.py::test_protected_items_over_their_slots_max_tokens_refuse_although_the_payload_fits",
+        "tests/test_refusal.py::test_protected_items_exactly_at_their_slots_max_tokens_are_kept"
       ]
     },
     {
       "id": "R-18",
-      "status": "in progress",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_admission.py::test_variant_ids_must_differ_from_the_parent_and_each_other",
         "tests/test_purity.py::test_assemble_needs_no_network_or_clock",
@@ -283,7 +293,7 @@
     },
     {
       "id": "R-21",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason",
@@ -308,7 +318,7 @@
     },
     {
       "id": "R-22",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_golden.py::test_defaults_filled_are_traced_as_records",
         "tests/test_conformance.py::test_conformance_case",

@@ -178,3 +178,50 @@ def test_an_item_exactly_at_its_cap_is_untouched():
     candidate(snapshot, "kb:b")["token_budget"] = 11
     assert omitted(snapshot) == ["ex:1"]
     assert "kb:b" in included(snapshot)
+
+
+# budget-slot-caps (R-16, route max_tokens): after kb:gift (5 tokens, cap 3, no variants) goes for its own
+# cap and kb:a takes kb:a~mid (10), knowledge holds kb:a 10 + kb:b 15 + kb:faq 12 = 37 against 12, and
+# history holds turn:15 12 + turn:16 7 = 19 against 13. The payload fits a budget of 4096 throughout.
+
+def test_slots_over_their_max_tokens_shed_their_own_items_although_the_payload_fits():
+    snapshot = case("budget-slot-caps")
+    assert omitted(snapshot) == ["kb:gift", "turn:15", "kb:faq"]
+    assert compressed(snapshot) == [("kb:a", "kb:a~short"), ("kb:b", "kb:b~short")]
+    assert included(snapshot) == ["policy:v12", "ex:1", "user:plan", "kb:a", "kb:b", "turn:16", "turn:18"]
+
+
+def test_a_slot_exactly_at_its_max_tokens_is_untouched():
+    snapshot = case("budget-slot-caps")
+    snapshot["route_policy"]["slots"]["interaction.history"]["max_tokens"] = 19
+    assert "turn:15" not in omitted(snapshot)
+
+
+def test_a_slot_without_max_tokens_has_no_cap():
+    snapshot = case("budget-slot-caps")
+    del snapshot["route_policy"]["slots"]["evidence.knowledge"]["max_tokens"]
+    assert omitted(snapshot) == ["kb:gift", "turn:15"]
+    assert compressed(snapshot) == [("kb:a", "kb:a~mid")]
+
+
+def test_without_a_route_step_a_capped_slot_takes_variants_before_omitting():
+    snapshot = case("budget-slot-caps")
+    del snapshot["route_policy"]["fitting_order"]
+    assert "turn:15" not in omitted(snapshot)
+    assert ("turn:15", "turn:15~sum") in compressed(snapshot)
+
+
+def test_capped_slots_shed_in_slot_shedding_order():
+    snapshot = case("budget-slot-caps")
+    del snapshot["route_policy"]["slots"]["interaction.history"]["priority"]
+    assert omitted(snapshot) == ["kb:gift", "kb:faq", "turn:15"]
+
+
+# budget-slot-cap-before-pressure: 69 tokens against 60. Capping knowledge at 20 takes kb:b~short and
+# leaves 57, so budget pressure, which would have omitted ex:1 first, never runs.
+
+def test_slot_caps_run_before_budget_pressure():
+    snapshot = case("budget-slot-cap-before-pressure")
+    assert omitted(snapshot) == []
+    assert compressed(snapshot) == [("kb:b", "kb:b~short")]
+    assert "ex:1" in included(snapshot)

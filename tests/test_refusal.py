@@ -164,3 +164,21 @@ def test_a_protected_item_over_its_own_cap_refuses_although_the_payload_fits(fix
 def test_a_protected_item_exactly_at_its_cap_is_kept(fixture_snapshot):
     items(fixture_snapshot, "policy-registry")[0]["token_budget"] = 9
     assert not assemble(Snapshot.from_json(fixture_snapshot)).refused
+
+
+# protected-over-slot-cap: task:8821 renders 3 tokens, within its own cap of 3, but state.task is placed
+# twice, so the slot holds 6 against max_tokens 5 (R-16, R-17).
+
+def test_protected_items_over_their_slots_max_tokens_refuse_although_the_payload_fits():
+    trace = assemble(Snapshot.from_json(read_json(CASES / "protected-over-slot-cap" / "snapshot.json"))).trace
+    assert trace["refused"] == {"bool": True, "reason": "protected_content_over_budget"}
+    assert trace["excluded"] == []
+
+
+def test_protected_items_exactly_at_their_slots_max_tokens_are_kept():
+    snapshot = read_json(CASES / "protected-over-slot-cap" / "snapshot.json")
+    snapshot["route_policy"]["slots"]["state.task"]["max_tokens"] = 6
+    trace = assemble(Snapshot.from_json(snapshot)).trace
+    assert trace["refused"]["bool"] is False
+    assert [row["item_id"] for row in trace["included"]].count("task:8821") == 2
+    assert [row["item_id"] for row in trace["excluded"]] == ["kb:a"]  # knowledge renders 8 against its cap of 4

@@ -1,13 +1,14 @@
 """Properties over generated snapshots (docs/DESIGN.md §6), where the conformance cases fix single
 examples: input order never matters (R-23), protected bytes never change (R-16, R-17), droppable
-items go before any compressible item is reduced (R-16), the payload fits its budget and counts
-its items (R-16, R-21), refusals have no payload (R-17), and a stored snapshot replays (R-23)."""
+items go before any compressible item is reduced under budget pressure (R-16), the payload fits its
+budget and counts its items (R-16, R-21), every capped slot fits its max_tokens (R-16), refusals
+have no payload (R-17), and a stored snapshot replays (R-23)."""
 from __future__ import annotations
 
 import copy
 import hashlib
 
-from hypothesis import HealthCheck, given, settings, strategies as st
+from hypothesis import HealthCheck, assume, given, settings, strategies as st
 
 from cwa import Snapshot, assemble
 from cwa.render.fixture_xml import escape_body
@@ -59,6 +60,10 @@ def snapshots(draw) -> dict:
         rules = policy.setdefault("slots", {}).setdefault(slot, {})
         rules["priority"] = draw(st.integers(-1, 1))
         rules["order_by"] = draw(st.sampled_from([["-relevance", "-freshness"], ["-freshness"], ["freshness"]]))
+    if draw(st.booleans()):
+        for slot in ("state.task",) + DROPPABLE + COMPRESSIBLE:
+            if (cap := draw(st.none() | st.integers(0, 30))) is not None:
+                policy.setdefault("slots", {}).setdefault(slot, {})["max_tokens"] = cap
     steps = [{"slot": slot, "action": action} for slot in COMPRESSIBLE for action in ("compress", "omit")]
     policy["fitting_order"] = draw(st.lists(st.sampled_from(steps), unique_by=lambda s: (s["slot"], s["action"]), max_size=3))
     snapshot["renderer"] = draw(st.sampled_from(["fixture-xml/v1", "cwa-messages/v1"]))
@@ -80,6 +85,10 @@ def _rows(trace: dict, reason: str) -> set[str]:
 
 def _candidates(document: dict, slots: tuple[str, ...]) -> list[dict]:
     return [c for b in document["batches"] for c in b["items"] if c["slot"] in slots]
+
+
+def _slot_caps(document: dict) -> dict[str, int]:
+    return {slot: rules["max_tokens"] for slot, rules in document["route_policy"].get("slots", {}).items() if "max_tokens" in rules}
 
 
 PROPERTY = settings(max_examples=150, deadline=None, suppress_health_check=[HealthCheck.too_slow])
@@ -118,6 +127,9 @@ def test_protected_bytes_never_change(document):
 @PROPERTY
 @given(snapshots())
 def test_droppable_items_go_before_any_compressible_item_is_reduced(document):
+    """Under budget pressure alone: a slot cap sheds only its own slot, so a capped route may compress
+    one slot's items while another slot keeps its droppable ones."""
+    assume(not _slot_caps(document))
     trace = assemble(Snapshot.from_json(document)).trace
     compressible = {c["id"] for c in _candidates(document, COMPRESSIBLE)}
     reduced = compressible & (_rows(trace, "over_budget") | {row["item_id"] for row in trace["compressed"]})
@@ -131,6 +143,15 @@ def test_included_tokens_fit_within_the_payload_and_the_payload_within_the_budge
     result = assemble(Snapshot.from_json(document))
     if not result.refused:
         assert sum(row["tokens"] for row in result.trace["included"]) <= result.trace["result"]["input_tokens"] <= document["budget"]["input"]
+
+
+@PROPERTY
+@given(snapshots())
+def test_every_capped_slot_fits_its_max_tokens(document):
+    result = assemble(Snapshot.from_json(document))
+    if not result.refused:
+        for slot, cap in _slot_caps(document).items():
+            assert sum(row["tokens"] for row in result.trace["included"] if row["slot"] == slot) <= cap
 
 
 @PROPERTY

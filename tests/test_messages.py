@@ -154,3 +154,13 @@ def test_compressed_rows_count_each_occurrences_own_rendering(fixture_snapshot):
     escaped = lambda text: text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     assert [(row["from"], row["to"]) for row in trace["compressed"]] == [
         (len(body), len(short)), (len(escaped(body)), len(escaped(short)))]
+
+
+@pytest.mark.parametrize("extra, refused", [(-1, True), (0, False)])
+def test_a_slot_cap_sums_each_occurrences_own_rendering(fixture_snapshot, extra, refused):
+    body = "Refunds need <manager> approval."
+    items(fixture_snapshot, "policy-registry")[0]["body"] = body
+    fixture_snapshot["route_policy"].setdefault("slots", {})["governance.instructions"] = {
+        "max_tokens": len(body) + len(body.replace("<", "&lt;").replace(">", "&gt;")) + extra}
+    result = assemble(characters(messages(fixture_snapshot, REPEATED)))
+    assert result.refused is refused

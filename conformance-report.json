@@ -73,8 +73,7 @@
         "R-18",
         "R-21"
       ],
-      "outcome": "failed",
-      "detail": "payload bytes differ"
+      "outcome": "passed"
     },
     {
       "id": "budget-slot-caps",
@@ -85,8 +84,7 @@
         "R-21",
         "R-22"
       ],
-      "outcome": "failed",
-      "detail": "payload bytes differ"
+      "outcome": "passed"
     },
     {
       "id": "budget-token-caps",
@@ -284,8 +282,7 @@
         "R-17",
         "R-21"
       ],
-      "outcome": "failed",
-      "detail": "a payload, but a refusal was expected"
+      "outcome": "passed"
     },
     {
       "id": "required-slot-missing",
