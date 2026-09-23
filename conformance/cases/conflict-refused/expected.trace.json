@@ -57,11 +57,12 @@
     "reason": "conflict_unresolved"
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "conflict-refused/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "422d93309d1d6408bdecadde334ce367e0796a687090703f803617c569d3a803"
+    "snapshot_digest": "413e4c1cbaa7e9d98cc7a3d4388cfcc7f70a2747e8c856d16c3c32227fd4a5c8"
   },
   "defaults_filled": []
 }

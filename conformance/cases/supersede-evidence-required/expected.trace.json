@@ -26,11 +26,12 @@
     "reason": "evidence_required"
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "supersede-evidence-required/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "7c0f2d1999506ff8c4355ce3b55ede43f7a90498b273cdca054737105e7c6db4"
+    "snapshot_digest": "d87111fb7ec52ae9a876d49999d6da68e3d517325ae0176b49e943e13045c30a"
   },
   "defaults_filled": [],
   "recovery": {

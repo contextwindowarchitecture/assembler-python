@@ -76,11 +76,12 @@
     "reason": null
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "ordering-astral-ids/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "0d591ce515d4507cd167d9eac230404bdd42fec5127b056bbe5a43ac60bff575"
+    "snapshot_digest": "9264bb7d71e284430aa3a73f674d9f0d14a5c821b7e52765816a989cdd093bdf"
   },
   "defaults_filled": [
     {

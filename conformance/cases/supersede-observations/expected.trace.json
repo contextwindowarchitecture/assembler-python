@@ -114,11 +114,12 @@
     "reason": null
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "supersede-observations/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "325b34f9e5edcc6e19e737faedb6354f31cb2e411041a3f4de939689ce8af45d"
+    "snapshot_digest": "aa1efcb1ec0e6cff992d75d73ad277a7294ad101974e44ad36b4c44a71b63161"
   },
   "defaults_filled": []
 }

@@ -30,11 +30,12 @@
     "reason": "conflict_unresolved"
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "conflict-request-context/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "d381c18a7522cdfbdace8f67cd47a133b08387c88ce5393cced46d5770c961d0"
+    "snapshot_digest": "3c5bc05b5e251354852634c516102a88afab55bea7d3c5c5f6a56ef3bbac5bce"
   },
   "defaults_filled": [],
   "recovery": {

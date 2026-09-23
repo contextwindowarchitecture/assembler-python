@@ -115,6 +115,7 @@ class Placement:
 
 @dataclass(frozen=True, slots=True)
 class Profile:
+    spec: str
     id: str
     version: int
     route: str

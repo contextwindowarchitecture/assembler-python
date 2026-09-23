@@ -70,11 +70,12 @@
     "reason": null
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "messages-budget/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "cwa-messages/v1",
-    "snapshot_digest": "4a221800796c9cf78543838aae51dccd4ac49d96537863006305eafb21271822"
+    "snapshot_digest": "a9852d2d570657eb7003f1f11cfa3dbaa9e0ff187d0dd002160a975875dd04f4"
   },
   "defaults_filled": []
 }

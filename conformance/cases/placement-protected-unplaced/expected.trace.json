@@ -25,11 +25,12 @@
     "reason": "protected_slot_unplaced"
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "placement-protected-unplaced/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "4fb49ff2b086c263a13f0e754be812b5bb6fa534b52be64901caa652fe2699b5"
+    "snapshot_digest": "c7a483f3da39cb372a6faec692167d9142b863a6c6b15aa80eb1deb3f7e7678e"
   },
   "defaults_filled": []
 }

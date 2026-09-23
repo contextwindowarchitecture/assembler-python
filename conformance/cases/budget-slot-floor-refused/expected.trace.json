@@ -31,11 +31,12 @@
     "reason": "slot_floor_over_budget"
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "budget-slot-floor-refused/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "ff6938b0abf0681d519450f98d8e8f6b64d94c482ebb4e34a4203190fa5afa89"
+    "snapshot_digest": "232adb18de769d0b2e417f93b4bea6f9bbf331e683a31a71f620f60080c4d8cc"
   },
   "defaults_filled": []
 }

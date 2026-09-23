@@ -280,7 +280,8 @@
         "tests/test_registry.py::test_an_evaluation_without_its_artifact_or_run_is_not_an_evaluation",
         "tests/test_registry.py::test_an_evaluation_alone_keeps_the_version",
         "tests/test_registry.py::test_invalid_or_unpinned_content_is_refused",
-        "tests/test_snapshot.py::test_unassemblable_snapshots_are_rejected_before_assembly"
+        "tests/test_snapshot.py::test_unassemblable_snapshots_are_rejected_before_assembly",
+        "tests/test_placement.py::test_a_profile_written_for_another_specification_is_rejected"
       ]
     },
     {
@@ -326,7 +327,8 @@
         "tests/test_report.py::test_the_report_covers_every_case_in_id_order_and_names_the_vendored_commit",
         "tests/test_golden.py::test_fixture_payload_hash_and_tokens",
         "tests/test_properties.py::test_included_tokens_fit_within_the_payload_and_the_payload_within_the_budget",
-        "tests/test_properties.py::test_a_refusal_has_no_payload_and_a_payload_carries_its_hash"
+        "tests/test_properties.py::test_a_refusal_has_no_payload_and_a_payload_carries_its_hash",
+        "tests/test_placement.py::test_every_trace_names_the_specification_its_profile_follows"
       ]
     },
     {

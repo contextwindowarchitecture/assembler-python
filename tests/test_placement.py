@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import copy
 
-from cwa import Snapshot, assemble
+import pytest
+
+from cwa import Snapshot, SnapshotError, assemble
 
 
 def turn(id: str = "turn:17", **fields) -> dict:
@@ -84,3 +86,23 @@ def test_every_trace_records_the_profile_id_and_version(fixture_snapshot):
     refused = assemble(Snapshot.from_json(fixture_snapshot))
     assert refused.refused and not assembled.refused
     assert assembled.trace["profile"] == refused.trace["profile"] == {"id": "support-chat-profile", "version": 7}
+
+
+def test_every_trace_names_the_specification_its_profile_follows(fixture_snapshot):
+    """R-19, R-21: context.spec repeats the profile's spec, payload or refusal."""
+    assembled = assemble(Snapshot.from_json(fixture_snapshot))
+    next(b for b in fixture_snapshot["batches"] if b["producer"]["id"] == "conversation")["items"].clear()
+    refused = assemble(Snapshot.from_json(fixture_snapshot))
+    assert refused.refused and not assembled.refused
+    assert assembled.trace["context"]["spec"] == refused.trace["context"]["spec"] == fixture_snapshot["profile"]["spec"] == "cwa/draft"
+
+
+@pytest.mark.parametrize("spec", ["cwa/1", "cwa/v2", "draft", None])
+def test_a_profile_written_for_another_specification_is_rejected(fixture_snapshot, spec):
+    """R-19: the profile schema fixes spec, so the snapshot fails before assembly."""
+    if spec is None:
+        del fixture_snapshot["profile"]["spec"]
+    else:
+        fixture_snapshot["profile"]["spec"] = spec
+    with pytest.raises(SnapshotError, match="spec"):
+        Snapshot.from_json(fixture_snapshot)

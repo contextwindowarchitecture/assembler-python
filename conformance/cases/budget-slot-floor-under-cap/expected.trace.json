@@ -78,11 +78,12 @@
     "reason": null
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "budget-slot-floor-under-cap/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "fe6c74e7045a8fedc962fb18850fa2e32135b8c4cabb192feeee1802054f5292"
+    "snapshot_digest": "05090c9af9bf97895028a1679649e822a4788b78c7b62ed4a181c3f710ee0a2c"
   },
   "defaults_filled": []
 }

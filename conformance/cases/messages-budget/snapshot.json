@@ -11,6 +11,7 @@
     "reserved_output": 1024
   },
   "profile": {
+    "spec": "cwa/draft",
     "id": "messages-fixture",
     "version": 1,
     "route": "support-chat",

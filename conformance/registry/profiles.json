@@ -1,5 +1,6 @@
 [
   {
+    "spec": "cwa/draft",
     "id": "policy-first-chat",
     "version": 1,
     "route": "support-chat",
@@ -60,6 +61,7 @@
     }
   },
   {
+    "spec": "cwa/draft",
     "id": "document-analysis",
     "version": 1,
     "route": "document-qa",
@@ -116,6 +118,7 @@
     }
   },
   {
+    "spec": "cwa/draft",
     "id": "long-context-reinforced",
     "version": 1,
     "route": "long-context-qa",
@@ -172,6 +175,7 @@
     }
   },
   {
+    "spec": "cwa/draft",
     "id": "tool-agent",
     "version": 1,
     "route": "agent-loop",
@@ -228,6 +232,7 @@
     }
   },
   {
+    "spec": "cwa/draft",
     "id": "extraction",
     "version": 1,
     "route": "extract",
@@ -272,6 +277,7 @@
     }
   },
   {
+    "spec": "cwa/draft",
     "id": "fixture-three-slot",
     "version": 1,
     "route": "contract-fixture",

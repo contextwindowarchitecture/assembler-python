@@ -112,11 +112,12 @@
     "reason": null
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "diversity-cap/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "104bd416f1716a508b44bfa7c003e211768c9e9e9c38fededbbf4c96f6ba4a33"
+    "snapshot_digest": "d87b84b24a8445f4b5da661372f17dc87a819c0f503843863fc3bfc679d6fff5"
   },
   "defaults_filled": []
 }

@@ -72,11 +72,12 @@
     "reason": null
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "budget-token-caps/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "be703097a712a418118e54973368bd23ba192343273eaed4a170c239ae438cf0"
+    "snapshot_digest": "69d03c67356f544ab8eb8ba684b98a5bc54faaaa77106cc5c62e0c312d9a39b5"
   },
   "defaults_filled": []
 }

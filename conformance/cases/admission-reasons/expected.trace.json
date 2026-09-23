@@ -328,11 +328,12 @@
     "reason": null
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "admission/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "9e518557a4fbb1d45e62082bca2255c0b1096d182f9cc1c8bceec25a5ddc3d8c"
+    "snapshot_digest": "ecdcf1a83e595bb62032855b4192457fe8adef5b3fb54e362cb08bfa367d77c3"
   },
   "defaults_filled": [
     {

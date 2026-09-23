@@ -9,6 +9,7 @@
     "reserved_output": 1200
   },
   "profile": {
+    "spec": "cwa/draft",
     "id": "fixture-three-slot",
     "version": 1,
     "route": "contract-fixture",

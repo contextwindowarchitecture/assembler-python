@@ -84,7 +84,7 @@ def build(case):
               "producers": {p: {"kind": k, "slots": slots_of[p]} for p, k in kinds.items()},
               "slots": {"evidence.knowledge": {"min_relevance": 0.5, "required_scope": ["tenant"]}}}
     policy.update(copy.deepcopy(case.get("policy", {})))
-    profile = {"id": "conflict-fixture", "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": policy["version"],
+    profile = {"spec": "cwa/draft", "id": "conflict-fixture", "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": policy["version"],
                "placement": [{"slot": s, "wrap": "xml:" + s} for s in PLACEMENT],
                "evaluation": {"status": "unevaluated", "suite": None, "date": None, "result": None, "artifact": None}}
     batches = {}
@@ -217,7 +217,7 @@ def build(case):
                        "resolution": g["resolution"], **({"winner": g["winner"]} if "winner" in g else {})}
                       for g in sorted(groups, key=lambda g: U16(g["id"]))],
         "refused": {"bool": bool(refusal), "reason": refusal},
-        "context": {"assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1", "snapshot_digest": snapshot_digest(snapshot)},
+        "context": {"spec": "cwa/draft", "assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1", "snapshot_digest": snapshot_digest(snapshot)},
         "defaults_filled": [],
     }
     if recovery:

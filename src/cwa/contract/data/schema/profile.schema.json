@@ -1,6 +1,10 @@
 {
   "type": "object",
   "properties": {
+    "spec": {
+      "const": "cwa/draft",
+      "description": "The specification this profile was written for: \"cwa/draft\" until the first release, then \"cwa/1\". A profile for another specification is invalid (R-19)."
+    },
     "id": {
       "type": "string",
       "minLength": 1,
@@ -135,6 +139,7 @@
     }
   },
   "required": [
+    "spec",
     "id",
     "version",
     "route",

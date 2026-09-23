@@ -139,7 +139,7 @@ class Snapshot:
         if renderer is None:
             problems.append(f"unknown renderer {document['renderer']!r}")
         p = document["profile"]
-        profile = Profile(p["id"], p["version"], p["route"], p["model_family"], p["route_policy_version"],
+        profile = Profile(p["spec"], p["id"], p["version"], p["route"], p["model_family"], p["route_policy_version"],
                           tuple(Placement(e["slot"], e["wrap"]) for e in p["placement"]), copy.deepcopy(p["evaluation"]))
         if renderer is not None:
             problems += renderer.profile_errors(profile)

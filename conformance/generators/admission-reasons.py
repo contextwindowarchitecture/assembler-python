@@ -113,7 +113,7 @@ route_policy = {
 }
 placement = ["governance.instructions", "governance.capabilities", "state.user", "state.task", "evidence.knowledge",
              "evidence.tool_results", "interaction.memory", "interaction.history", "interaction.query"]
-profile = {"id": "admission-fixture", "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": "admission/v1",
+profile = {"spec": "cwa/draft", "id": "admission-fixture", "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": "admission/v1",
            "placement": [{"slot": s, "wrap": "xml:" + s} for s in placement],
            "evaluation": {"status": "unevaluated", "suite": None, "date": None, "result": None, "artifact": None}}
 
@@ -167,7 +167,7 @@ trace = {
     "included": included, "compressed": [],
     "excluded": [{"item_id": "m:expired", "reason": "expired", "stage": "producer"}] + [row(rid, r, slot) for _, rid, r, slot in excluded],
     "conflicts": [], "refused": {"bool": False, "reason": None},
-    "context": {"assembly_time": T, "route_policy_version": "admission/v1", "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1", "snapshot_digest": snapshot_digest(snapshot)},
+    "context": {"spec": "cwa/draft", "assembly_time": T, "route_policy_version": "admission/v1", "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1", "snapshot_digest": snapshot_digest(snapshot)},
     "defaults_filled": [{"item_id": i, "field": f} for i, f in sorted(filled, key=lambda x: (U16(x[0]), POLICY.index(x[1])))],
 }
 case = {"id": "admission-reasons", "rules": ["R-1", "R-2", "R-3", "R-8", "R-9", "R-10", "R-13", "R-14", "R-15", "R-16", "R-18", "R-21", "R-22"],

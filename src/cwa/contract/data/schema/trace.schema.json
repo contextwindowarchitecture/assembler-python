@@ -479,6 +479,10 @@
     "context": {
       "type": "object",
       "properties": {
+        "spec": {
+          "const": "cwa/draft",
+          "description": "The specification the assembly followed, which is the profile's spec (R-21)."
+        },
         "assembly_time": {
           "type": "string",
           "format": "date-time",
@@ -507,6 +511,7 @@
         }
       },
       "required": [
+        "spec",
         "assembly_time",
         "route_policy_version",
         "tokenizer",

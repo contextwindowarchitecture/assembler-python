@@ -224,11 +224,12 @@
     "reason": null
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "conflict-instruction/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "beb20d3a0ccd11db6eeae263b501bdd87a0ce4f2064b0c2c2b153c752895c809"
+    "snapshot_digest": "a3efb88b785b4ff775eb1ffa0ac349507367375dd88831060e2372ee2f23dec6"
   },
   "defaults_filled": []
 }

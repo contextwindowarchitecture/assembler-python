@@ -95,7 +95,7 @@ def build(case):
                 policy["slots"].setdefault(slot, {}).update(rules)
         else:
             policy[key] = value
-    profile = {"id": "messages-fixture", "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": policy["version"],
+    profile = {"spec": "cwa/draft", "id": "messages-fixture", "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": policy["version"],
                "placement": [{"slot": s, "wrap": w} for s, w in placement],
                "evaluation": {"status": "unevaluated", "suite": None, "date": None, "result": None, "artifact": None}}
     batches = {}
@@ -130,7 +130,7 @@ def build(case):
         "conflicts": [{"group_id": g["id"], "kind": "instruction", "items": sorted(g["items"], key=U16), "decided_by": "escalated", "resolution": "surfaced"}
                       for g in sorted(groups, key=lambda g: U16(g["id"]))],
         "refused": {"bool": False, "reason": None},
-        "context": {"assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": RENDERER, "snapshot_digest": snapshot_digest(snapshot)},
+        "context": {"spec": "cwa/draft", "assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": RENDERER, "snapshot_digest": snapshot_digest(snapshot)},
         "defaults_filled": [],
     }
     out = os.path.join(WEB, "conformance/cases", name)

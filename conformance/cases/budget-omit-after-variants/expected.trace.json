@@ -79,11 +79,12 @@
     "reason": null
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "budget-omit-after-variants/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "f32d4a455588b1931e1dea945eb2fcde91fd40c5339ed226340eda4fd13bc588"
+    "snapshot_digest": "37de3ac7078ad8a78e44ab8b066ee339e1509d67149c62a51cae911443d8c268"
   },
   "defaults_filled": []
 }

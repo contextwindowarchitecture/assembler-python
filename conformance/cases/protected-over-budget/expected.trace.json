@@ -18,11 +18,12 @@
     "reason": "protected_content_over_budget"
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "protected-over-budget/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "a6493f39cd4d59f54b6a1014a6846dd0f76c10df5bb12b8ff2b261a25cd3a7c1"
+    "snapshot_digest": "70880618988d6ab1466192ad4241015a6cf968d3c840c5727de5d25dbd763dad"
   },
   "defaults_filled": []
 }

@@ -25,11 +25,12 @@
     "reason": "evidence_required"
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "diversity-evidence-required/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "afcd93eec72bc6085c10f60f640903323cd3981854c8327e573df00e972a9851"
+    "snapshot_digest": "f316ee8ebccaf39d79e41265de14438d564773eea90e4f490d992626788c1ec4"
   },
   "defaults_filled": [],
   "recovery": {

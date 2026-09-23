@@ -18,11 +18,12 @@
     "reason": "required_slot_missing"
   },
   "context": {
+    "spec": "cwa/draft",
     "assembly_time": "2026-09-22T12:00:00Z",
     "route_policy_version": "placement-required-slot-first/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "9991ce0f710491c3ba660bd84a0ce4e141abf5ee4a71c88ff5833ba82a4cf0d7"
+    "snapshot_digest": "04c7ed1f428e2607d01379b12718fc0004fa005c51f421bb1c8b3273b334520b"
   },
   "defaults_filled": []
 }

@@ -107,6 +107,7 @@ def _trace(snapshot: Snapshot, admission: Admission, resolution: Resolution, sup
         "conflicts": [dict(record) for record in resolution.records],
         "refused": {"bool": False, "reason": None},
         "context": {
+            "spec": snapshot.profile.spec,
             "assembly_time": snapshot.assembly_time,
             "route_policy_version": snapshot.route_policy.version,
             "tokenizer": snapshot.tokenizer.id,

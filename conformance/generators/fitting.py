@@ -88,7 +88,7 @@ def build(case):
                 policy["slots"].setdefault(slot, {}).update(rules)
         else:
             policy[key] = value
-    profile = {"id": "fitting-fixture", "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": policy["version"],
+    profile = {"spec": "cwa/draft", "id": "fitting-fixture", "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": policy["version"],
                "placement": [{"slot": s, "wrap": "xml:" + s} for s in placement],
                "evaluation": {"status": "unevaluated", "suite": None, "date": None, "result": None, "artifact": None}}
     batches = {}
@@ -227,7 +227,7 @@ def build(case):
              "method": compressed[row["item_id"]]["method"], "variant_id": compressed[row["item_id"]]["id"]}
             for row in included if row["item_id"] in compressed],
         "excluded": excluded, "conflicts": [], "refused": {"bool": bool(refusal), "reason": refusal},
-        "context": {"assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1", "snapshot_digest": snapshot_digest(snapshot)},
+        "context": {"spec": "cwa/draft", "assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1", "snapshot_digest": snapshot_digest(snapshot)},
         "defaults_filled": [{"item_id": i, "field": f} for i, f in
                             sorted(((it["id"], f) for it, _ in rows for f in POLICY if f not in it), key=lambda x: (U16(x[0]), POLICY.index(x[1])))],
     }
