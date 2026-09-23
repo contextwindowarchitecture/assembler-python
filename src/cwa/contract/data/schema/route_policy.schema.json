@@ -76,12 +76,12 @@
         "properties": {
           "min_relevance": {
             "type": "number",
-            "description": "Items scoring below this rerank threshold are excluded as below_threshold (R-13)."
+            "description": "Items scoring below this rerank threshold are excluded as below_threshold (R-13). An item with no relevance cannot clear a threshold and is excluded the same way. A score equal to the threshold passes."
           },
           "max_age_seconds": {
             "type": "integer",
             "minimum": 0,
-            "description": "Items observed longer ago than this are excluded: stale_state for state slots (R-8), not_eligible elsewhere."
+            "description": "Items observed longer ago than this are excluded: stale_state for state slots (R-8), not_eligible elsewhere. An item exactly this old is still admitted."
           },
           "required_scope": {
             "type": "array",
@@ -96,7 +96,7 @@
                 "step"
               ]
             },
-            "description": "Scope keys an item must carry and match; a missing key is out_of_scope, never a wildcard."
+            "description": "Scope keys an item must carry. Independently of this list, every key an item's scope does carry must equal the request's value for that key; a key the request lacks never matches. A missing key is out_of_scope, never a wildcard."
           },
           "source_prefix": {
             "type": "string",

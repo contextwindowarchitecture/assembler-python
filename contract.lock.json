@@ -1,7 +1,7 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "a211b2f1e4472b5ebe9073dac1208f5419dedee2",
+    "commit": "7239c57ba0bd226701f2cffd045b688c6e7321a0",
     "dirty": false
   },
   "files": {
@@ -17,12 +17,12 @@
     "conformance/generators/admission-reasons.py": "a8f488da137d8ff59c27c952e88b064471f7851ee26d2ccf5a56f360a37fb62b",
     "src/cwa/contract/data/assembler-scope.json": "c33e75cf955610f1d869ba152f439b4130fdd940c66a82dd3ccae3f2582f00e8",
     "src/cwa/contract/data/reasons.json": "a762692f776fb988d5bb056efc1efb70b2bab8965d47be715ada54e729a36757",
-    "src/cwa/contract/data/requirements.json": "d6652dd4eb7047da579f0e426154f359d866b7b305f037267a71f94f015cfcb0",
+    "src/cwa/contract/data/requirements.json": "41cb3e0becde758a8a6df9d14190f666a2ab52d90ac91fb9927028db80a52edd",
     "src/cwa/contract/data/schema/conflict_group.schema.json": "0d36d232a96ed428ebcbdf95b1d08eca3381a107205712205d86444c4a898730",
     "src/cwa/contract/data/schema/context_item.schema.json": "e9373d298945925add17489dc18f22e8a88d6ae3c9bb7e899c949fec466310e6",
     "src/cwa/contract/data/schema/producer_batch.schema.json": "59ceb90d8e374f5811a4066b1328f3cf968df0cc20c1ae200e985db9a183d946",
     "src/cwa/contract/data/schema/profile.schema.json": "74ead604f79aeaf9e1a410a84ad9a0d8b0d51c5b35afc452c3706aa9b98c21ee",
-    "src/cwa/contract/data/schema/route_policy.schema.json": "24c5d4c26355cf5cecefa573f10652090c21987eb805483f8a17b5da0dcde6e0",
+    "src/cwa/contract/data/schema/route_policy.schema.json": "c3341f08ea532c87877dfd373cc9ad72d115c25d161185a865a1e769ac4ea68f",
     "src/cwa/contract/data/schema/snapshot.schema.json": "d06bd97fe2f44a7d70ee730605dc27887af2326d81ecbc293dddeb770965fa7c",
     "src/cwa/contract/data/schema/trace.schema.json": "6173de1529e6ce1c23d1fb4bdab58bbad97bf802a9aef7c34f7f557f28767273",
     "src/cwa/contract/data/slot-defaults.json": "89e2f6636e081995615426f5f29e4f0933d851906b78c2d7955271a4109df60d"
