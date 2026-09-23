@@ -29,9 +29,9 @@ def test_included_rows_record_eligibility_after_defaults_are_filled(fixture_snap
     when there is one (R-3), else the slot default."""
     query = fixture_snapshot["batches"][3]["items"][0]
     del query["eligibility"]
-    fixture_snapshot["route_policy"]["default_overrides"] = {"interaction.query": {"eligibility": "support-chat/v2: live turn"}}
+    fixture_snapshot["route_policy"]["default_overrides"] = {"interaction.query": {"eligibility": "support-chat/v1: live turn"}}
     rows = {row["item_id"]: row["eligibility"] for row in assemble(Snapshot.from_json(fixture_snapshot)).trace["included"]}
-    assert rows["turn:18"] == "support-chat/v2: live turn"
+    assert rows["turn:18"] == "support-chat/v1: live turn"
     del fixture_snapshot["route_policy"]["default_overrides"]
     rows = {row["item_id"]: row["eligibility"] for row in assemble(Snapshot.from_json(fixture_snapshot)).trace["included"]}
-    assert rows == {"policy:v12": "route-policy", "refunds-eu:v17#p4": "support-chat/v2: tenant acme; rerank at least 0.82", "turn:18": "route-policy"}
+    assert rows == {"policy:v12": "route-policy", "refunds-eu:v17#p4": "support-chat/v1: tenant acme; rerank at least 0.82", "turn:18": "route-policy"}

@@ -25,7 +25,7 @@
       "item_id": "refunds-eu:v17#p4",
       "tokens": 10,
       "source_version": "2026-09-10",
-      "eligibility": "support-chat/v2: tenant acme; rerank at least 0.82"
+      "eligibility": "support-chat/v1: tenant acme; rerank at least 0.82"
     },
     {
       "slot": "interaction.query",
@@ -53,7 +53,7 @@
     "route_policy_version": "fixture/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "34906f58f0ba64c5179848577ece87a42908b8d7f1e1391c6dadda8f5625680c"
+    "snapshot_digest": "23942d766ef7da272699d35969562c4669ec71fb52f2b761f1a921f9509a40d5"
   },
   "defaults_filled": []
 }

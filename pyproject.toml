@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "cwa-assembler"
 version = "0.0.1"
-description = "Reference assembler for the Context Window Architecture (CWA) v2 draft"
+description = "Reference assembler for the Context Window Architecture (CWA) draft specification"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

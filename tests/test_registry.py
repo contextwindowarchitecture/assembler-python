@@ -31,10 +31,10 @@ def test_digests_agree_with_the_published_lock(published):
 
 def test_a_registry_returns_pinned_content_by_identity(published):
     registry = Registry.from_json(*published)
-    profile = registry.profile("document-analysis", 3)
+    profile = registry.profile("document-analysis", 1)
     assert profile == published[1][1]
     profile["placement"].clear()
-    assert registry.profile("document-analysis", 3) == published[1][1]
+    assert registry.profile("document-analysis", 1) == published[1][1]
     assert registry.route_policy("contract-fixture", "fixture/v1") == published[2][0]
 
 
@@ -42,12 +42,12 @@ def test_a_registry_returns_pinned_content_by_identity(published):
     lambda p: p["placement"].reverse(),
     lambda p: p["placement"][0].update(wrap="xml:instructions"),
     lambda p: p.update(model_family="example-model/1"),
-    lambda p: p.update(route_policy_version="illustrative/v3"),
+    lambda p: p.update(route_policy_version="illustrative/v2"),
 ])
 def test_a_profile_changed_under_an_unchanged_version_is_refused(published, change):
     pinned, profiles, policies = published
     change(profiles[0])
-    with pytest.raises(RegistryError, match="profile policy-first-chat v2 differs from its lock entry"):
+    with pytest.raises(RegistryError, match="profile policy-first-chat v1 differs from its lock entry"):
         Registry.from_json(pinned, profiles, policies)
 
 
@@ -61,26 +61,26 @@ def test_a_route_policy_changed_under_an_unchanged_version_is_refused(published)
 def test_an_evaluation_alone_keeps_the_version(published):
     """R-20: promoting an identical payload configuration may keep its version."""
     pinned, profiles, policies = published
-    draft = {**copy.deepcopy(profiles[0]), "version": 3, "model_family": "example-model/1"}
+    draft = {**copy.deepcopy(profiles[0]), "version": 2, "model_family": "example-model/1"}
     pinned = lock([draft], existing=pinned)
     promoted = {**draft, "evaluation": EVALUATED}
-    assert Registry.from_json(pinned, profiles + [promoted], policies).profile("policy-first-chat", 3, deployment=True) == promoted
+    assert Registry.from_json(pinned, profiles + [promoted], policies).profile("policy-first-chat", 2, deployment=True) == promoted
 
 
 def test_a_deployment_gets_only_evaluated_profiles(published):
     registry = Registry.from_json(*published)
-    registry.profile("policy-first-chat", 2)
-    with pytest.raises(RegistryError, match="profile policy-first-chat v2 is unevaluated; a deployment needs an evaluated profile"):
-        registry.profile("policy-first-chat", 2, deployment=True)
+    registry.profile("policy-first-chat", 1)
+    with pytest.raises(RegistryError, match="profile policy-first-chat v1 is unevaluated; a deployment needs an evaluated profile"):
+        registry.profile("policy-first-chat", 1, deployment=True)
 
 
 @pytest.mark.parametrize("mutate, message", [
     (lambda lk, pr, po: pr.append({**pr[0], "version": 9}), "profile policy-first-chat v9 is not in the lock"),
-    (lambda lk, pr, po: lk["profiles"].append(dict(lk["profiles"][0])), "the lock lists profile policy-first-chat v2 more than once"),
+    (lambda lk, pr, po: lk["profiles"].append(dict(lk["profiles"][0])), "the lock lists profile policy-first-chat v1 more than once"),
     (lambda lk, pr, po: lk["route_policies"].append(dict(lk["route_policies"][0])), "the lock lists route policy contract-fixture fixture/v1 more than once"),
     (lambda lk, pr, po: lk["profiles"][0].update(sha256="ABC"), "lock: /profiles/0/sha256"),
     (lambda lk, pr, po: pr.insert(0, {**pr[0], "placement": pr[0]["placement"][::-1]}),
-     "profile policy-first-chat v2 is given twice with different content"),
+     "profile policy-first-chat v1 is given twice with different content"),
     (lambda lk, pr, po: pr[0].pop("evaluation"), "profile 0: "),
     (lambda lk, pr, po: po[0].pop("producers"), "route policy 0: "),
 ])
@@ -92,21 +92,21 @@ def test_invalid_or_unpinned_content_is_refused(published, mutate, message):
 
 def test_asking_for_content_the_registry_lacks_is_refused(published):
     registry = Registry.from_json(*published)
-    with pytest.raises(RegistryError, match="no profile policy-first-chat v1 in the registry"):
-        registry.profile("policy-first-chat", 1)
+    with pytest.raises(RegistryError, match="no profile policy-first-chat v2 in the registry"):
+        registry.profile("policy-first-chat", 2)
     with pytest.raises(RegistryError, match="no route policy support-chat v9 in the registry"):
         registry.route_policy("support-chat", "v9")
 
 
 def test_locking_adds_new_identities_and_never_rewrites_one(published):
     pinned, profiles, policies = published
-    bumped = {**copy.deepcopy(profiles[0]), "version": 3, "placement": profiles[0]["placement"][::-1]}
+    bumped = {**copy.deepcopy(profiles[0]), "version": 2, "placement": profiles[0]["placement"][::-1]}
     grown = lock([bumped], existing=pinned)
-    assert {"id": "policy-first-chat", "version": 3, "sha256": profile_digest(bumped)} in grown["profiles"]
+    assert {"id": "policy-first-chat", "version": 2, "sha256": profile_digest(bumped)} in grown["profiles"]
     assert all(entry in grown["profiles"] for entry in pinned["profiles"])
     assert lock(profiles, policies) == lock(list(reversed(profiles)), list(reversed(policies)))
-    edited = {**bumped, "version": 2}
-    with pytest.raises(RegistryError, match="profile policy-first-chat v2 is already pinned with another digest; increase its version"):
+    edited = {**bumped, "version": 1}
+    with pytest.raises(RegistryError, match="profile policy-first-chat v1 is already pinned with another digest; increase its version"):
         lock([edited], existing=pinned)
 
 

@@ -2,28 +2,28 @@
   "profiles": [
     {
       "id": "policy-first-chat",
-      "version": 2,
-      "sha256": "9d2912865f8c79ebdb79c8386fa43102d254d0eeaf59654b0de9e2a3845ea5aa"
+      "version": 1,
+      "sha256": "3326b4df02fe689e89f07677ec73ad7c790a3c3a005fb53b35c3a3a0faf1f898"
     },
     {
       "id": "document-analysis",
-      "version": 3,
-      "sha256": "264393cd80c064d47c6e785ee407a9993c4edc2e1fd62c31fcd0e32ff4ff0f09"
+      "version": 1,
+      "sha256": "77dc962e86cfe80bb8d91145bc7111077c0bc86aba86c14d4c52bd759e6bb60f"
     },
     {
       "id": "long-context-reinforced",
-      "version": 3,
-      "sha256": "08d17ffcecc199503c0d6de0e47a794ac926e2a4ba57bc28f52ecfb687b27e73"
+      "version": 1,
+      "sha256": "c86c2338cd92eb21953fba57d3b234672bc17655629995ae87f8105f0c47788d"
     },
     {
       "id": "tool-agent",
-      "version": 2,
-      "sha256": "8b24f7ea742a4e1da1c14c20b67895bfb6d6453a35f987e37489446705d5899d"
+      "version": 1,
+      "sha256": "669d4f1c5bee56bdc1924a8225a4a956b9b454bbae67d565dcd3b6d2ab2af149"
     },
     {
       "id": "extraction",
-      "version": 2,
-      "sha256": "456876f1d37b59023c460728389c4e829ba0c09c82aef36216c0c9e6df812d8d"
+      "version": 1,
+      "sha256": "1883f7c847481590d53ef59bb908cf8e780ee656263d38b8d5b7af9356aa51e6"
     },
     {
       "id": "fixture-three-slot",

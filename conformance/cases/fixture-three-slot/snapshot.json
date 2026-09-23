@@ -121,7 +121,7 @@
           "conflict_policy": "defers",
           "injection_risk": "untrusted_content",
           "lineage": "verbatim",
-          "eligibility": "support-chat/v2: tenant acme; rerank at least 0.82",
+          "eligibility": "support-chat/v1: tenant acme; rerank at least 0.82",
           "body": "Pro plans refund in full within 30 days of purchase."
         }
       ],

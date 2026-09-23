@@ -1,7 +1,7 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "d141663de6e2063c76146726f7321e8e0d90dd5b",
+    "commit": "b91c1564ff892b99ddf2324be9a031b939cdb425",
     "dirty": false
   },
   "files": {
@@ -107,8 +107,8 @@
     "conformance/cases/evidence-retrieve-narrower/snapshot.json": "eb1abdb4d2d5380b742b5979f30aafa2615b07e30da66c94d8202d4507a7dc96",
     "conformance/cases/fixture-three-slot/case.json": "6d0dc5f70982a7ff31604a08f24aa6c1ed18082d11a878d2bfaf57c862f1a762",
     "conformance/cases/fixture-three-slot/expected.payload.txt": "4cf0b083e167bb952c1ba0f9a93bf3ed3c64b178c063c259b49cdace1b86972f",
-    "conformance/cases/fixture-three-slot/expected.trace.json": "30235827270b7951b1574408febcd0288ac12b997276f2a9d3afd60ffbf656d0",
-    "conformance/cases/fixture-three-slot/snapshot.json": "a370006da4784e5ce24a29fe0b58e752d36f97e0b52c10783e99fb737e5aef09",
+    "conformance/cases/fixture-three-slot/expected.trace.json": "49e5c3e5fec5bf43d35627d455e2b57ae1296c3ace948456ffbbc94f2b44e53b",
+    "conformance/cases/fixture-three-slot/snapshot.json": "d8ae8a01e66a9ad8e1e7e2c07bd63afd22db6fc5cb90ea42d405fc241bed4f2a",
     "conformance/cases/messages-budget/case.json": "49f1edd7efd69ca4c73c23b1601b5219142e11c4f4f1967f644aa7864318e645",
     "conformance/cases/messages-budget/expected.payload.txt": "42c8242bbae0c4e69033fa84f68dde8c1608128cf0d98e327df4651da2c9d176",
     "conformance/cases/messages-budget/expected.trace.json": "b4e018a4265a42a1562f38f8fc23eeccf5f55efb2378186751024c7f561146f8",
@@ -163,15 +163,15 @@
     "conformance/generators/messages.py": "a633c80ceac91126fad0f3a4bb81114b6fac9c77acc0ce88280a23f490240cb2",
     "conformance/generators/registry.py": "be771b2605b21ee772ede8aebc616e5eaadba716335b571affc0a7cff3a1e745",
     "conformance/generators/supersede.py": "1004bcf373898ce67c5469ea7ead756ce1e547e1d9492db8a47618e17dcdd4e1",
-    "conformance/registry/lock.json": "7fbb47e27908eb5cdeb462d026cf0b1ca63c32e5d3d23a2ea83e3fbccec57b74",
-    "conformance/registry/profiles.json": "5e08ec619f0c17631ed2151b20594e1a2845a826201b3babf57c223a1ed7cd0b",
+    "conformance/registry/lock.json": "86780bd9393bce83b3062fca7e98245c7f64c7270fc64d6c17470fa70ffcba76",
+    "conformance/registry/profiles.json": "79674edd0deab58771ca93856ac7d81ff39be7efb897aa4546ace0e1d887f412",
     "conformance/registry/route-policies.json": "12b22bac5be7da3e0643a204234b3923c7495c06e83244e6e6a85aad8e8ef616",
     "src/cwa/contract/data/assembler-scope.json": "7c44fe1dd0b407fade895cd7027cf685f3e5274c6cea1d081b4df61196d0e644",
     "src/cwa/contract/data/reasons.json": "1d880ba595e0793194bf0cedf8e53308b70fcadca34d774f586b3b42e8eb7aa4",
     "src/cwa/contract/data/requirements.json": "2ed0d7d1ea3a536d8db025c73b72ba2a84ca3d3d5c0cbd107651555815ee4df9",
     "src/cwa/contract/data/schema/conflict_group.schema.json": "06b6df97c84474371194b7f8758c3264d61c96b4a50ca1e865bff3e811365b89",
     "src/cwa/contract/data/schema/conformance_report.schema.json": "9afba45bf2112dc38fea678ac899769d78df2f6b73240d5fac1a8bb960bdd02d",
-    "src/cwa/contract/data/schema/context_item.schema.json": "14e268918562758a2ebf5f4b7dbd1e849cc9bdc4ced0af8518df9d0d4e1343a8",
+    "src/cwa/contract/data/schema/context_item.schema.json": "813e6bc147343cbd7cffe3116ac3911cee6678d54c3588dc146853837aa73be5",
     "src/cwa/contract/data/schema/producer_batch.schema.json": "1a2abcdc60caf8d060545609e0c9a106c73d237e029e31f0979f62ad86a1b2e1",
     "src/cwa/contract/data/schema/profile.schema.json": "d26e1ff8205ff8ec5f1a8369136b5053a7553adece9c6cf84d8a1ec2e07f4b30",
     "src/cwa/contract/data/schema/registry_lock.schema.json": "61a0da0661c004c3718cd9e2148604c116133d0076a2c47b2248e54b3608dbf5",
