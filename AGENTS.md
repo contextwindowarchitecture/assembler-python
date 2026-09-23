@@ -43,6 +43,7 @@ Rules:
   - The body says *why*, and lists the requirement IDs affected.
   - Breaking changes use `!` after the scope and a `BREAKING CHANGE:` footer.
   - A `test:` commit is only for tests that add coverage to existing, already-passing behavior.
+- **The changelog is generated.** `CHANGELOG.md` comes from the commit history through git-cliff (`cliff.toml`), so a commit's subject line is its changelog entry. Never edit the file by hand. A commit cannot list itself, so regenerate it at a release (`uvx git-cliff --tag vX.Y.Z -o CHANGELOG.md`) or when asked, not in every commit.
 - **Sign off every commit:** `git commit -s`. The local commit-msg hook rejects commits without a matching `Signed-off-by`, and it removes `Co-Authored-By` trailers. Don't add or restore them.
 - Stage paths explicitly. Never commit `.venv/`, caches, or anything under `.claude/`.
 

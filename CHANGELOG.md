@@ -1,0 +1,158 @@
+# Changelog
+
+Generated from the Conventional Commit history by [git-cliff](https://git-cliff.org). Do not edit by hand.
+
+## [Unreleased]
+
+### Features
+
+- M0 walking skeleton of the CWA reference assembler (a3fb700)
+- **admission:** Refuse and record schema-invalid items per item (c7fa430)
+- **admission:** Authenticate producers against the route policy (e280d75)
+- **admission:** Exclude every candidate whose id is ambiguous (9adc512)
+- **admission:** Enforce one authority role per slot (c236425)
+- **admission:** Admit tools only through the capability policy grant (13fb9db)
+- **admission:** Keep untrusted content marked and out of governance (3f583dd)
+- **admission:** Let only route policy raise a slot's tier (adb58ab)
+- **admission:** Require distinct variant ids (619ec79)
+- **admission:** Judge lifetime at full precision against assembly_time (992e403)
+- **admission:** Exclude stale state and memory without a source turn (ff13505)
+- **admission:** Keep items inside the request's scope (a33ae35)
+- **admission:** Apply the route's threshold and age eligibility (73df5b9)
+- **defaults:** Fill omitted policy fields from route overrides (6eddcca)
+- **trace:** Exclusion rows name the candidate's slot (9d803b8)
+- **admission:** Refuse assemblies missing a required slot (a15c908)
+- **fitting:** Refuse when protected content alone exceeds the budget (500acde)
+- **fitting:** Shed droppable items in the route's shedding order (b2cfdf3)
+- **fitting:** Reduce compressible items, variants before omission (3cbe8ad)
+- **fitting:** Run the route's fitting order before the default steps (0aa821d)
+- **fitting:** Refuse when a route's required evidence does not survive (610b163)
+- **fitting:** Enforce per-item token_budget caps before shedding (15089ef)
+- **snapshot:** Reject conflict groups that disagree with the snapshot (401064c)
+- **conflicts:** Resolve moot groups and instruction authority (3c27184)
+- **conflicts:** Exclude deferring instruction peers (103be72)
+- **conflicts:** Escalate unresolved instruction groups (2d6f83c)
+- **conflicts:** Resolve fact groups by route precedence (f0c7f98)
+- **snapshot:** Reject profiles that cannot carry their route (3b5bef2)
+- **admission:** Exclude unplaced items and refuse unplaced protected ones (7de5fb7)
+- **render:** Add the cwa-messages/v1 render IR (e318214)
+- **registry:** Pin profiles and route policies by digest (e25dbe0)
+- **trace:** Reject reasons the registry does not define (f40a4de)
+- **canonical:** Order strings by UTF-16 code units (b7edd66)
+- **trace:** Record each included item's eligibility (7572cd0)
+- **trace:** Time assembly stages with a clock the caller lends (da0db52)
+- **conformance:** Run the cases and commit a conformance report (dc580f6)
+- **fitting:** Enforce the route's per-slot max_tokens caps (7817552)
+- **dedupe:** Exclude exact duplicates in the slots a route asks (d412843)
+- **supersede:** Keep only the latest observation of each call (1bc277d)
+- **diversity:** Cap each source at the route's max_per_source (639ddc0)
+- **fitting:** Hold slots at the route's min_tokens floors (f87b6fe)
+- **snapshot:** Carry the near-duplicates retrievers report (394e495)
+- **trace:** Name the specification the profile follows in every trace (ca8cdb2)
+- **tokenize:** Count estimate-utf8/v1, UTF-8 bytes divided by 4 (d33e872)
+- **tokenize:** Take caller tokenizers beside the built-in ones (20bdeaf)
+- **conformance:** Report rejection cases and gate claims on them (fbe1def)
+
+### Bug fixes
+
+- **snapshot:** Keep the digest order-independent for duplicate ids (a9fde59)
+- **fitting:** Size a body by its largest rendering (e5bb240)
+- **contract:** Read the vendored schemas once, at import (3a604d9)
+- **snapshot:** Treat only ECMAScript whitespace as blank (e18c2e4)
+- **snapshot:** Parse only the portable timestamp profile (e72db1a)
+- **render:** Reject wrap tags with a trailing newline (7e4b35d)
+- **snapshot:** Reject strings with unpaired surrogates (9178fdd)
+- **snapshot:** Import on Python 3.11, which rejects the scope default (7d0a14a)
+
+### Refactoring
+
+- **admission:** Share the effective slot tier with fitting (abc7587)
+- **render:** Let each renderer declare the texts it counts (c1b2e34)
+- **canonical:** Keep the portable string rules in one module (e3beefc)
+- **conformance:** Share one trace comparison with the runner (0121aee)
+- **fitting:** Expose the slot rank for reuse (f896afa)
+- **fitting:** Drop an unused pytest import from the fitting tests (6c58856)
+- Satisfy mypy across the package (1855d78)
+
+### Documentation
+
+- Add AGENTS.md with TDD, commit, and architecture rules (fed290d)
+- Name the origin remote and keep pushing with the maintainer (d3c4744)
+- Describe M1 status, the status ledger, and pipefail gating (59f66fc)
+- **design:** Record M1 status and where admission diverged (d39b8fb)
+- **design:** Diagram admission precedence as built (fc36609)
+- Require documentation updates in the same commit as behavior (50f0ea3)
+- Hand off M2 plan and website commit permission (b67df06)
+- Check diagrams against mermaid 12 (52b76cf)
+- **design:** Hand off the M3 kickoff plan (756bcd9)
+- **conflicts:** Claim R-3 and R-6 implemented, R-11 boundary-checked (1acee9e)
+- **design:** Bring the design in line with M0-M3 as built (6ce4f24)
+- Restore mutation checks from a copy, never from git (692eb4c)
+- **design:** Plan M5 hardening and record decisions D-7 to D-10 (749c4f7)
+- **conformance:** Claim R-21, R-22 and R-23 implemented (8783f6b)
+- **design:** Close out M5 (aa0e1bc)
+- **contract:** Say when a vendor commit may carry its fix (7748c23)
+- **design:** Bring the header, layout note and plan legend up to M10 (f53c119)
+- **design:** Plan the v1 release gates as M11 to M14 (cd76680)
+- **tokenize:** Add an exact tiktoken adapter as an example (0c1d644)
+
+### Tests
+
+- **conformance:** Run every conformance case under the purity guard (6c44973)
+- **admission:** Cover memory authority limits (8776a19)
+- **conformance:** Add a requirement status ledger bound to scope and tests (e2c5f3f)
+- **fitting:** Cover the tiers a route raises (d0f9514)
+- **conflicts:** Pin conflict_policy to instruction peers (d3bb73a)
+- **conformance:** Shuffle every case's input to prove order-independence (560c14f)
+- **conformance:** Let the purity check fail on unimplemented cases (971bc2e)
+- **conformance:** Let the order check run on pending cases (03b6a40)
+- **trace:** Check every trace records the profile id and version (3a6ac02)
+- **snapshot:** Replay stored snapshots in fresh processes (c8d85a7)
+- **snapshot:** Lint the core for imports that reach outside (9378e2a)
+- **conflicts:** Report an unresolved conflict before the budget (50e3770)
+- **conformance:** Compare snapshot digests with the expected traces (f451b01)
+- **conformance:** Reject claims while a tagged case fails (36e5202)
+- **fitting:** Check fitting and determinism properties with hypothesis (136133c)
+- Pin linear tokenizer calls and measure assemble() at scale (a0cd87e)
+
+### Build
+
+- Add repository and specification urls to project metadata (a544aa5)
+- **contract:** Vendor website a211b2f (d346c12)
+- **contract:** Vendor website 7239c57 (f3f180d)
+- **contract:** Vendor website 9e40504 (fd1281a)
+- **contract:** Vendor website d84bbd8 (2d7aba1)
+- **contract:** Vendor website adae6e1 (49f8d8c)
+- **contract:** Vendor website 72cfce5 (68882a7)
+- **contract:** Vendor website 1986791 (49eb703)
+- **contract:** Vendor website b303ca4 (a06cc38)
+- **contract:** Vendor website c131acc (e160cd5)
+- **contract:** Vendor website 3227b9a (a787bee)
+- **contract:** Vendor website ac55a4a (8272137)
+- **contract:** Vendor website 78a9d10 (934bef3)
+- **contract:** Vendor website 4f465ca (fd177a4)
+- **contract:** Vendor website b8fd56a (86da22c)
+- **contract:** Vendor website 52c9c5d (441bfea)
+- **contract:** Vendor website ce40ef5 (dcf2901)
+- **contract:** Vendor website c9027ec (a9557de)
+- **contract:** Vendor website d70e14b (4577d79)
+- **contract:** Vendor website 0526686 (ecdc9da)
+- **contract:** Vendor website d2e8bd6 (7297828)
+- **contract:** Vendor website 13d4ff9 (eff9e04)
+- **contract:** Vendor website 6ba14c0 (3fb48aa)
+- **contract:** Vendor website a8530ee (03f7943)
+- **contract:** Vendor website b91c156 (d524349)
+- **contract:** Vendor website a3ad837 (f1aa759)
+- **contract:** Vendor website a50f31f (064afda)
+- **contract:** Vendor website ffcc379 (6a9d245)
+- Ship py.typed and keep the package type-checked (d2daa0b)
+
+### Continuous integration
+
+- Test every supported Python and check contract drift (6d5bd77)
+
+### Chores
+
+- Ignore .claude/ and .idea/ (a935265)
+- License the assembler under Apache-2.0 (4f7d934)
+

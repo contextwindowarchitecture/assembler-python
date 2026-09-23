@@ -1,0 +1,47 @@
+# git-cliff builds CHANGELOG.md from the Conventional Commit history (AGENTS.md, Commits).
+#   uvx git-cliff -o CHANGELOG.md                  # everything so far, as Unreleased
+#   uvx git-cliff --tag v1.0.0 -o CHANGELOG.md     # at release
+# A commit cannot list itself, so regenerate at release rather than in every commit.
+
+[changelog]
+header = """
+# Changelog
+
+Generated from the Conventional Commit history by [git-cliff](https://git-cliff.org). Do not edit by hand.\n
+"""
+body = """
+{% if version %}\
+## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+## [Unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim | upper_first }}
+{% for commit in commits %}
+- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}\
+{% if commit.breaking %}[**breaking**] {% endif %}\
+{{ commit.message | upper_first }} ({{ commit.id | truncate(length=7, end="") }})\
+{% endfor %}
+{% endfor %}\n
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+protect_breaking_commits = true
+filter_commits = false
+topo_order = false
+sort_commits = "oldest"
+commit_parsers = [
+  { message = "^feat", group = "<!-- 0 -->Features" },
+  { message = "^fix", group = "<!-- 1 -->Bug fixes" },
+  { message = "^perf", group = "<!-- 2 -->Performance" },
+  { message = "^refactor", group = "<!-- 3 -->Refactoring" },
+  { message = "^docs", group = "<!-- 4 -->Documentation" },
+  { message = "^test", group = "<!-- 5 -->Tests" },
+  { message = "^build", group = "<!-- 6 -->Build" },
+  { message = "^ci", group = "<!-- 7 -->Continuous integration" },
+  { message = "^chore", group = "<!-- 8 -->Chores" },
+]
