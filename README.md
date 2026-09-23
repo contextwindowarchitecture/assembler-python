@@ -61,3 +61,7 @@ Schemas, slot defaults, reason codes and conformance cases come from the website
 python scripts/vendor_contract.py --website ../website          # re-vendor and rewrite the lock
 python scripts/vendor_contract.py --website ../website --check  # fail on drift
 ```
+
+## License
+
+Apache License 2.0: see [LICENSE](LICENSE) and [NOTICE](NOTICE). The vendored contract comes from the website repository under the same license.

@@ -1,0 +1,6 @@
+CWA reference assembler
+Copyright 2026 Melvin Hillsman
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+It vendors the CWA specification, schemas and conformance cases from the website
+repository (contextwindowarchitecture/website), which are licensed the same way.
