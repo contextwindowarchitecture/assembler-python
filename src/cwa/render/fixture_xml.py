@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from . import Occurrence, Rendered
     from ..model import Profile
 
-TAG = re.compile(r"^[A-Za-z_][A-Za-z0-9_.\-]*$")
+TAG = re.compile(r"[A-Za-z_][A-Za-z0-9_.\-]*")  # always fullmatch: Python's $ also matches before a final newline
 
 
 def escape_body(text: str) -> str:
@@ -27,7 +27,7 @@ class FixtureXml:
         problems = []
         for index, placement in enumerate(profile.placement):
             tag = placement.wrap.removeprefix("xml:")
-            if not placement.wrap.startswith("xml:") or not TAG.match(tag):
+            if not placement.wrap.startswith("xml:") or not TAG.fullmatch(tag):
                 problems.append(f"placement[{index}] wrap {placement.wrap!r} is not an xml:<name> wrap")
         return problems
 

@@ -26,7 +26,7 @@ class Messages:
         problems, seen_xml = [], False
         for index, placement in enumerate(profile.placement):
             wrap, slot = placement.wrap, placement.slot
-            if wrap not in _CHANNELS and not (wrap.startswith("xml:") and TAG.match(wrap.removeprefix("xml:"))):
+            if wrap not in _CHANNELS and not (wrap.startswith("xml:") and TAG.fullmatch(wrap.removeprefix("xml:"))):
                 problems.append(f"placement[{index}] wrap {wrap!r} is not system, tools or xml:<name>")
             elif wrap == "system" and not slot.startswith("governance."):
                 problems.append(f"placement[{index}] puts {slot} in system; only governance slots take a platform role")

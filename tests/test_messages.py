@@ -49,6 +49,7 @@ def ir(snapshot: dict) -> dict:
      "placement[1] puts system after an xml: placement"),
     ([("governance.instructions", "markdown"), ("interaction.query", "xml:query")], "placement[0] wrap 'markdown' is not system, tools or xml:<name>"),
     ([("governance.instructions", "system"), ("interaction.query", "xml:1query")], "placement[1] wrap 'xml:1query' is not system, tools or xml:<name>"),
+    ([("governance.instructions", "system"), ("interaction.query", "xml:query\n")], "placement[1] wrap 'xml:query\\n' is not system, tools or xml:<name>"),
 ])
 def test_profiles_a_message_request_cannot_realize_are_rejected(fixture_snapshot, placement, message):
     with pytest.raises(SnapshotError, match=re.escape(message)):

@@ -18,6 +18,7 @@ def test_timestamps_are_format_checked(fixture_snapshot, bad):
     (lambda s: s["batches"][1]["producer"].update(id="policy-registry"), "more than one batch"),
     (lambda s: s["batches"][0]["producer"].update(kind="self-declared"), "kind"),
     (lambda s: s.update(clock="now"), "Additional properties"),
+    (lambda s: s["profile"]["placement"][0].update(wrap="xml:governance.instructions\n"), "not an xml:<name> wrap"),
 ])
 def test_unassemblable_snapshots_are_rejected_before_assembly(fixture_snapshot, mutate, message):
     mutate(fixture_snapshot)
