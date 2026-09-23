@@ -22,9 +22,7 @@ GAPS = (NotImplementedError, SnapshotError, TraceError)
 
 
 def comparable(trace: dict) -> dict:
-    trace = {k: v for k, v in trace.items() if k not in IGNORED}
-    trace["context"] = {k: v for k, v in trace["context"].items() if k != "snapshot_digest"}
-    return trace
+    return {k: v for k, v in trace.items() if k not in IGNORED}
 
 
 @pytest.mark.parametrize("case", [

@@ -316,7 +316,8 @@
         "tests/test_admission.py::test_items_without_a_usable_id_are_recorded_by_producer_and_position",
         "tests/test_replay.py::test_a_stored_snapshot_replays_identically_in_a_fresh_process",
         "tests/test_purity.py::test_the_core_imports_nothing_that_reaches_outside",
-        "tests/test_snapshot.py::test_producer_rows_order_by_producer_then_item_in_utf16_code_units"
+        "tests/test_snapshot.py::test_producer_rows_order_by_producer_then_item_in_utf16_code_units",
+        "tests/test_conformance.py::test_conformance_case"
       ]
     }
   ]
