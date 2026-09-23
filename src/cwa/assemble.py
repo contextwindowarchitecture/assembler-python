@@ -42,7 +42,8 @@ def _refusal(snapshot: Snapshot, items: tuple[Item, ...]) -> str | None:
     return None
 
 
-def _trace(snapshot: Snapshot, admission: Admission, trace_id: str | None, **outcome: Any) -> dict[str, Any]:
+def _trace(snapshot: Snapshot, admission: Admission, trace_id: str | None, omitted: tuple[Item, ...] = (),
+           **outcome: Any) -> dict[str, Any]:
     trace = {
         "trace_id": trace_id or str(uuid.uuid4()),
         "profile": {"id": snapshot.profile.id, "version": snapshot.profile.version},
@@ -54,7 +55,8 @@ def _trace(snapshot: Snapshot, admission: Admission, trace_id: str | None, **out
             {"item_id": row.item_id, "reason": row.reason, "stage": row.stage}
             for batch in snapshot.batches for row in batch.excluded
         ] + [{"item_id": e.item_id, "reason": e.reason, "stage": "assembler", **({"slot": e.slot} if e.slot else {})}
-             for e in admission.excluded],
+             for e in admission.excluded
+        ] + [{"item_id": item.id, "reason": "over_budget", "stage": "assembler", "slot": item.slot} for item in omitted],
         "conflicts": [],
         "refused": {"bool": False, "reason": None},
         "context": {
@@ -92,7 +94,7 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResu
     input_tokens = snapshot.tokenizer.count(rendered.payload.decode("utf-8"))
 
     return AssemblyResult(payload=rendered.payload, trace=_trace(
-        snapshot, admission, trace_id,
+        snapshot, admission, trace_id, fitted.omitted,
         result={"input_tokens": input_tokens, "hash": hashlib.sha256(rendered.payload).hexdigest()},
         included=[
             {"slot": o.slot, "item_id": o.item.id, "tokens": snapshot.tokenizer.count(body), "source_version": o.item.source_version}

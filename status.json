@@ -137,7 +137,14 @@
       "evidence": [
         "tests/test_admission.py::test_items_cannot_downgrade_a_protected_slot",
         "tests/test_admission.py::test_items_cannot_protect_themselves",
-        "tests/test_admission.py::test_the_route_can_raise_a_tier_and_items_may_then_claim_it"
+        "tests/test_admission.py::test_the_route_can_raise_a_tier_and_items_may_then_claim_it",
+        "tests/test_fitting.py::test_droppable_items_shed_by_slot_priority_then_lowest_rank_and_stop_once_the_payload_fits",
+        "tests/test_fitting.py::test_equal_priorities_shed_in_slot_name_order",
+        "tests/test_fitting.py::test_order_by_freshness_keeps_older_items_longer",
+        "tests/test_fitting.py::test_unscored_items_rank_below_scored_ones",
+        "tests/test_fitting.py::test_an_item_that_volunteers_droppable_sheds_with_the_droppable_items",
+        "tests/test_fitting.py::test_over_budget_rows_name_the_slot_after_the_admission_rows",
+        "tests/test_conformance.py::test_conformance_case"
       ]
     },
     {
@@ -183,7 +190,8 @@
       "evidence": [
         "tests/test_golden.py::test_defaults_filled_are_traced_as_records",
         "tests/test_conformance.py::test_conformance_case",
-        "tests/test_admission.py::test_assembler_exclusion_rows_carry_the_slot_the_candidate_names"
+        "tests/test_admission.py::test_assembler_exclusion_rows_carry_the_slot_the_candidate_names",
+        "tests/test_fitting.py::test_over_budget_rows_name_the_slot_after_the_admission_rows"
       ]
     },
     {
