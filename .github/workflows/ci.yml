@@ -1,0 +1,40 @@
+# The suite on every supported Python, and the vendored contract against the website commit it pins.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: pytest (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync --locked
+      - run: uv run pytest
+
+  contract:
+    name: vendored contract matches the website
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - id: lock
+        run: echo "commit=$(python3 -c 'import json; print(json.load(open("contract.lock.json"))["source"]["commit"])')" >> "$GITHUB_OUTPUT"
+      # The locked commit must be pushed to the website repository for this checkout to find it.
+      - uses: actions/checkout@v5
+        with:
+          repository: contextwindowarchitecture/website
+          ref: ${{ steps.lock.outputs.commit }}
+          path: website
+      - run: python3 scripts/vendor_contract.py --website website --check
