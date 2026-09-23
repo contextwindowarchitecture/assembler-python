@@ -42,14 +42,21 @@ def _first_difference(actual: Any, expected: Any, path: str = "") -> str | None:
     return None if actual == expected else path or "/"
 
 
+def _skipped(document: Any) -> dict[str, str] | None:
+    """A case whose tokenizer or renderer this implementation does not provide is skipped, not judged."""
+    for field, registry in (("tokenizer", TOKENIZERS), ("renderer", RENDERERS)):
+        if isinstance(document, dict) and isinstance(document.get(field), str) and document[field] not in registry:
+            return {"outcome": "skipped", "detail": f"no {field} {document[field]}"}
+    return None
+
+
 def run_case(directory: Path) -> dict[str, Any]:
     """One report entry: passed, failed with what differed, or skipped for a missing tokenizer or renderer."""
     meta = json.loads((directory / "case.json").read_text(encoding="utf-8"))
     entry = {"id": meta["id"], "rules": meta["rules"]}
     document = json.loads((directory / "snapshot.json").read_text(encoding="utf-8"))
-    for field, registry in (("tokenizer", TOKENIZERS), ("renderer", RENDERERS)):
-        if isinstance(document, dict) and isinstance(document.get(field), str) and document[field] not in registry:
-            return {**entry, "outcome": "skipped", "detail": f"no {field} {document[field]}"}
+    if skipped := _skipped(document):
+        return {**entry, **skipped}
     try:
         result = assemble(Snapshot.from_json(document))
     except SnapshotError as error:
@@ -68,12 +75,35 @@ def run_case(directory: Path) -> dict[str, Any]:
     return {**entry, "outcome": "passed"}
 
 
-def report(cases: Path, lock: Mapping[str, Any]) -> dict[str, Any]:
-    """The conformance_report.schema.json document for every case under `cases`, by id."""
+def run_rejection(directory: Path) -> dict[str, Any]:
+    """One rejections entry: rejected before assembly, failed with what happened instead, or skipped (R-17)."""
+    meta = json.loads((directory / "case.json").read_text(encoding="utf-8"))
+    entry = {"id": meta["id"], "rules": meta["rules"]}
+    document = json.loads((directory / "snapshot.json").read_text(encoding="utf-8"))
+    if skipped := _skipped(document):
+        return {**entry, **skipped}
+    try:
+        result = assemble(Snapshot.from_json(document))
+    except SnapshotError:
+        return {**entry, "outcome": "rejected"}
+    except Exception as error:  # a crash is not a rejection
+        return {**entry, "outcome": "failed", "detail": f"{type(error).__name__}: {error}"}
+    did = "assembled a payload" if not result.refused else f"refused with {result.trace['refused']['reason']}"
+    return {**entry, "outcome": "failed", "detail": f"{did} instead of rejecting the snapshot"}
+
+def _by_id(directory: Path) -> list[Path]:
+    return sorted((p for p in directory.iterdir() if p.is_dir()), key=lambda p: utf16(p.name))
+
+
+def report(cases: Path, lock: Mapping[str, Any], rejections: Path | None = None) -> dict[str, Any]:
+    """The conformance_report.schema.json document for every case under `cases` and every rejection case under
+    `rejections` (by default the rejections folder beside `cases`), each by id."""
+    rejections = rejections or cases.parent / "rejections"
     return {
         "implementation": {"name": "cwa-assembler", "version": version("cwa-assembler"), "language": "python"},
         "contract": {"website_commit": lock["source"]["commit"], "dirty": lock["source"]["dirty"]},
-        "cases": [run_case(d) for d in sorted((p for p in cases.iterdir() if p.is_dir()), key=lambda p: utf16(p.name))],
+        "cases": [run_case(d) for d in _by_id(cases)],
+        "rejections": [run_rejection(d) for d in _by_id(rejections)],
     }
 
 

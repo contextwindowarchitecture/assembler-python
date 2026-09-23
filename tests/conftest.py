@@ -8,6 +8,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 CASES = ROOT / "conformance" / "cases"
+REJECTIONS = ROOT / "conformance" / "rejections"
 
 
 def read_json(path: Path):

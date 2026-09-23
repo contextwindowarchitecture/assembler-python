@@ -262,7 +262,9 @@
         "tests/test_properties.py::test_protected_bytes_never_change",
         "tests/test_properties.py::test_a_refusal_has_no_payload_and_a_payload_carries_its_hash",
         "tests/test_refusal.py::test_protected_items_over_their_slots_max_tokens_refuse_although_the_payload_fits",
-        "tests/test_refusal.py::test_protected_items_exactly_at_their_slots_max_tokens_are_kept"
+        "tests/test_refusal.py::test_protected_items_exactly_at_their_slots_max_tokens_are_kept",
+        "tests/test_rejections.py::test_each_rejection_case_is_rejected_before_assembly",
+        "tests/test_report.py::test_a_rejection_case_that_assembles_fails"
       ]
     },
     {

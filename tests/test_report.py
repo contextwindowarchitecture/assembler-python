@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 
 from cwa import contract
-from cwa.conformance import report, run_case
+from cwa.conformance import report, run_case, run_rejection
 from cwa.strings import utf16
-from conftest import CASES, ROOT, read_json
+from conftest import CASES, REJECTIONS, ROOT, read_json
 
 LOCK = read_json(ROOT / "contract.lock.json")
 
@@ -60,10 +60,48 @@ def test_a_case_needing_a_tokenizer_or_renderer_it_lacks_is_skipped(case, field)
                               "detail": f"no {field} elsewhere/v9"}
 
 
+@pytest.fixture
+def rejection(tmp_path) -> Path:
+    """A private copy of a rejection case: its profile is for another route (R-17, R-20)."""
+    return Path(shutil.copytree(REJECTIONS / "profile-route-mismatch", tmp_path / "profile-route-mismatch"))
+
+
+def test_a_rejection_case_the_assembler_rejects_is_rejected(rejection):
+    assert run_rejection(rejection) == {"id": "profile-route-mismatch", "rules": ["R-17", "R-20"], "outcome": "rejected"}
+
+
+def test_a_rejection_case_that_assembles_fails(rejection):
+    edit(rejection / "snapshot.json", lambda s: s["profile"].update(route="contract-fixture"))
+    assert run_rejection(rejection) == {"id": "profile-route-mismatch", "rules": ["R-17", "R-20"], "outcome": "failed",
+                                        "detail": "assembled a payload instead of rejecting the snapshot"}
+
+
+def test_a_rejection_case_that_refuses_fails(rejection):
+    def valid_but_refused(s):
+        s["profile"]["route"] = "contract-fixture"
+        next(b for b in s["batches"] if b["producer"]["id"] == "conversation")["items"].clear()
+    edit(rejection / "snapshot.json", valid_but_refused)
+    assert run_rejection(rejection)["detail"] == "refused with required_slot_missing instead of rejecting the snapshot"
+
+
+def test_a_rejection_case_that_crashes_fails(rejection, monkeypatch):
+    def crash(document, **kwargs):
+        raise RuntimeError("boom")
+    monkeypatch.setattr("cwa.conformance.Snapshot.from_json", crash)
+    assert run_rejection(rejection)["detail"] == "RuntimeError: boom"
+
+
+def test_a_rejection_case_needing_a_tokenizer_it_lacks_is_skipped(rejection):
+    edit(rejection / "snapshot.json", lambda s: s.update(tokenizer="elsewhere/v9"))
+    assert run_rejection(rejection)["outcome"] == "skipped"
+
+
 def test_the_report_covers_every_case_in_id_order_and_names_the_vendored_commit():
     produced = report(CASES, LOCK)
     assert not contract.errors("conformance_report", produced)
     assert [c["id"] for c in produced["cases"]] == sorted((p.name for p in CASES.iterdir()), key=utf16)
+    assert [c["id"] for c in produced["rejections"]] == sorted((p.name for p in REJECTIONS.iterdir()), key=utf16)
+    assert {c["outcome"] for c in produced["rejections"]} == {"rejected"}
     assert produced["contract"] == {"website_commit": LOCK["source"]["commit"], "dirty": LOCK["source"]["dirty"]}
     assert produced["implementation"] == {"name": "cwa-assembler", "version": "0.0.1", "language": "python"}
 

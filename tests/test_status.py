@@ -37,8 +37,10 @@ def test_claims_cite_tests_that_exist():
 
 def test_claims_hold_only_while_every_case_for_the_requirement_passes():
     """D-8: the committed conformance report (kept current by test_report.py) backs every claim."""
-    cases = read_json(ROOT / "conformance-report.json")["cases"]
+    report = read_json(ROOT / "conformance-report.json")
+    # A case counts when it passed, a rejection case when the snapshot was rejected (R-17).
+    cases = [(c, "passed") for c in report["cases"]] + [(c, "rejected") for c in report.get("rejections", [])]
     for row in STATUS:
         if row["status"] in ("implemented", "boundary-checked"):
-            failing = [case["id"] for case in cases if row["id"] in case["rules"] and case["outcome"] != "passed"]
+            failing = [case["id"] for case, counts in cases if row["id"] in case["rules"] and case["outcome"] != counts]
             assert not failing, f"{row['id']} claims {row['status']} while {failing} do not pass"

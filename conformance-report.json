@@ -454,5 +454,121 @@
       ],
       "outcome": "passed"
     }
+  ],
+  "rejections": [
+    {
+      "id": "conflict-group-overlap",
+      "rules": [
+        "R-11",
+        "R-17"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "conflict-group-repeated-id",
+      "rules": [
+        "R-11",
+        "R-17"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "conflict-group-unknown-fact",
+      "rules": [
+        "R-11",
+        "R-17"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "conflict-group-unknown-item",
+      "rules": [
+        "R-11",
+        "R-17"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "duplicate-of-unknown",
+      "rules": [
+        "R-13",
+        "R-17"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "producer-in-two-batches",
+      "rules": [
+        "R-15",
+        "R-17"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "profile-missing-output-contract",
+      "rules": [
+        "R-4",
+        "R-17",
+        "R-20"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "profile-missing-query",
+      "rules": [
+        "R-4",
+        "R-17",
+        "R-20"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "profile-route-mismatch",
+      "rules": [
+        "R-17",
+        "R-20"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "profile-route-policy-mismatch",
+      "rules": [
+        "R-17",
+        "R-20"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "profile-unrealizable",
+      "rules": [
+        "R-7",
+        "R-17",
+        "R-20"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "schema-missing-budget",
+      "rules": [
+        "R-17"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "schema-profile-spec",
+      "rules": [
+        "R-17",
+        "R-19"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "unpaired-surrogate",
+      "rules": [
+        "R-17",
+        "R-23"
+      ],
+      "outcome": "rejected"
+    }
   ]
 }
