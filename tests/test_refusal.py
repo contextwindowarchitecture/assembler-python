@@ -78,6 +78,14 @@ def test_a_missing_required_slot_is_reported_before_the_budget(fixture_snapshot)
     assert_refused(assemble(Snapshot.from_json(fixture_snapshot)), "required_slot_missing")
 
 
+def test_an_unresolved_conflict_is_reported_before_the_budget(fixture_snapshot):
+    fixture_snapshot["budget"]["input"] = 1
+    instructions = items(fixture_snapshot, "policy-registry")
+    instructions.append({**instructions[0], "id": "policy:v13", "body": "Never refund."})
+    fixture_snapshot["conflicts"] = [{"id": "g1", "kind": "instruction", "items": ["policy:v12", "policy:v13"]}]
+    assert_refused(assemble(Snapshot.from_json(fixture_snapshot)), "conflict_unresolved")
+
+
 # R-12: a route that requires evidence never answers from nothing, and says how to recover.
 
 def evidence_case(name: str) -> dict:
