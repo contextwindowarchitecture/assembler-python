@@ -19,6 +19,19 @@ snapshot.digest() # SHA-256 of the RFC 8785 form, the replay key
 assemble(snapshot, clock=time.perf_counter).trace["timings"]   # stage timings, only from a clock you lend
 ```
 
+Count with your own tokenizer by passing it in. Any object with an `id` and a `count(text)` satisfies `cwa.Tokenizer`. It joins the built-in ones for that call only, and cannot reuse a built-in id. Load its data (an encoding file, a vocabulary) before freezing: `assemble()` reads nothing else. If it estimates, reserve headroom with `budget.margin_percent`:
+
+```python
+from cwa import Snapshot, assemble
+
+class Chars:
+    id = "my-chars/v1"
+    def count(self, text): return len(text)
+
+snapshot = Snapshot.from_json(document, tokenizers={Chars.id: Chars()})   # document["tokenizer"] == "my-chars/v1"
+snapshot = Snapshot.freeze(**fields, tokenizers={Chars.id: Chars()})     # the keyword form takes it too
+```
+
 Load profiles and route policies through the registry, so an edit under an unchanged version is caught before it reaches a snapshot:
 
 ```python

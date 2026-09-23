@@ -116,7 +116,7 @@ def test_the_payload_is_canonical_json_and_its_size_is_the_sum_of_its_texts(fixt
 # Fitting). The fixture tokenizer counts both alike, so these tests count characters.
 
 class Characters:
-    id, exact, margin = "test-characters/v1", True, 0.0
+    id = "test-characters/v1"
 
     def count(self, text: str) -> int:
         return len(text)

@@ -124,9 +124,15 @@ class Snapshot:
     _document: Mapping[str, Any]
 
     @classmethod
-    def from_json(cls, document: Mapping[str, Any], *, tokenizers: Mapping[str, Tokenizer] = TOKENIZERS,
+    def from_json(cls, document: Mapping[str, Any], *, tokenizers: Mapping[str, Tokenizer] = {},
                   renderers: Mapping[str, Renderer] = RENDERERS) -> Snapshot:
-        """Validate a snapshot.schema.json document and freeze it. The caller's object is copied, never kept."""
+        """Validate a snapshot.schema.json document and freeze it. The caller's object is copied, never kept.
+
+        tokenizers adds the caller's tokenizers, by id, to the built-in ones for this call only. A built-in id
+        cannot be redefined, since conformance/README.md fixes what it counts."""
+        if redefined := sorted(set(tokenizers) & set(TOKENIZERS)):
+            raise ValueError(f"tokenizer {', '.join(redefined)} is built in; give yours another id")
+        tokenizers = {**TOKENIZERS, **tokenizers}
         document = json.loads(json.dumps(document))
         if problems := contract.errors("snapshot", document) + _unpaired_surrogates(document):
             raise SnapshotError(problems)
@@ -175,9 +181,10 @@ class Snapshot:
         )
 
     @classmethod
-    def freeze(cls, **fields: Any) -> Snapshot:
+    def freeze(cls, *, tokenizers: Mapping[str, Tokenizer] = {}, renderers: Mapping[str, Renderer] = RENDERERS,
+               **fields: Any) -> Snapshot:
         """Keyword form of from_json; field names and values follow snapshot.schema.json."""
-        return cls.from_json(fields)
+        return cls.from_json(fields, tokenizers=tokenizers, renderers=renderers)
 
     def to_json(self) -> dict[str, Any]:
         """The normalized snapshot document, suitable for storing and replaying."""
