@@ -363,38 +363,41 @@ Snapshot normalization sorts batches by producer id and items by id, so the orde
 - **Supersede.** `evidence.tool_results` with `supersede_by: source` keeps the newest `freshness` per source → `superseded`. This implements "fresh observations replace stale ones for the same call", which has no call-identity field (DA-19).
 - **Diversity.** `max_per_source` → `source_diversity_cap`.
 
-### 4.3 Conflict resolution
+### 4.3 Conflict resolution (as built, M3)
 
-The assembler never reads prose. It only acts on groups the application declares (R-11).
+The assembler never reads prose. It acts only on the groups the application declares (R-11), and `src/cwa/conflicts.py` follows `conformance/README.md`'s Conflicts section. Resolution runs right after admission, before any refusal check, so every trace records `conflicts[]`. A group's members are the items it names that admission admitted.
 
 ```mermaid
 flowchart TD
-  G[Declared group] --> K{kind}
-  K -- instruction --> I1{"Any member with authority<br/>state / reference_only /<br/>observation / generated / untrusted?"}
-  I1 -- yes --> I1a["Those members cannot instruct.<br/>Keep them as material, no exclusion.<br/>decided_by: authority"]
-  I1 -- no --> I2{"governing vs user?"}
-  I1a --> I2
-  I2 -- yes --> I2a["Governing prevails. User item is not excluded<br/>(query is protected; platform roles do the work).<br/>decided_by: authority"]
-  I2 -- "governing peers" --> I3{"exactly one 'governs',<br/>rest 'defers', no 'escalate'?"}
-  I3 -- yes --> I3a{"Any deferring member protected?"}
-  I3a -- no --> I3b["Exclude deferring members<br/>reason conflict_deferred<br/>decided_by: policy"]
-  I3a -- yes --> ESC
-  I3 -- no --> ESC["decided_by: escalated<br/>→ on_unresolved_instruction"]
-  K -- fact --> F0{"policy.facts has group.fact?<br/>members share scope?"}
-  F0 -- no --> ESCF
-  F0 -- yes --> F1["Rank members by precedence using the<br/>AUTHENTICATED producer id, never item.source"]
-  F1 --> F2{"unique top?"}
-  F2 -- yes --> F2a["Winner kept, losers excluded conflict_lost<br/>decided_by: policy"]
-  F2 -- no --> F3{"freshness_tiebreak and<br/>distinct freshness?"}
-  F3 -- yes --> F3a["Newest wins<br/>decided_by: freshness"]
-  F3 -- no --> ESCF["decided_by: escalated<br/>→ facts.X.on_unresolved"]
-  ESCF --> U{"on_unresolved"}
-  U -- surface --> U1["Keep all; renderer tags each<br/>with conflict='g1'"]
-  U -- request_context --> U2["REFUSE conflict_unresolved<br/>recovery.action: request_context"]
-  U -- refuse --> U3["REFUSE conflict_unresolved"]
+  G["Declared group"] --> M{"2 or more members<br/>admitted?"}
+  M -- no --> MOOT["moot / moot"]
+  M -- yes --> K{kind}
+  K -- instruction --> A["Set aside members that cannot instruct<br/>(anything but governing or user):<br/>they stay as material"]
+  A --> T{"Peers at the highest<br/>instructing authority?"}
+  T -- "0 or 1" --> AUTH["authority / resolved<br/>winner: the peer, if any<br/>nothing excluded"]
+  T -- "2 or more" --> P{"exactly one governs,<br/>the rest defer?"}
+  P -- yes --> PX["policy / resolved<br/>deferring peers: conflict_deferred"]
+  P -- no --> ESC
+  K -- fact --> E["Eligible: authenticated producer in<br/>facts.KEY.precedence, and carries<br/>every facts.KEY.scope key"]
+  E --> R{"leaders: eligible members of the<br/>earliest-ranked producer"}
+  R -- "one" --> FX["policy / resolved<br/>others: conflict_lost"]
+  R -- "several" --> FT{"freshness_tiebreak and<br/>one strictly newest?"}
+  FT -- yes --> FW["freshness / resolved<br/>others: conflict_lost"]
+  FT -- no --> ESC
+  R -- "none" --> ESC
+  PX & FX & FW -. "would exclude<br/>a protected item" .-> ESC["escalated"]
+  ESC --> U{"on_unresolved<br/>(instruction default: refuse)"}
+  U -- surface --> U1["surfaced: members kept,<br/>marked conflict=#quot;group id#quot;"]
+  U -- request_context --> U2["context_requested:<br/>REFUSE conflict_unresolved"]
+  U -- refuse --> U3["refused:<br/>REFUSE conflict_unresolved"]
 ```
 
-`authority` never decides a `fact` group (R-6, R-11). The schema renamed `tier` to `authority` and added `moot` (DA-10, done). This is also asserted in `trace.py` before emitting.
+- **Authority never decides a fact group** (R-6), and `conflict_policy` is read only between instruction peers (R-3). A `governing` example that loses a fact group is excluded like any other member.
+- **Precedence reads the authenticated producer**, which admission records per item, and never `item.source` (R-15).
+- **Protected items are never excluded by a conflict**, so the protected user request, which `defers` by default, cannot lose to a history turn that `governs`. The required-slot check therefore stays sound after resolution.
+- **Refusal.** `conflict_unresolved` comes right after `required_slot_missing`. `recovery.action: request_context` is set only when every refusing group asked for context. A refused trace keeps `conflicts[]` and the conflict rows.
+- **Trace order.** `conflicts[]` is ordered by group id, and each record's `items` by item id. Conflict rows come after the admission rows, ordered by item id, and before the fitting rows.
+- **Surface marks** reach the renderer through `place()`. Fitting renders the same marks, so they count against the budget like any wrapper.
 
 ### 4.4 Fitting (as built, M2)
 
@@ -574,7 +577,7 @@ flowchart LR
 Done so far:
 
 - `Snapshot.from_json` rejects unknown, shared and duplicate group ids and undefined facts. It also sorts each group's items, so their order cannot change the digest.
-- `src/cwa/conflicts.py` resolves groups right after admission, and every trace, refused or not, carries `conflicts[]` in group-id order. Moot groups and instruction groups are done: decided by authority, or by peers' `conflict_policy`, which excludes the deferring peers with `conflict_deferred`. Conflict rows follow the admission rows, by item id. An escalated instruction group follows the route's `on_unresolved_instruction` (default `refuse`). `refuse` and `request_context` refuse with `conflict_unresolved`, right after `required_slot_missing`, and set `recovery.action: request_context` only when every refusing group asked for it. `surface` keeps the members, and `place()` passes the group id to the renderer, which writes `conflict="<group id>"`. Fitting renders the same marks, so they count against the budget. The `conflict-instruction` case passes. Fact groups still raise `NotImplementedError`.
+- `src/cwa/conflicts.py` resolves every group kind and every escalation action (§4.3). All five conflict conformance cases pass byte for byte, and all nineteen vendored cases pass.
 
 **M2 status (2026-09-22): done.** Budget fitting and refusal are implemented test-first, spec first. The website gained the route-policy fields (`c0f5890`), `excluded[].slot` (`574fc6d`), and nine budget and refusal conformance cases generated from intent tables (`9e40504`). All eleven vendored cases pass byte for byte. Three followed: `budget-route-tiers` (website `d84bbd8`) closed a gap in the R-16 claim, since no test showed fitting honor a tier the route raised; `budget-token-caps` and `protected-over-cap` (website `adae6e1`) cover caps. `status.json` now claims R-4, R-12, R-16 and R-17 implemented and R-18 boundary-checked. Fitting is §4.4, refusals are §4, and the recovery mapping is §4.5. It diverged from this document in six ways, each written into the spec:
 

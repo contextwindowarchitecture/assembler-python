@@ -41,6 +41,8 @@ class Admission:
     """Assembler-stage exclusions, ordered by producer id and then recorded item id."""
     defaults_filled: tuple[tuple[str, str], ...]
     """(item id, field) for every schema-valid candidate whose policy fields were filled (R-3, R-22)."""
+    producers: Mapping[str, str]
+    """The authenticated producer id of each admitted item, by item id (R-15)."""
 
 
 def _schema_codes(error: ValidationError) -> list[str]:
@@ -203,7 +205,7 @@ def _item_reason(item: Item, ctx: _Context) -> str | None:
 
 
 def admit(snapshot: Snapshot) -> Admission:
-    items, excluded, filled = [], [], []
+    items, excluded, filled, producers = [], [], [], {}
     id_uses = Counter(
         [i for b in snapshot.batches for c in b.candidates if (i := usable_id(c))]
         + [row.item_id for b in snapshot.batches for row in b.excluded]
@@ -231,8 +233,10 @@ def admit(snapshot: Snapshot) -> Admission:
                 excluded.append(Exclusion(batch.producer.id, item_id, reason, slot))
                 continue
             items.append(item)
+            producers[item.id] = batch.producer.id
     return Admission(
         items=tuple(items),
         excluded=tuple(sorted(excluded, key=lambda e: (e.producer, e.item_id))),
         defaults_filled=tuple(sorted(filled, key=lambda f: (f[0], POLICY_FIELDS.index(f[1])))),
+        producers=producers,
     )

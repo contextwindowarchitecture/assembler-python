@@ -193,3 +193,103 @@ def test_a_protected_deferring_peer_is_never_excluded_so_its_group_escalates(fix
     result = assembled(fixture_snapshot, group("g1", "turn:10", "turn:18"))
     assert result.trace["conflicts"] == [record("g1", "instruction", ["turn:10", "turn:18"], "escalated", "surfaced")]
     assert b'<interaction.query id="turn:18" conflict="g1">' in result.payload
+
+
+# Fact groups (R-6, R-11): route policy for the fact key ranks authenticated producers; instruction
+# authority never ranks facts.
+
+def wiki_producer(snapshot: dict) -> list[dict]:
+    """A second retrieval producer, and its (empty) batch."""
+    snapshot["route_policy"]["producers"]["wiki-corpus"] = {"kind": "retrieval", "slots": ["evidence.knowledge"]}
+    snapshot["batches"].append({"producer": {"id": "wiki-corpus", "kind": "retrieval"}, "items": [], "excluded": []})
+    return snapshot["batches"][-1]["items"]
+
+
+def facts(snapshot: dict, **policies: dict) -> None:
+    snapshot["route_policy"]["facts"] = {key.replace("_", "."): {"on_unresolved": "surface", **p} for key, p in policies.items()}
+
+
+def excluded_by_conflicts(result) -> list[tuple[str, str]]:
+    return [(r["item_id"], r["reason"]) for r in result.trace["excluded"] if r["reason"].startswith("conflict_")]
+
+
+def test_the_producer_ranked_first_wins_and_the_others_lose(fixture_snapshot):
+    wiki_producer(fixture_snapshot).append(passage("wiki:window", "Refunds are possible for 14 days.", freshness="2026-09-21T00:00:00Z"))
+    facts(fixture_snapshot, refund_window={"precedence": ["policy-corpus", "wiki-corpus"]})
+    result = assembled(fixture_snapshot, group("f1", "wiki:window", "refunds-eu:v17#p4", fact="refund.window"))
+    assert result.trace["conflicts"] == [record("f1", "fact", ["refunds-eu:v17#p4", "wiki:window"], "policy", "resolved", "refunds-eu:v17#p4")]
+    assert excluded_by_conflicts(result) == [("wiki:window", "conflict_lost")]
+    assert b"wiki:window" not in result.payload
+
+
+def test_precedence_reads_the_authenticated_producer_never_the_item_source(fixture_snapshot):
+    """R-15: a wiki passage claiming the policy corpus as its source still ranks as the wiki."""
+    wiki_producer(fixture_snapshot).append(passage("wiki:window", source="policy-corpus"))
+    facts(fixture_snapshot, refund_window={"precedence": ["wiki-corpus", "policy-corpus"]})
+    result = assembled(fixture_snapshot, group("f1", "wiki:window", "refunds-eu:v17#p4", fact="refund.window"))
+    assert result.trace["conflicts"][0]["winner"] == "wiki:window"
+
+
+def test_governing_authority_does_not_rank_a_fact(fixture_snapshot):
+    open_slot(fixture_snapshot, "policy-registry", "governance.examples", after="governance.instructions")
+    batch(fixture_snapshot, "policy-registry").append(example("ex:window", "Example: refunds within 60 days are approved."))
+    facts(fixture_snapshot, refund_window={"precedence": ["policy-corpus"]})
+    result = assembled(fixture_snapshot, group("f1", "ex:window", "refunds-eu:v17#p4", fact="refund.window"))
+    assert result.trace["conflicts"][0]["decided_by"] == "policy"
+    assert excluded_by_conflicts(result) == [("ex:window", "conflict_lost")]
+
+
+def test_members_from_unlisted_producers_or_without_the_policy_scope_cannot_win(fixture_snapshot):
+    wiki_producer(fixture_snapshot).append(passage("wiki:status", scope={"tenant": "acme"}))
+    batch(fixture_snapshot, "policy-corpus").append(passage("kb:status"))
+    facts(fixture_snapshot, order_status={"precedence": ["wiki-corpus", "policy-corpus"], "scope": ["task"]})
+    result = assembled(fixture_snapshot, group("f1", "wiki:status", "kb:status", "refunds-eu:v17#p4", fact="order.status"))
+    # Only the fixture passage carries a task scope; the wiki outranks it but lacks the key.
+    assert result.trace["conflicts"][0]["winner"] == "refunds-eu:v17#p4"
+    assert excluded_by_conflicts(result) == [("kb:status", "conflict_lost"), ("wiki:status", "conflict_lost")]
+
+
+def test_a_group_with_no_eligible_member_escalates(fixture_snapshot):
+    wiki_producer(fixture_snapshot).append(passage("wiki:window"))
+    facts(fixture_snapshot, refund_window={"precedence": ["crm-mcp"]})
+    result = assembled(fixture_snapshot, group("f1", "wiki:window", "refunds-eu:v17#p4", fact="refund.window"))
+    assert result.trace["conflicts"] == [record("f1", "fact", ["refunds-eu:v17#p4", "wiki:window"], "escalated", "surfaced")]
+    assert b'<evidence.knowledge id="wiki:window" conflict="f1">' in result.payload
+
+
+def test_freshness_breaks_a_tie_only_when_allowed_and_at_full_precision(fixture_snapshot):
+    batch(fixture_snapshot, "policy-corpus").extend([passage("kb:a", freshness="2026-09-22T11:00:00.0000002Z"),
+                                                     passage("kb:b", freshness="2026-09-22T11:00:00.0000001Z")])
+    facts(fixture_snapshot, refund_fee={"precedence": ["policy-corpus"], "freshness_tiebreak": True})
+    result = assembled(fixture_snapshot, group("f1", "kb:a", "kb:b", fact="refund.fee"))
+    assert result.trace["conflicts"] == [record("f1", "fact", ["kb:a", "kb:b"], "freshness", "resolved", "kb:a")]
+    assert excluded_by_conflicts(result) == [("kb:b", "conflict_lost")]
+    facts(fixture_snapshot, refund_fee={"precedence": ["policy-corpus"]})
+    assert assembled(fixture_snapshot, group("f1", "kb:a", "kb:b", fact="refund.fee")).trace["conflicts"][0]["decided_by"] == "escalated"
+
+
+def test_freshness_does_not_break_a_tie_between_equally_fresh_leaders(fixture_snapshot):
+    batch(fixture_snapshot, "policy-corpus").extend([passage("kb:a", freshness="2026-09-22T11:00:00Z"),
+                                                     passage("kb:b", freshness="2026-09-22T11:00:00.000Z"),
+                                                     passage("kb:c", freshness="2026-09-22T10:00:00Z")])
+    facts(fixture_snapshot, refund_fee={"precedence": ["policy-corpus"], "freshness_tiebreak": True})
+    result = assembled(fixture_snapshot, group("f1", "kb:a", "kb:b", "kb:c", fact="refund.fee"))
+    assert result.trace["conflicts"][0]["decided_by"] == "escalated"
+
+
+def test_a_fact_decision_that_would_exclude_protected_content_escalates(fixture_snapshot):
+    facts(fixture_snapshot, refund_window={"precedence": ["policy-corpus"]})
+    result = assembled(fixture_snapshot, group("f1", "policy:v12", "refunds-eu:v17#p4", fact="refund.window"))
+    assert result.trace["conflicts"][0]["decided_by"] == "escalated"
+    assert excluded_by_conflicts(result) == []
+
+
+def test_each_fact_names_its_own_unresolved_action(fixture_snapshot):
+    batch(fixture_snapshot, "policy-corpus").extend([passage("kb:a"), passage("kb:b"), passage("kb:c"), passage("kb:d")])
+    facts(fixture_snapshot, fee={"precedence": ["policy-corpus"], "on_unresolved": "request_context"},
+          window={"precedence": ["policy-corpus"], "on_unresolved": "refuse"})
+    asked = assembled(fixture_snapshot, group("f1", "kb:a", "kb:b", fact="fee"))
+    assert asked.trace["refused"]["reason"] == "conflict_unresolved" and asked.trace["recovery"] == {"action": "request_context"}
+    both = assembled(fixture_snapshot, group("f1", "kb:a", "kb:b", fact="fee"), group("f2", "kb:c", "kb:d", fact="window"))
+    assert [r["resolution"] for r in both.trace["conflicts"]] == ["context_requested", "refused"]
+    assert both.trace["refused"]["reason"] == "conflict_unresolved" and "recovery" not in both.trace

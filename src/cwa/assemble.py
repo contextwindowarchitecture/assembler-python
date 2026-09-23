@@ -115,7 +115,7 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResu
     if unplaced := sorted({item.slot for item in items} - placed):
         raise NotImplementedError(f"admitted items in unplaced slots {unplaced} need placement checks (M4)")
     # Conflicts resolve before any refusal check, so every trace records them (R-11).
-    resolution = resolve(snapshot, items)
+    resolution = resolve(snapshot, items, admission.producers)
     reason, fitted, recovery = _refusal(snapshot, resolution)
     if reason:
         # R-17: a refusal has no payload; exclusions found so far, including fitting's, stay in the trace.

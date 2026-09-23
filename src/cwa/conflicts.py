@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
+from . import instants
 from .fitting import tier
 from .model import ConflictGroup, Item
 from .snapshot import Snapshot
@@ -55,8 +56,30 @@ def _instruction(snapshot: Snapshot, group: ConflictGroup, members: list[Item]) 
     return _record(group, "policy", "resolved", governing[0].id), [(m, "conflict_deferred") for m in deferring]
 
 
-def resolve(snapshot: Snapshot, items: tuple[Item, ...]) -> Resolution:
-    """Decide every declared group against the admitted items."""
+def _fact(snapshot: Snapshot, group: ConflictGroup, members: list[Item], producers: Mapping[str, str]) -> tuple[dict[str, Any], list[tuple[Item, str]]]:
+    policy = snapshot.route_policy.document["facts"][group.fact]
+    precedence = policy["precedence"]
+    # Eligibility reads the authenticated producer, never item.source (R-15).
+    eligible = [m for m in members if producers[m.id] in precedence and all(key in m.scope for key in policy.get("scope", []))]
+    if not eligible:
+        raise _Escalate
+    best = min(precedence.index(producers[m.id]) for m in eligible)
+    leaders = [m for m in eligible if precedence.index(producers[m.id]) == best]
+    decided_by = "policy"
+    if len(leaders) > 1:
+        newest = [m for m in leaders if all(instants.compare(m.freshness, other.freshness) > 0 for other in leaders if other is not m)]
+        if not policy.get("freshness_tiebreak", False) or not newest:
+            raise _Escalate
+        leaders, decided_by = newest, "freshness"
+    losers = [m for m in members if m is not leaders[0]]
+    if any(tier(snapshot, m) == "protected" for m in losers):
+        raise _Escalate
+    return _record(group, decided_by, "resolved", leaders[0].id), [(m, "conflict_lost") for m in losers]
+
+
+def resolve(snapshot: Snapshot, items: tuple[Item, ...], producers: Mapping[str, str]) -> Resolution:
+    """Decide every declared group against the admitted items; producers maps each to its
+    authenticated producer id."""
     admitted = {item.id: item for item in items}
     records, excluded, marks, refusing = [], [], {}, []
     for group in snapshot.conflicts:
@@ -64,12 +87,16 @@ def resolve(snapshot: Snapshot, items: tuple[Item, ...]) -> Resolution:
         if len(members) < 2:
             records.append(_record(group, "moot", "moot"))
             continue
-        if group.kind == "fact":
-            raise NotImplementedError("fact groups land later in M3")
         try:
-            record, losers = _instruction(snapshot, group, members)
+            if group.kind == "fact":
+                record, losers = _fact(snapshot, group, members, producers)
+            else:
+                record, losers = _instruction(snapshot, group, members)
         except _Escalate:
-            action = snapshot.route_policy.document.get("on_unresolved_instruction", "refuse")
+            if group.kind == "fact":
+                action = snapshot.route_policy.document["facts"][group.fact]["on_unresolved"]
+            else:
+                action = snapshot.route_policy.document.get("on_unresolved_instruction", "refuse")
             record, losers = _record(group, "escalated", _ESCALATED[action]), []
             if action == "surface":
                 marks.update((m.id, group.id) for m in members)
