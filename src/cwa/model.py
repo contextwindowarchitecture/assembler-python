@@ -51,8 +51,10 @@ class Item:
     """Policy fields the producer omitted and the slot defaults supplied (R-3)."""
 
     @classmethod
-    def from_json(cls, data: Mapping[str, Any]) -> Item:
-        defaults = SLOT_DEFAULTS[data["slot"]]
+    def from_json(cls, data: Mapping[str, Any], overrides: Mapping[str, Any] | None = None) -> Item:
+        """Build from a schema-valid item; omitted policy fields come from the slot defaults as
+        replaced by the route's overrides for that slot (R-3)."""
+        defaults = {**SLOT_DEFAULTS[data["slot"]], **(overrides or {})}
         filled = tuple(field for field in POLICY_FIELDS if field not in data)
         merged = {**{field: defaults[field] for field in filled}, **data}
         return cls(

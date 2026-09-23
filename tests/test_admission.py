@@ -383,3 +383,19 @@ def test_an_item_without_a_score_cannot_clear_a_threshold(fixture_snapshot):
     fixture_snapshot["route_policy"]["slots"] = {"evidence.tool_results": {"min_relevance": 0.5}}
     add_batch(fixture_snapshot, "crm-mcp", "mcp", observation("obs:1"))
     assert exclusions(fixture_snapshot) == [("obs:1", "below_threshold")]
+
+
+# R-3: omitted policy fields come from the slot defaults, replaced by the route's versioned overrides.
+
+def test_route_overrides_replace_slot_defaults_and_are_traced(fixture_snapshot):
+    from cwa.admission import admit
+
+    fixture_snapshot["route_policy"]["default_overrides"] = {"evidence.knowledge": {"token_budget": 420, "lineage": "extracted"}}
+    add(fixture_snapshot, "policy-corpus", knowledge(id="kb:filled"), knowledge(id="kb:explicit", token_budget=90, lineage="verbatim", variants=[],
+                                                                                  conflict_policy="defers", eligibility="route-policy", injection_risk="untrusted_content"))
+    admission = admit(Snapshot.from_json(fixture_snapshot))
+    by_id = {item.id: item for item in admission.items}
+    assert (by_id["kb:filled"].token_budget, by_id["kb:filled"].lineage, by_id["kb:filled"].conflict_policy) == (420, "extracted", "defers")
+    assert (by_id["kb:explicit"].token_budget, by_id["kb:explicit"].lineage) == (90, "verbatim")
+    assert [f for i, f in admission.defaults_filled if i == "kb:filled"] == list(("token_budget", "variants", "conflict_policy", "lineage", "eligibility", "injection_risk"))
+    assert [f for i, f in admission.defaults_filled if i == "kb:explicit"] == []

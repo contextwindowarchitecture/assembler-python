@@ -225,7 +225,8 @@ def admit(snapshot: Snapshot) -> Admission:
             if reason := _structure(candidate):
                 excluded.append(Exclusion(batch.producer.id, item_id, reason))
                 continue
-            item = Item.from_json(candidate)
+            overrides = snapshot.route_policy.document.get("default_overrides", {}).get(candidate["slot"])
+            item = Item.from_json(candidate, overrides)
             filled += [(item.id, field) for field in item.defaults_filled]
             if reason := _item_reason(item, _Context(snapshot, batch.producer, granted, id_uses)):
                 excluded.append(Exclusion(batch.producer.id, item_id, reason))
