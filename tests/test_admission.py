@@ -131,6 +131,18 @@ def test_ids_used_by_refused_candidates_still_count(fixture_snapshot):
     ]
 
 
+def producer_rows(snapshot: dict) -> list[tuple[str, str]]:
+    trace = assemble(Snapshot.from_json(snapshot)).trace
+    return [(row["item_id"], row["reason"]) for row in trace["excluded"] if row["stage"] == "producer"]
+
+
+def test_producer_rows_from_an_unauthenticated_batch_reach_the_trace(fixture_snapshot):
+    # R-9: producer rows carry no content, so they reach the trace whether or not the route admits the producer.
+    add_batch(fixture_snapshot, "rogue", "retrieval", knowledge(id="rogue:1"))["batches"][-1]["excluded"] = [
+        {"item_id": "rogue:0", "reason": "below_threshold", "stage": "producer"}]
+    assert ("rogue:0", "below_threshold") in producer_rows(fixture_snapshot)
+
+
 def place(snapshot: dict, *slots: str) -> dict:
     """Add placements so admitted items in these slots render."""
     snapshot["profile"]["placement"][-1:-1] = [{"slot": s, "wrap": "xml:" + s} for s in slots]

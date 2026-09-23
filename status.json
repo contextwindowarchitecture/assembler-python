@@ -107,7 +107,8 @@
         "tests/test_admission.py::test_lifetime_boundaries",
         "tests/test_admission.py::test_memory_sources_must_name_their_turn",
         "tests/test_admission.py::test_expired_memory_a_producer_failed_to_suppress_is_still_excluded",
-        "tests/test_conformance.py::test_conformance_case"
+        "tests/test_conformance.py::test_conformance_case",
+        "tests/test_admission.py::test_producer_rows_from_an_unauthenticated_batch_reach_the_trace"
       ]
     },
     {
