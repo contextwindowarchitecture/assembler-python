@@ -13,7 +13,7 @@ This document designs the Python reference assembler and tests whether the v2 dr
 
 | # | Gap | Why it blocks code |
 |---|-----|--------------------|
-| DA-1 | "Rendered payload" is undefined for multi-channel requests (`wrap: system`, `wrap: tools`) | You cannot hash "exact bytes" until you define which bytes. Two profiles cannot be realized on a single-system-prompt API. **Decided** (D-1); the render IR lands with M4's message renderer. |
+| DA-1 | "Rendered payload" is undefined for multi-channel requests (`wrap: system`, `wrap: tools`) | You cannot hash "exact bytes" until you define which bytes. Two profiles cannot be realized on a single-system-prompt API. **Done** (D-1, M4): `cwa-messages/v1`. |
 | DA-2 | R-16 requires exact counts with the declared tokenizer, but R-23 forbids external reads | Some providers only offer token counting as a remote call, and the sum of per-part counts ≠ the count of the whole. **Decided** (D-3); only the exact fixture tokenizer is built. |
 | DA-3 | Fitting has no defined step after "compress" | With 30 retrieved passages, a literal reading refuses routine requests. The landing demo does exactly that. **Done** (D-2, M2). |
 | DA-4 | The published API (`assembler.html`) has no `assembly_time`, conflicts, scope, producer identity, tokenizer or renderer | The API makes R-23 impossible to meet: those inputs would be ambient. |
@@ -131,7 +131,7 @@ The snapshot stores the *outcome* of authentication (producer id, kind, verified
 
 ### 2.3 Package layout
 
-This is the planned layout. As built through M3 and M4 so far, `src/cwa/` holds `assemble.py` (pipeline, refusals and the R-12 recovery mapping), `admission.py`, `conflicts.py`, `fitting.py`, `snapshot.py`, `model.py`, `canonical.py` (RFC 8785), `instants.py`, `trace.py`, `render/` (`fixture_xml.py`, `messages.py` from M4), `tokenize/` (`fixture_whitespace.py`) and `contract/` (vendored data, pinned by `contract.lock.json`). There is no `evidence.py`, `policy.py`, `registry.py`, `reasons.py` or conformance runner: the reason registry and route policy are read from the vendored JSON, the registry arrives with M4, and the report with M5.
+This is the planned layout. As built through M4, `src/cwa/` holds `assemble.py` (pipeline, refusals and the R-12 recovery mapping), `admission.py`, `conflicts.py`, `fitting.py`, `snapshot.py`, `model.py`, `canonical.py` (RFC 8785), `instants.py`, `trace.py`, `render/` (`fixture_xml.py`, `messages.py` from M4), `tokenize/` (`fixture_whitespace.py`) and `registry.py` (M4) and `contract/` (vendored data, pinned by `contract.lock.json`). There is no `evidence.py`, `policy.py`, `reasons.py` or conformance runner: the reason registry and route policy are read from the vendored JSON, and the report arrives with M5.
 
 ```
 cwa/
@@ -280,7 +280,7 @@ R-3 says the route owns the *executable* eligibility predicate. Keep it declarat
 
 ## 4. Pipeline deep dive
 
-This is the pipeline as first designed. What is built differs: see "Refusals as built" below and §4.1–§4.5. Step 0 became a `SnapshotError` with no trace, step 2 is deferred (§4.2), step 3 runs before step 4, and step 5 waits for M4.
+This is the pipeline as first designed. What is built differs: see "Refusals as built" below and §4.1–§4.5. Step 0 became a `SnapshotError` with no trace, step 2 is deferred (§4.2), step 3 runs before step 4, and step 5 became admission's `slot_unplaced` check plus the `protected_slot_unplaced` refusal (M4).
 
 ```mermaid
 flowchart TD
@@ -477,7 +477,7 @@ Severity: **B** blocks implementation · **H** high (security or correctness) ·
 
 | ID | Sev | The spec or site says | The problem | Recommendation |
 |---|---|---|---|---|
-| DA-1 | B | R-21: hash of "the exact rendered UTF-8 payload". Profiles use `wrap: system`, `wrap: tools`. | Chat APIs take a system parameter, a tools array and messages, not one string. `document-analysis` puts evidence *before* `system`. `long-context-reinforced` repeats instructions as a second `system`, which a single-system-param API merges back to the top and defeats the profile's intent. | Renderer output is **canonical bytes of a render IR**: `{system:[…], tools:[…], messages:[…]}` serialized as JSON with sorted keys, no floats, UTF-8 (RFC 8785-equivalent). The provider adapter is a pure, versioned function of that IR. Renderers declare position constraints, and unrealizable profiles are rejected at load. Change the repeated instruction wrap to `xml:instructions`. **D-1** **Decided** (D-1); the render IR lands with M4's message renderer. |
+| DA-1 | B | R-21: hash of "the exact rendered UTF-8 payload". Profiles use `wrap: system`, `wrap: tools`. | Chat APIs take a system parameter, a tools array and messages, not one string. `document-analysis` puts evidence *before* `system`. `long-context-reinforced` repeats instructions as a second `system`, which a single-system-param API merges back to the top and defeats the profile's intent. | Renderer output is **canonical bytes of a render IR**: `{system:[…], tools:[…], messages:[…]}` serialized as JSON with sorted keys, no floats, UTF-8 (RFC 8785-equivalent). The provider adapter is a pure, versioned function of that IR. Renderers declare position constraints, and unrealizable profiles are rejected at load. Change the repeated instruction wrap to `xml:instructions`. **D-1** **Done** (D-1, M4): `cwa-messages/v1` rejects unrealizable profiles, and both example profiles are now version 3 with `xml:instructions` repeats. |
 | DA-2 | B | R-16: count with the declared tokenizer. R-23: no external reads. | Some providers expose counting only as a remote endpoint. BPE counts are not additive across segment boundaries. | `Tokenizer` protocol with `exact: bool` and `margin`. Estimators must declare a margin, which is recorded in `context.tokenizer`, e.g. `estimate-cl/v1+8%`. Optional remote verification runs *after* assembly, outside the pure core, and an overflow produces a new snapshot with a smaller budget. **D-3** **Decided** (D-3); only the exact fixture tokenizer is built. |
 | DA-3 | B | R-16: "drop droppable before compressing compressible". Spec §4.1: compressible "may be replaced by a variant". | Nothing says what happens when the smallest variants still don't fit. The landing demo refuses. The "Budget" stage says "admit only content that fits", which implies dropping. A strict reading refuses whenever retrieval is generous. | Add Phase 3, dropping compressible items by route priority, and amend R-16 to say so explicitly. **D-2** **Done** (D-2, M2). |
 | DA-4 | B | `assembler.html` API: `assemble(items, profile, budget, route_policy)` | Clock, scope, conflicts, producer identity, tokenizer and renderer are absent, so they would have to be ambient, which violates R-23. | `assemble(snapshot)` (§2.2). **Done 2026-09-22** on `assembler.html`. |
@@ -496,8 +496,8 @@ Severity: **B** blocks implementation · **H** high (security or correctness) ·
 | DA-17 | M | Website validates `format: date-time` via ajv-formats | Python `jsonschema` ignores `format` unless a `FormatChecker` is passed *and* `rfc3339-validator` is installed. `freshness: "yesterday"` would pass silently. | Pin both and add bad-timestamp conformance cases. **Done** (M0; `kb:bad-date` in `admission-reasons`). |
 | DA-18 | M | Expiry compares `expires ≤ assembly_time` | JS `Date.parse` truncates to milliseconds, and Python keeps microseconds. `expires = 12:00:00.0005Z` is expired in JS and live in Python. | Spec: compare at full given precision, or define millisecond truncation. Add a conformance case either way. **Done:** full precision (M1; `kb:sub-ms` in `admission-reasons`). |
 | DA-19 | L | "Fresh observations replace stale ones for the same call" | No call-identity field. | `supersede_by: source` route rule (§4.2). **Deferred** with §4.2. |
-| DA-20 | M | Profile `route_policy_version` is a string. R-20 requires a version bump on change. | Nothing stops someone editing a profile or policy in place under the same version. | Lockfile pins sha256 per `(id, version)`, and a mismatch is a load error. Planned for M4. |
-| DA-21 | M | `document-analysis` has no `governance.capabilities` or `evidence.tool_results` placement | If a protected capability is admitted on that route, the profile must not omit it (R-20). | Step 5: `protected_slot_unplaced` refusal. Unprotected → `slot_not_placed` exclusion. Planned for M4. |
+| DA-20 | M | Profile `route_policy_version` is a string. R-20 requires a version bump on change. | Nothing stops someone editing a profile or policy in place under the same version. | Lockfile pins sha256 per `(id, version)`, and a mismatch is a load error. **Done** (M4): `cwa.registry`, with the lock format in `schema/registry_lock.schema.json`. |
+| DA-21 | M | `document-analysis` has no `governance.capabilities` or `evidence.tool_results` placement | If a protected capability is admitted on that route, the profile must not omit it (R-20). | Step 5: `protected_slot_unplaced` refusal. Unprotected → `slot_not_placed` exclusion. **Done** (M4) as `protected_slot_unplaced` and `slot_unplaced`. |
 | DA-22 | M | R-1: history carries `user` authority | Prior *assistant* turns are not user authority. Rendering them as native assistant messages versus a transcript block changes both authority semantics and token counts. | Assistant turns use `authority: untrusted` (R-1 allows it) and render inside a transcript block. **Done 2026-09-22** (D-5). |
 | DA-23 | L | Stages "Packetize … binding or informative", "Filter … jurisdiction", "Attribute … carry citation requirements into the output contract" | No schema fields exist for binding/informative or jurisdiction. Mutating the protected, verbatim output contract would break R-16. | Attribute = renderer emits `id` on each packet, and the route's output contract references ids. The other two are out of v0 scope. |
 | DA-24 | L | Trace schema `additionalProperties: false` | There is no place for a snapshot digest, so a trace cannot point back to its replay input. | Add optional `context.snapshot_digest`. **Done** (D-6). |
@@ -534,7 +534,7 @@ flowchart LR
   R --> W["website: assembler.html matrix"]
 ```
 
-**Built so far (M0–M3, and M4 in progress):** the golden test, all twenty-four conformance cases, a shuffle test over every case (payload, trace and digest), purity guards on sockets and clocks, and schema validation of every emitted trace. The suite also passes under different `PYTHONHASHSEED`, `TZ` and locale values, checked by hand, not in CI. Not built: hypothesis property tests, the import lint, a fresh-process replay test, and `conformance-report.json` (M5).
+**Built so far (M0–M4):** the golden test, all twenty-four conformance cases, a shuffle test over every case (payload, trace and digest), purity guards on sockets and clocks, and schema validation of every emitted trace. The suite also passes under different `PYTHONHASHSEED`, `TZ` and locale values, checked by hand, not in CI. Not built: hypothesis property tests, the import lint, a fresh-process replay test, and `conformance-report.json` (M5).
 
 - **The golden test comes first.** Reproduce `examples/trace.json` and `examples/payload.txt` exactly. The fixture already exists and is hash-checked, so it's a free end-to-end test.
 - **Tests map to requirements.** Each conformance case declares `rules: ["R-16", "R-17"]`. A row flips to *implemented* only when every assembler-scoped clause has a passing case. That is the rule `assembler.html` already states.
@@ -566,7 +566,7 @@ flowchart LR
   M4 --> M5["M5 · Hardening<br/>R-21 R-22 R-23<br/>conformance-report → website"]
 ```
 
-**M4 status (2026-09-22): in progress. Placement, profiles and the message renderer** (R-7, R-19, R-20). The maintainer chose the render IR (below) and asked for the two example profiles a single system prompt cannot realize to be revised to version 3, which website `1a6ede5` did. Spec first again: website `16a5cca` defines the placement checks and `b303ca4` adds three placement cases, vendored here as pending.
+**M4 status (2026-09-22): done. Placement, profiles, the message renderer and the registry** (R-7, R-19, R-20). The maintainer chose the render IR (below) and asked for the two example profiles a single system prompt cannot realize to be revised to version 3, which website `1a6ede5` did. Spec first again: website `16a5cca` defines the placement checks and `b303ca4` adds three placement cases, vendored here as pending.
 
 ```mermaid
 flowchart LR
@@ -577,6 +577,26 @@ flowchart LR
 - **Placement is the last admission check** (R-20). An item in a slot the profile does not place is excluded with `slot_unplaced`, after every other check. A protected item is kept instead, and assembly refuses with `protected_slot_unplaced` right after `required_slot_missing`. Placement no longer raises `NotImplementedError`, and the three placement cases pass.
 - **One body, two renderings.** A governance slot placed as both `system` (raw) and `xml:` (escaped), as `document-analysis` v3 now is, renders one body two ways. Caps and variant comparisons use the larger rendering, and each `compressed[]` row counts its own occurrence (website `3227b9a`).
 - **Render IR (D-1), as chosen and built** (website `35b827e`, cases `c131acc`). `cwa-messages/v1` (`src/cwa/render/messages.py`) emits RFC 8785 JSON `{messages, system, tools}`. Only governance slots may use `system` or `tools` wraps (`tools` only for capabilities), and every `system` placement comes before every `xml:` placement; anything else is a `SnapshotError`. One user message holds every `xml:` occurrence in `fixture-xml/v1` grammar, with history turns marked `speaker="user"` or `speaker="assistant"` (from `lineage: generated`) and never split into their own messages (R-7). `input_tokens` is the sum of the tokenizer's counts of each system text, tool text and message content, so a renderer now declares the texts it counts (`Rendered.texts`). `included[]` follows placement order, which the spec now says explicitly, since the IR's sorted keys put `messages` before `system`. With it R-7 and R-10 are implemented: the `messages-render` case is also the injection case DA-6 asked for.
+- **Registry** (website `dcb2319`, fixtures `ac55a4a`). `cwa.registry` loads profiles and route policies against a lock that pins each `(id, version)` or `(route, version)` to a digest. It refuses content that changed under an unchanged version, content the lock does not pin, and a lock or input that names an identity twice (R-20). A profile's digest leaves out `evaluation`, so promotion alone keeps the version, as R-20 allows. `lock()` adds new identities and never rewrites one. `profile(..., deployment=True)` returns only evaluated profiles, for which the profile schema demands a model family and a reproducible artifact (R-19). `conformance/registry/` pins the published example profiles; the website recomputes those digests in JavaScript, and the tests here in Python.
+
+```mermaid
+flowchart LR
+  L[/"lock.json<br/>id, version, sha256"/] --> RG["Registry.from_json<br/>schema-valid, pinned,<br/>digest unchanged"]
+  D[/"profiles,<br/>route policies"/] --> RG
+  RG -- "changed, unpinned<br/>or duplicated" --> X["RegistryError"]
+  RG --> P["profile(id, version,<br/>deployment=True)"]
+  P -- unevaluated --> X
+  P --> S["Snapshot.freeze(profile=…,<br/>route_policy=…)"] --> A["assemble()"]
+```
+
+Result: all twenty-four vendored conformance cases pass, and `status.json` claims R-7, R-10 and R-20 implemented and R-19 boundary-checked. The build diverged from the original design in four ways, each written into the spec:
+
+- **`Registry.from_json(lock, profiles, route_policies)`**, not `Registry.from_lockfile(path)` (§2.2). The registry reads documents, not files, like `Snapshot.from_json`, so the application owns all I/O. The lock pins route policies as well as profiles.
+- **Placement is an admission check.** The old step 5 ran after conflicts; the built check runs last in admission, so an unplaced item never joins a conflict group, and a group it would have joined can become moot.
+- **The payload's size is a renderer's business.** A text renderer counts its payload, and `cwa-messages/v1` sums its texts, so JSON punctuation and role names are never counted.
+- **`included[]` is in placement order**, which for a text renderer is the same as payload order.
+
+**Next: M5.** Hardening: R-21, R-22, R-23, the code-point versus UTF-16 ordering question, and `conformance-report.json` for the website.
 
 **M3 status (2026-09-22): done. Conflicts** (R-6, R-11, and the last clause of R-3). As in M2, the spec came first. Website `89660ed` defines resolution, and `271f4c3` adds five conflict conformance cases generated from intent tables, vendored here as pending. The maintainer took the recommended option on each open question:
 
