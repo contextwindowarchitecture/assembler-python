@@ -293,3 +293,24 @@ def test_each_fact_names_its_own_unresolved_action(fixture_snapshot):
     both = assembled(fixture_snapshot, group("f1", "kb:a", "kb:b", fact="fee"), group("f2", "kb:c", "kb:d", fact="window"))
     assert [r["resolution"] for r in both.trace["conflicts"]] == ["context_requested", "refused"]
     assert both.trace["refused"]["reason"] == "conflict_unresolved" and "recovery" not in both.trace
+
+
+# R-3: conflict_policy applies only between eligible instruction peers.
+
+def test_conflict_policy_is_ignored_for_factual_precedence(fixture_snapshot):
+    wiki_producer(fixture_snapshot).append(passage("wiki:window", conflict_policy="governs"))
+    batch(fixture_snapshot, "policy-corpus")[0]["conflict_policy"] = "defers"
+    facts(fixture_snapshot, refund_window={"precedence": ["policy-corpus", "wiki-corpus"]})
+    result = assembled(fixture_snapshot, group("f1", "wiki:window", "refunds-eu:v17#p4", fact="refund.window"))
+    assert result.trace["conflicts"][0]["winner"] == "refunds-eu:v17#p4"
+
+
+def test_conflict_policy_does_not_reach_across_authority_levels(fixture_snapshot):
+    """A user turn that governs does not outrank a governing example that defers."""
+    open_slot(fixture_snapshot, "policy-registry", "governance.examples", after="governance.instructions")
+    open_slot(fixture_snapshot, "conversation", "interaction.history", after="evidence.knowledge")
+    batch(fixture_snapshot, "policy-registry").append(example("ex:long"))
+    batch(fixture_snapshot, "conversation").append(turn("turn:10", "Keep it to one line.", conflict_policy="governs"))
+    result = assembled(fixture_snapshot, group("g1", "ex:long", "turn:10"))
+    assert result.trace["conflicts"] == [record("g1", "instruction", ["ex:long", "turn:10"], "authority", "resolved", "ex:long")]
+    assert excluded_by_conflicts(result) == []
