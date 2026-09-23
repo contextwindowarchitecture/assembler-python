@@ -10,6 +10,7 @@ uv run pytest                                                    # full suite; m
 uv run pytest tests/test_x.py::test_name                         # one test
 python scripts/vendor_contract.py --website ../website           # re-vendor the contract after a website change
 python scripts/vendor_contract.py --website ../website --check   # fail on drift
+uv run python -m cwa.conformance > conformance-report.json         # regenerate the committed conformance report
 ```
 
 ## Test-driven development
@@ -28,7 +29,7 @@ Rules:
 - Before claiming a test protects something, break the code on purpose and watch the test fail. Restore the code afterwards:
   - Copy the file outside the repo first, and restore it with `cp`. Never use `git checkout` or `git restore`, which also discard uncommitted work.
   - Then delete `__pycache__`. A same-length edit restored within the same second leaves bytecode that Python still trusts, and the suite then fails on correct code.
-- A conformance-matrix row moves to *implemented* (or *boundary-checked*) only when tests cover every assembler-scoped clause of that requirement. Record the claim in `status.json` and cite the tests. `tests/test_status.py` rejects statuses that don't fit the scope, and claims whose cited tests don't exist. The website imports `status.json` into its matrix.
+- A conformance-matrix row moves to *implemented* (or *boundary-checked*) only when tests cover every assembler-scoped clause of that requirement. Record the claim in `status.json` and cite the tests. `tests/test_status.py` rejects statuses that don't fit the scope, claims whose cited tests don't exist, and claims for a requirement while any case tagged with it fails in `conformance-report.json`. Regenerate that report with `uv run python -m cwa.conformance > conformance-report.json` whenever a case or the code changes; `tests/test_report.py` fails while it is stale. The website imports both files into its matrix.
 
 ## Commits
 

@@ -33,3 +33,12 @@ def test_claims_cite_tests_that_exist():
                 tree = ast.parse((ROOT / path).read_text(encoding="utf-8"))
                 defined[path] = {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
             assert name in defined[path], f"{row['id']} cites missing test {node}"
+
+
+def test_claims_hold_only_while_every_case_for_the_requirement_passes():
+    """D-8: the committed conformance report (kept current by test_report.py) backs every claim."""
+    cases = read_json(ROOT / "conformance-report.json")["cases"]
+    for row in STATUS:
+        if row["status"] in ("implemented", "boundary-checked"):
+            failing = [case["id"] for case in cases if row["id"] in case["rules"] and case["outcome"] != "passed"]
+            assert not failing, f"{row['id']} claims {row['status']} while {failing} do not pass"
