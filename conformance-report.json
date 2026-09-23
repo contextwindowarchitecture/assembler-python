@@ -1,0 +1,269 @@
+{
+  "implementation": {
+    "name": "cwa-assembler",
+    "version": "0.0.1",
+    "language": "python"
+  },
+  "contract": {
+    "website_commit": "c9027ec3f222b69e4c27e8b8334c865715edda42",
+    "dirty": false
+  },
+  "cases": [
+    {
+      "id": "admission-reasons",
+      "rules": [
+        "R-1",
+        "R-2",
+        "R-3",
+        "R-8",
+        "R-9",
+        "R-10",
+        "R-13",
+        "R-14",
+        "R-15",
+        "R-16",
+        "R-18",
+        "R-21",
+        "R-22"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "budget-droppable-order",
+      "rules": [
+        "R-16",
+        "R-21",
+        "R-22"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "budget-omit-after-variants",
+      "rules": [
+        "R-4",
+        "R-12",
+        "R-16",
+        "R-18",
+        "R-21",
+        "R-22"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "budget-route-order",
+      "rules": [
+        "R-16",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "budget-route-tiers",
+      "rules": [
+        "R-16",
+        "R-18",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "budget-token-caps",
+      "rules": [
+        "R-3",
+        "R-16",
+        "R-18",
+        "R-21",
+        "R-22"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "budget-variant-choice",
+      "rules": [
+        "R-16",
+        "R-18",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "conflict-fact",
+      "rules": [
+        "R-2",
+        "R-6",
+        "R-11",
+        "R-15",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "conflict-instruction",
+      "rules": [
+        "R-3",
+        "R-6",
+        "R-7",
+        "R-11",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "conflict-refused",
+      "rules": [
+        "R-6",
+        "R-11",
+        "R-17",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "conflict-request-context",
+      "rules": [
+        "R-11",
+        "R-12",
+        "R-17",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "conflict-required-slot-first",
+      "rules": [
+        "R-4",
+        "R-11",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "evidence-precompute-summary",
+      "rules": [
+        "R-12",
+        "R-16",
+        "R-17",
+        "R-21",
+        "R-22"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "evidence-request-context",
+      "rules": [
+        "R-12",
+        "R-17",
+        "R-21",
+        "R-22"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "evidence-retrieve-narrower",
+      "rules": [
+        "R-12",
+        "R-16",
+        "R-17",
+        "R-21",
+        "R-22"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "fixture-three-slot",
+      "rules": [
+        "R-9",
+        "R-21",
+        "R-22",
+        "R-23"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "messages-budget",
+      "rules": [
+        "R-7",
+        "R-16",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "messages-render",
+      "rules": [
+        "R-7",
+        "R-10",
+        "R-11",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "ordering-astral-ids",
+      "rules": [
+        "R-3",
+        "R-16",
+        "R-21",
+        "R-22",
+        "R-23"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "placement-protected-unplaced",
+      "rules": [
+        "R-16",
+        "R-20",
+        "R-21",
+        "R-22"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "placement-required-slot-first",
+      "rules": [
+        "R-4",
+        "R-20",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "placement-unplaced-slot",
+      "rules": [
+        "R-20",
+        "R-21",
+        "R-22"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "protected-over-budget",
+      "rules": [
+        "R-16",
+        "R-17",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "protected-over-cap",
+      "rules": [
+        "R-16",
+        "R-17",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "required-slot-missing",
+      "rules": [
+        "R-4",
+        "R-17",
+        "R-21",
+        "R-22"
+      ],
+      "outcome": "passed"
+    }
+  ]
+}

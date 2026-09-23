@@ -35,7 +35,10 @@ snapshot = Snapshot.freeze(profile=profile, route_policy=registry.route_policy("
 ```sh
 uv sync
 uv run pytest
+uv run python -m cwa.conformance > conformance-report.json   # regenerate the committed report
 ```
+
+[conformance-report.json](conformance-report.json) records each published case's outcome in the website's `conformance_report.schema.json` format; a test fails when it is stale.
 
 ## The contract is vendored
 
