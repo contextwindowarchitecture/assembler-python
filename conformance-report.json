@@ -5,7 +5,7 @@
     "language": "python"
   },
   "contract": {
-    "website_commit": "d2e8bd66841039c0713eff1046094fe7c192ef1a",
+    "website_commit": "13d4ff9f47808c162572a60f16a37f71e69d27ea",
     "dirty": false
   },
   "cases": [
@@ -323,6 +323,42 @@
         "R-22"
       ],
       "outcome": "passed"
+    },
+    {
+      "id": "supersede-evidence-required",
+      "rules": [
+        "R-12",
+        "R-17",
+        "R-21",
+        "R-25"
+      ],
+      "outcome": "failed",
+      "detail": "a payload, but a refusal was expected"
+    },
+    {
+      "id": "supersede-exemptions",
+      "rules": [
+        "R-6",
+        "R-11",
+        "R-16",
+        "R-21",
+        "R-24",
+        "R-25"
+      ],
+      "outcome": "failed",
+      "detail": "trace differs at /excluded/1/duplicate_of"
+    },
+    {
+      "id": "supersede-observations",
+      "rules": [
+        "R-2",
+        "R-15",
+        "R-21",
+        "R-22",
+        "R-25"
+      ],
+      "outcome": "failed",
+      "detail": "payload bytes differ"
     }
   ]
 }

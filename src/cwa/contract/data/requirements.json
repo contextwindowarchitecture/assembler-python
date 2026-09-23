@@ -166,5 +166,12 @@
     "keyword": "MUST",
     "summary": "Route-requested exact deduplication",
     "text": "When a route sets dedupe: exact on a slot, the assembler MUST, after conflict resolution and before any refusal check or fitting, exclude each item in that slot whose body equals the body of an item it keeps in the slot, with reason duplicate_content, stage assembler and duplicate_of naming the kept item. Bodies MUST be compared code unit for code unit after collapsing each run of whitespace to one space and trimming both ends, without Unicode normalization or case folding. The assembler MUST NOT exclude a protected item or an item a conflict group names: a set of equal bodies that contains one keeps every such item, and otherwise keeps its highest-ranked item by the slot's fitting rank. Deduplication never compares items across slots, and a slot without dedupe keeps equal bodies."
+  },
+  {
+    "id": "R-25",
+    "section": "fit",
+    "keyword": "MUST",
+    "summary": "Route-requested supersession of stale observations",
+    "text": "When a route sets supersede: source on a slot, the assembler MUST, after conflict resolution and before deduplication, exclude each item in that slot for which another item in the slot, from the same authenticated producer and with the same source, has a later freshness, compared as instants at full precision. It MUST record each such exclusion with reason superseded, stage assembler and superseded_by naming the highest-ranked of the latest items by the slot's fitting rank. Items tied for the latest freshness are all kept. The assembler MUST NOT exclude a protected item or an item a conflict group names. source and freshness decide alone: bodies, variants and source_version are not compared, and a slot without supersede keeps every observation."
   }
 ]

@@ -2,15 +2,18 @@
 
 Each case lists its candidates with their authenticated producer and admission intent, and each
 declared group with the decision it intends: decided_by, resolution, winner and the members it
-excludes. A case may also list the duplicates it intends deduplication to exclude, each with the
-item kept in its place (dedupe.py builds those cases). Expected traces and payloads come from those
+excludes. A case may also list the items it intends supersession to exclude ("superseded") and the
+duplicates it intends deduplication to exclude ("duplicates"), each with the item kept in its place
+(supersede.py and dedupe.py build those cases), and producers beyond the fixed set ("producers"). Expected traces and payloads come from those
 tables, not from a resolution algorithm, so the cases can fail an implementation. The generator
-only checks that each table is self-consistent with conformance/README.md's Conflicts and
-Deduplication sections: excluded and winning items are admitted members, no protected item is
-excluded, moot means fewer than two members, the duplicates are exactly those the keys, exemptions
-and ranks imply, and the refusal and recovery follow. Budgets are generous, so fitting never acts.
+only checks that each table is self-consistent with conformance/README.md's Conflicts,
+Supersession and Deduplication sections: excluded and winning items are admitted members, no
+protected item is excluded, moot means fewer than two members, the superseded items and duplicates
+are exactly those the calls, instants, keys, exemptions and ranks imply, and the refusal and
+recovery follow. Budgets are generous, so fitting never acts.
 """
-import copy, hashlib, json, os, re, sys
+import calendar, copy, hashlib, json, os, re, sys
+from fractions import Fraction
 U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 sys.dont_write_bytecode = True  # importing fitting must not leave a __pycache__ for implementations to vendor
@@ -26,7 +29,15 @@ SLOTS = {"policy-registry": ["governance.examples", "governance.instructions", "
          "crm-mcp": ["evidence.tool_results"], "memory-svc": ["interaction.memory"], "conversation": ["interaction.history", "interaction.query"]}
 ESCALATED = {"surfaced", "context_requested", "refused"}
 WS_RUN = re.compile(r"[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+")
-TIMESTAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")  # one format, so text order is instant order
+INSTANT = re.compile(r"([0-9]{4})-([0-9]{2})-([0-9]{2})[Tt]([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\.([0-9]+))?(?:[Zz]|([+-])([0-9]{2}):([0-9]{2}))")
+
+
+def instant(text):
+    """Seconds since the epoch as an exact fraction, so instants compare at full precision (R-2)."""
+    y, mo, d, h, mi, sec, frac, sign, oh, om = INSTANT.fullmatch(text).groups()
+    seconds = calendar.timegm((int(y), int(mo), int(d), int(h), int(mi), int(sec)))
+    offset = (int(oh) * 3600 + int(om) * 60) * (1 if sign == "+" else -1) if sign else 0
+    return seconds - offset + (Fraction(int(frac), 10 ** len(frac)) if frac else 0)
 
 
 def key(body):
@@ -39,11 +50,10 @@ def ranked(items, order_by):
     def sort_key(it):
         keys = []
         for k in order_by:
-            assert all(TIMESTAMP.fullmatch(i["freshness"]) for i in items), "freshness must compare as text"
             if k == "-relevance":
                 keys.append((it.get("relevance") is None, -(it.get("relevance") or 0)))
             else:
-                keys.append(tuple(-c for c in U16(it["freshness"])) if k == "-freshness" else tuple(U16(it["freshness"])))
+                keys.append(-instant(it["freshness"]) if k == "-freshness" else instant(it["freshness"]))
         return (*keys, U16(it["id"]))
     return [it["id"] for it in sorted(items, key=sort_key)]
 
@@ -66,8 +76,10 @@ def render(kept, marks):
 def build(case):
     name = case["id"]
     rows = case["items"]  # (item, producer, admission intent: "admit" or a reason)
+    kinds = {**KINDS, **{p: k for p, (k, _) in case.get("producers", {}).items()}}
+    slots_of = {**SLOTS, **{p: s for p, (_, s) in case.get("producers", {}).items()}}
     policy = {"route": "support-chat", "version": f"{name}/v1",
-              "producers": {p: {"kind": k, "slots": SLOTS[p]} for p, k in KINDS.items()},
+              "producers": {p: {"kind": k, "slots": slots_of[p]} for p, k in kinds.items()},
               "slots": {"evidence.knowledge": {"min_relevance": 0.5, "required_scope": ["tenant"]}}}
     policy.update(copy.deepcopy(case.get("policy", {})))
     profile = {"id": "conflict-fixture", "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": policy["version"],
@@ -75,12 +87,12 @@ def build(case):
                "evaluation": {"status": "unevaluated", "suite": None, "date": None, "result": None, "artifact": None}}
     batches = {}
     for it, producer, _ in rows:
-        assert it["slot"] in SLOTS[producer], f"{name}: {producer} cannot emit {it['slot']}"
+        assert it["slot"] in slots_of[producer], f"{name}: {producer} cannot emit {it['slot']}"
         batches.setdefault(producer, []).append(it)
     groups = case["groups"]
     snapshot = {"assembly_time": T, "scope": SCOPE, "budget": {"input": 4000, "reserved_output": 1024}, "profile": profile,
                 "route_policy": policy, "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1",
-                "batches": [{"producer": {"id": p, "kind": KINDS[p]}, "items": batches[p], "excluded": []} for p in sorted(batches, key=U16)],
+                "batches": [{"producer": {"id": p, "kind": kinds[p]}, "items": batches[p], "excluded": []} for p in sorted(batches, key=U16)],
                 "conflicts": [{k: g[k] for k in ("id", "kind", "fact", "items") if k in g} for g in groups]}
 
     producer_of = {it["id"]: p for it, p, _ in rows}
@@ -124,12 +136,32 @@ def build(case):
     rank_of = {"droppable": 0, "compressible": 1, "protected": 2}
     tier = lambda it: it.get("tier") or max(DEFAULTS[it["slot"]]["tier"], upgrades.get(it["slot"], "droppable"), key=rank_of.get)
     exempt = lambda i: tier(kept[i]) == "protected" or i in named
+    order_of = lambda slot: policy.get("slots", {}).get(slot, {}).get("order_by", ["-relevance", "-freshness"])
+
+    # Supersession (R-25): right after conflicts, before deduplication.
+    superseded, implied = case.get("superseded", {}), {}
+    for slot, rules in policy.get("slots", {}).items():
+        if rules.get("supersede") != "source":
+            continue
+        calls = {}
+        for it in kept.values():
+            if it["slot"] == slot:
+                calls.setdefault((producer_of[it["id"]], it["source"]), []).append(it)
+        for members in calls.values():
+            latest = max(instant(it["freshness"]) for it in members)
+            newest = ranked([it for it in members if instant(it["freshness"]) == latest], order_of(slot))
+            implied.update({it["id"]: newest[0] for it in members if instant(it["freshness"]) < latest and not exempt(it["id"])})
+    assert superseded == implied, f"{name}: the superseded table should be {implied}"
+    for i in sorted(superseded, key=U16):
+        excluded.append({"item_id": i, "reason": "superseded", "stage": "assembler", "slot": kept[i]["slot"], "superseded_by": superseded[i]})
+        del kept[i]
+
     duplicates, implied = case.get("duplicates", {}), {}
     for slot, rules in policy.get("slots", {}).items():
         if rules.get("dedupe") != "exact":
             continue
         sets = {}
-        for i in ranked([it for it in kept.values() if it["slot"] == slot], rules.get("order_by", ["-relevance", "-freshness"])):
+        for i in ranked([it for it in kept.values() if it["slot"] == slot], order_of(slot)):
             sets.setdefault(key(kept[i]["body"]), []).append(i)
         for members in sets.values():
             keep = [i for i in members if exempt(i)] or members[:1]
@@ -176,7 +208,7 @@ def build(case):
             os.remove(payload_file)
     else:
         open(payload_file, "wb").write(payload)
-    print(f"{name}: {len(admitted)} admitted, {len(groups)} groups, {len(conflict_rows)} excluded by conflicts, {len(duplicates)} duplicates -> "
+    print(f"{name}: {len(admitted)} admitted, {len(groups)} groups, {len(conflict_rows)} excluded by conflicts, {len(superseded)} superseded, {len(duplicates)} duplicates -> "
           f"{refusal or trace['result']['input_tokens']}{' / ' + recovery if recovery else ''}")
 
 

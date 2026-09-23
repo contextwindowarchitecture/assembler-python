@@ -118,5 +118,10 @@
     "id": "R-24",
     "scope": "assembler",
     "note": "Excludes exact duplicate bodies in the slots a route opts in, after conflicts, keeping protected and grouped items."
+  },
+  {
+    "id": "R-25",
+    "scope": "assembler",
+    "note": "Keeps only the latest observation per producer and source in the slots a route opts in, after conflicts, keeping protected and grouped items."
   }
 ]

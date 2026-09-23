@@ -150,6 +150,12 @@
     "text": "Route fact policy chose another member of the item's declared fact conflict group, by authenticated producer precedence or an allowed freshness tie-break. A protected item is never excluded this way; its group escalates."
   },
   {
+    "code": "superseded",
+    "kind": "exclusion",
+    "rule": "R-25",
+    "text": "The route asked this slot to supersede by source, and the same producer sent a later observation with the same source. superseded_by names the item kept."
+  },
+  {
     "code": "duplicate_content",
     "kind": "exclusion",
     "rule": "R-24",
