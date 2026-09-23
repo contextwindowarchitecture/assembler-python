@@ -1,7 +1,7 @@
 """Immutable values an assembly reads. Built only from a schema-validated snapshot."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any, Mapping
 
@@ -49,7 +49,7 @@ class Item:
     eligibility: str
     injection_risk: str
     expires: str | None = None
-    scope: Mapping[str, str] = _frozen(None)
+    scope: Mapping[str, str] = field(default_factory=lambda: _frozen(None))  # Python 3.11 rejects an unhashable default
     relevance: float | None = None
     tier: str | None = None
     revoked_by: str | None = None
