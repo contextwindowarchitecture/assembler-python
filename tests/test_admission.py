@@ -131,6 +131,15 @@ def test_ids_used_by_refused_candidates_still_count(fixture_snapshot):
     ]
 
 
+@pytest.mark.parametrize("invalid_body, valid_body", [("a", "b"), ("b", "a")])
+def test_copies_of_an_id_order_by_their_rfc_8785_bytes(fixture_snapshot, invalid_body, valid_body):
+    # R-23: rows for candidates sharing an id order by their RFC 8785 bytes, whatever the input order
+    # (conformance/README.md, Ordering). Here the body decides, since it is the first key the copies differ in.
+    invalid, valid = knowledge(id="kb:dup", body=invalid_body, relevance=None), knowledge(id="kb:dup", body=valid_body)
+    rows = {invalid_body: ("kb:dup", "missing_field:relevance"), valid_body: ("kb:dup", "duplicate_item_id")}
+    assert exclusions(add(fixture_snapshot, "policy-corpus", invalid, valid)) == [rows["a"], rows["b"]]
+
+
 def producer_rows(snapshot: dict) -> list[tuple[str, str]]:
     trace = assemble(Snapshot.from_json(snapshot)).trace
     return [(row["item_id"], row["reason"]) for row in trace["excluded"] if row["stage"] == "producer"]
@@ -141,6 +150,15 @@ def test_producer_rows_from_an_unauthenticated_batch_reach_the_trace(fixture_sna
     add_batch(fixture_snapshot, "rogue", "retrieval", knowledge(id="rogue:1"))["batches"][-1]["excluded"] = [
         {"item_id": "rogue:0", "reason": "below_threshold", "stage": "producer"}]
     assert ("rogue:0", "below_threshold") in producer_rows(fixture_snapshot)
+
+
+def test_producer_rows_sharing_an_item_id_order_by_their_rfc_8785_bytes(fixture_snapshot):
+    # R-23 (conformance/README.md, Ordering): supplied expired first, they trace below_threshold first.
+    batch(fixture_snapshot, "policy-corpus")["excluded"] = [
+        {"item_id": "kb:gone", "reason": "expired", "stage": "producer"},
+        {"item_id": "kb:gone", "reason": "below_threshold", "stage": "producer"}]
+    assert [row for row in producer_rows(fixture_snapshot) if row[0] == "kb:gone"] == [
+        ("kb:gone", "below_threshold"), ("kb:gone", "expired")]
 
 
 def place(snapshot: dict, *slots: str) -> dict:
