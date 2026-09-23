@@ -534,7 +534,7 @@ flowchart LR
   R --> W["website: assembler.html matrix"]
 ```
 
-**Built so far (M0–M4):** the golden test, all twenty-four conformance cases, a shuffle test over every case (payload, trace and digest), purity guards on sockets and clocks, and schema validation of every emitted trace. The suite also passes under different `PYTHONHASHSEED`, `TZ` and locale values, checked by hand, not in CI. Not built: hypothesis property tests, the import lint, a fresh-process replay test, and `conformance-report.json` (M5).
+**Built so far (M0–M4):** the golden test, all twenty-four conformance cases, a shuffle test over every case (payload, trace and digest), purity guards on sockets, clocks, files, the environment and randomness (files since M5: the vendored schemas are read once, at import), and schema validation of every emitted trace. The suite also passes under different `PYTHONHASHSEED`, `TZ` and locale values, checked by hand, not in CI. Not built: hypothesis property tests, the import lint, a fresh-process replay test, and `conformance-report.json` (M5).
 
 - **The golden test comes first.** Reproduce `examples/trace.json` and `examples/payload.txt` exactly. The fixture already exists and is hash-checked, so it's a free end-to-end test.
 - **Tests map to requirements.** Each conformance case declares `rules: ["R-16", "R-17"]`. A row flips to *implemented* only when every assembler-scoped clause has a passing case. That is the rule `assembler.html` already states.

@@ -18,17 +18,23 @@ def load(name: str) -> Any:
     return json.loads((_DATA / name).read_text(encoding="utf-8"))
 
 
+# Read once, at import: assemble() never touches the filesystem (R-23).
+_SCHEMAS: dict[str, Any] = {
+    entry.name.removesuffix(".schema.json"): json.loads(entry.read_text(encoding="utf-8"))
+    for entry in (_DATA / "schema").iterdir() if entry.name.endswith(".schema.json")
+}
+
+
 @cache
 def _registry() -> Registry:
-    schemas = [load(f"schema/{entry.name}") for entry in (_DATA / "schema").iterdir() if entry.name.endswith(".schema.json")]
-    return Registry().with_resources((schema["$id"], Resource.from_contents(schema)) for schema in schemas)
+    return Registry().with_resources((schema["$id"], Resource.from_contents(schema)) for schema in _SCHEMAS.values())
 
 
 @cache
 def validator(name: str) -> Draft202012Validator:
     """Validator for schema/<name>.schema.json with format checking enabled."""
     return Draft202012Validator(
-        load(f"schema/{name}.schema.json"),
+        _SCHEMAS[name],
         registry=_registry(),
         format_checker=Draft202012Validator.FORMAT_CHECKER,
     )
