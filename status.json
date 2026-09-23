@@ -278,7 +278,7 @@
     },
     {
       "id": "R-21",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason",
@@ -293,12 +293,15 @@
         "tests/test_placement.py::test_an_unplaced_protected_item_is_reported_before_an_unresolved_conflict",
         "tests/test_conflicts.py::test_groups_and_their_members_order_by_utf16_code_units",
         "tests/test_conflicts.py::test_rows_excluded_by_conflicts_order_by_utf16_code_units",
-        "tests/test_snapshot.py::test_producer_rows_order_by_producer_then_item_in_utf16_code_units"
+        "tests/test_snapshot.py::test_producer_rows_order_by_producer_then_item_in_utf16_code_units",
+        "tests/test_report.py::test_a_trace_that_differs_fails_and_names_the_field",
+        "tests/test_report.py::test_the_report_covers_every_case_in_id_order_and_names_the_vendored_commit",
+        "tests/test_golden.py::test_fixture_payload_hash_and_tokens"
       ]
     },
     {
       "id": "R-22",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_golden.py::test_defaults_filled_are_traced_as_records",
         "tests/test_conformance.py::test_conformance_case",
@@ -312,7 +315,7 @@
     },
     {
       "id": "R-23",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_golden.py::test_assembly_is_repeatable",
         "tests/test_conformance.py::test_input_order_never_changes_the_outcome",
