@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://contextwindowarchitecture.io/schema/route_policy.schema.json",
   "title": "CWA route policy",
-  "description": "Versioned, application-owned policy for one route. Admission reads it, and it travels inside the snapshot (R-23). Later milestones add fitting, conflict and evidence fields.",
+  "description": "Versioned, application-owned policy for one route. Admission, fitting and refusal read it, and it travels inside the snapshot (R-23). Later milestones add conflict fields.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -25,6 +25,14 @@
       "type": "integer",
       "minimum": 0,
       "description": "Tolerance for producer clocks: freshness may exceed assembly_time by this much before the item is excluded as future_freshness. Default 0."
+    },
+    "parser": {
+      "type": "boolean",
+      "description": "A downstream parser consumes this route's responses, so assembly refuses with required_slot_missing when no governance.output_contract item is admitted (R-4). Default false."
+    },
+    "requires_evidence": {
+      "type": "boolean",
+      "description": "Assembly refuses with evidence_required when fitting leaves no evidence.knowledge or evidence.tool_results item, or fewer items in an evidence slot than its min_included (R-12). Default false."
     },
     "producers": {
       "type": "object",
@@ -69,40 +77,24 @@
       "propertyNames": {
         "$ref": "context_item.schema.json#/properties/slot"
       },
-      "description": "Per-slot admission rules; the route's executable eligibility predicate (R-3).",
+      "description": "Per-slot rules: the route's executable eligibility predicate (R-3) and its fitting policy (R-16).",
+      "properties": {
+        "evidence.knowledge": {
+          "$ref": "#/$defs/slot_rules"
+        },
+        "evidence.tool_results": {
+          "$ref": "#/$defs/slot_rules"
+        }
+      },
       "additionalProperties": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "min_relevance": {
-            "type": "number",
-            "description": "Items scoring below this rerank threshold are excluded as below_threshold (R-13). An item with no relevance cannot clear a threshold and is excluded the same way. A score equal to the threshold passes."
-          },
-          "max_age_seconds": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Items observed longer ago than this are excluded: stale_state for state slots (R-8), not_eligible elsewhere. An item exactly this old is still admitted."
-          },
-          "required_scope": {
-            "type": "array",
-            "uniqueItems": true,
-            "items": {
-              "enum": [
-                "tenant",
-                "user",
-                "session",
-                "task",
-                "locale",
-                "step"
-              ]
-            },
-            "description": "Scope keys an item must carry. Independently of this list, every key an item's scope does carry must equal the request's value for that key; a key the request lacks never matches. A missing key is out_of_scope, never a wildcard."
-          },
-          "source_prefix": {
-            "type": "string",
-            "minLength": 1,
-            "pattern": "\\S",
-            "description": "Prefix every item source must start with, e.g. turn: for memory's source turn (R-9)."
+        "$ref": "#/$defs/slot_rules",
+        "not": {
+          "type": "object",
+          "required": [
+            "min_included"
+          ],
+          "properties": {
+            "min_included": true
           }
         }
       }
@@ -151,6 +143,147 @@
           "compressible",
           "protected"
         ]
+      }
+    },
+    "fitting_order": {
+      "type": "array",
+      "uniqueItems": true,
+      "description": "The order in which compressible items are reduced once every droppable item is gone (R-16). Each step compresses (selects supplied variants for) or omits one slot's compressible items, lowest-ranked first, until the payload fits. Steps the route does not list follow in the default order: compress each slot, then omit each slot, both in shedding order. With no steps, variants always come before omission.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "slot",
+          "action"
+        ],
+        "properties": {
+          "slot": {
+            "$ref": "context_item.schema.json#/properties/slot"
+          },
+          "action": {
+            "enum": [
+              "compress",
+              "omit"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "if": {
+    "type": "object",
+    "required": [
+      "slots"
+    ],
+    "properties": {
+      "slots": {
+        "anyOf": [
+          {
+            "type": "object",
+            "required": [
+              "evidence.knowledge"
+            ],
+            "properties": {
+              "evidence.knowledge": {
+                "type": "object",
+                "required": [
+                  "min_included"
+                ],
+                "properties": {
+                  "min_included": true
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "evidence.tool_results"
+            ],
+            "properties": {
+              "evidence.tool_results": {
+                "type": "object",
+                "required": [
+                  "min_included"
+                ],
+                "properties": {
+                  "min_included": true
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "then": {
+    "type": "object",
+    "required": [
+      "requires_evidence"
+    ],
+    "properties": {
+      "requires_evidence": {
+        "const": true
+      }
+    }
+  },
+  "$defs": {
+    "slot_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min_relevance": {
+          "type": "number",
+          "description": "Items scoring below this rerank threshold are excluded as below_threshold (R-13). An item with no relevance cannot clear a threshold and is excluded the same way. A score equal to the threshold passes."
+        },
+        "max_age_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Items observed longer ago than this are excluded: stale_state for state slots (R-8), not_eligible elsewhere. An item exactly this old is still admitted."
+        },
+        "required_scope": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "tenant",
+              "user",
+              "session",
+              "task",
+              "locale",
+              "step"
+            ]
+          },
+          "description": "Scope keys an item must carry. Independently of this list, every key an item's scope does carry must equal the request's value for that key; a key the request lacks never matches. A missing key is out_of_scope, never a wildcard."
+        },
+        "source_prefix": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Prefix every item source must start with, e.g. turn: for memory's source turn (R-9)."
+        },
+        "priority": {
+          "type": "integer",
+          "description": "Shedding order across slots under budget pressure (R-16): lower priorities shed first, and equal priorities shed in slot-name order. Default 0."
+        },
+        "order_by": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "-relevance",
+              "-freshness",
+              "freshness"
+            ]
+          },
+          "description": "Rank within the slot; the lowest-ranked item sheds first (R-16). Keys compare in order, then id ascending. -relevance ranks higher scores first and unscored items last; -freshness ranks newer items first and freshness older ones, comparing instants at full precision. Default [\"-relevance\", \"-freshness\"]."
+        },
+        "min_included": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Evidence slots only, on a route with requires_evidence: assembly refuses with evidence_required when fitting leaves fewer items than this in the slot (R-12)."
+        }
       }
     }
   }

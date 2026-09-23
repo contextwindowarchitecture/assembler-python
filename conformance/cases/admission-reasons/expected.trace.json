@@ -102,42 +102,50 @@
     {
       "item_id": "cap:delete_account",
       "reason": "capability_not_allowed",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "governance.capabilities"
     },
     {
       "item_id": "turn:17a",
       "reason": "authority_not_allowed",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "interaction.history"
     },
     {
       "item_id": "cap:refund-direct",
       "reason": "capability_not_allowed",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "governance.capabilities"
     },
     {
       "item_id": "legacy:1",
       "reason": "producer_not_authenticated",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "m:bad-source",
       "reason": "source_invalid",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "interaction.memory"
     },
     {
       "item_id": "kb:authority",
       "reason": "authority_not_allowed",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:bad-authority",
       "reason": "unknown_authority",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:bad-date",
       "reason": "invalid_structure",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:bad-slot",
@@ -147,102 +155,122 @@
     {
       "item_id": "kb:dup",
       "reason": "duplicate_item_id",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:dup",
       "reason": "duplicate_item_id",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:expired",
       "reason": "expired",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:future",
       "reason": "future_freshness",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:low",
       "reason": "below_threshold",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:missing-body",
       "reason": "missing_field:body",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:old",
       "reason": "not_eligible",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:out-of-scope",
       "reason": "out_of_scope",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:protected",
       "reason": "tier_upgrade_not_allowed",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:revoked",
       "reason": "revoked",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:unmarked",
       "reason": "untrusted_content_unmarked",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:unscoped",
       "reason": "out_of_scope",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:variants",
       "reason": "duplicate_variant_id",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "kb:wrong-slot",
       "reason": "producer_slot_not_allowed",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "state.user"
     },
     {
       "item_id": "policy-corpus#invalid-0",
       "reason": "missing_field:id",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "policy:unverified",
       "reason": "untrusted_in_governance",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "governance.instructions"
     },
     {
       "item_id": "rogue:1",
       "reason": "producer_not_authenticated",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
     },
     {
       "item_id": "task:droppable",
       "reason": "protected_tier_changed",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "state.task"
     },
     {
       "item_id": "task:stale",
       "reason": "stale_state",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "state.task"
     },
     {
       "item_id": "user:other",
       "reason": "out_of_scope",
-      "stage": "assembler"
+      "stage": "assembler",
+      "slot": "state.user"
     }
   ],
   "conflicts": [],

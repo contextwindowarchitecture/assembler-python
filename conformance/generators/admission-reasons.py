@@ -133,8 +133,9 @@ for producer, it, intent in ROWS:
     if intent == "admit":
         admitted.append(it)
     else:
-        excluded.append((producer, rid, intent))
+        excluded.append((producer, rid, intent, it.get("slot")))
 excluded.sort(key=lambda r: (r[0], r[1]))
+row = lambda rid, r, slot: {"item_id": rid, "reason": r, "stage": "assembler", **({"slot": slot} if slot in DEFAULTS else {})}
 
 WS = re.compile(r"[^\t\n\v\f\r    -     　﻿]+")
 esc = lambda s: s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -151,7 +152,7 @@ trace = {
     "budget": snapshot["budget"],
     "result": {"input_tokens": len(WS.findall(payload.decode())), "hash": hashlib.sha256(payload).hexdigest()},
     "included": included, "compressed": [],
-    "excluded": [{"item_id": "m:expired", "reason": "expired", "stage": "producer"}] + [{"item_id": rid, "reason": r, "stage": "assembler"} for _, rid, r in excluded],
+    "excluded": [{"item_id": "m:expired", "reason": "expired", "stage": "producer"}] + [row(rid, r, slot) for _, rid, r, slot in excluded],
     "conflicts": [], "refused": {"bool": False, "reason": None},
     "context": {"assembly_time": T, "route_policy_version": "admission/v1", "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1"},
     "defaults_filled": [{"item_id": i, "field": f} for i, f in sorted(filled, key=lambda x: (x[0], POLICY.index(x[1])))],

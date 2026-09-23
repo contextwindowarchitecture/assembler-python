@@ -1,0 +1,34 @@
+{
+  "trace_id": "required-slot-missing",
+  "profile": {
+    "id": "fitting-fixture",
+    "version": 1
+  },
+  "budget": {
+    "input": 4096,
+    "reserved_output": 1024
+  },
+  "result": null,
+  "included": [],
+  "compressed": [],
+  "excluded": [
+    {
+      "item_id": "contract:json",
+      "reason": "untrusted_in_governance",
+      "stage": "assembler",
+      "slot": "governance.output_contract"
+    }
+  ],
+  "conflicts": [],
+  "refused": {
+    "bool": true,
+    "reason": "required_slot_missing"
+  },
+  "context": {
+    "assembly_time": "2026-09-22T12:00:00Z",
+    "route_policy_version": "required-slot-missing/v1",
+    "tokenizer": "fixture-whitespace/v1",
+    "renderer": "fixture-xml/v1"
+  },
+  "defaults_filled": []
+}
