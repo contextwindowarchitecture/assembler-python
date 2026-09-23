@@ -75,7 +75,7 @@ def _rules(snapshot: Snapshot, slot: str) -> dict:
     return snapshot.route_policy.document.get("slots", {}).get(slot, {})
 
 
-def _ranked(snapshot: Snapshot, slot: str, items: Iterable[Item]) -> list[Item]:
+def ranked(snapshot: Snapshot, slot: str, items: Iterable[Item]) -> list[Item]:
     """The slot's items, highest rank first: order_by keys, then id (R-16)."""
     keys = [_ORDER_KEYS[key] for key in _rules(snapshot, slot).get("order_by", ["-relevance", "-freshness"])]
 
@@ -97,7 +97,7 @@ def _slot_caps(snapshot: Snapshot) -> dict[str, int]:
 def _shedding_order(snapshot: Snapshot, items: Iterable[Item]) -> list[Item]:
     """Slots by ascending priority, then name; within a slot, lowest rank first."""
     items = list(items)
-    return [item for slot in _slots_in_shedding_order(snapshot) for item in reversed(_ranked(snapshot, slot, items))]
+    return [item for slot in _slots_in_shedding_order(snapshot) for item in reversed(ranked(snapshot, slot, items))]
 
 
 def _steps(snapshot: Snapshot) -> list[tuple[str, str]]:
@@ -171,7 +171,7 @@ def _shed(snapshot: Snapshot, kept: dict[str, Item], omitted: list[Item], compre
             return
         omitted.append(kept.pop(item.id))
     for slot, action in (step for step in _steps(snapshot) if step[0] in slots):
-        for item in reversed(_ranked(snapshot, slot, (i for i in kept.values() if tier(snapshot, i) == "compressible"))):
+        for item in reversed(ranked(snapshot, slot, (i for i in kept.values() if tier(snapshot, i) == "compressible"))):
             if done(kept.values()):
                 return
             if action == "omit":
