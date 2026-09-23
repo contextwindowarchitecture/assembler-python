@@ -120,3 +120,21 @@ def test_producer_rows_order_by_producer_then_item_in_utf16_code_units(fixture_s
     ]
     rows = [row["item_id"] for row in assemble(Snapshot.from_json(fixture_snapshot)).trace["excluded"] if row["stage"] == "producer"]
     assert rows == ["memory:expired", "v:1", "w:\U0001f600", "w:\uff5a"]
+
+
+@pytest.mark.parametrize("mutate, where", [
+    (lambda s: s["batches"][0]["items"][0].update(body="half a pair \ud83d here"), "/batches/0/items/0/body"),
+    (lambda s: s["batches"][1]["items"][0].update({"note\udc00": "x"}), "/batches/1/items/0"),
+])
+def test_strings_with_unpaired_surrogates_are_rejected_before_assembly(fixture_snapshot, mutate, where):
+    """conformance/README.md, Snapshot digest: RFC 8785 cannot serialize an unpaired surrogate (I-JSON)."""
+    mutate(fixture_snapshot)
+    with pytest.raises(SnapshotError, match=f"{where}.*unpaired surrogate"):
+        Snapshot.from_json(fixture_snapshot)
+
+
+def test_a_surrogate_pair_is_one_character(fixture_snapshot):
+    """A caller's str may hold a pair as two surrogates; JSON reads it back as one character."""
+    fixture_snapshot["batches"][0]["items"][0]["body"] = "a pair 😀 is fine"
+    batches = Snapshot.from_json(fixture_snapshot).to_json()["batches"]
+    assert next(b for b in batches if b["producer"]["id"] == "policy-registry")["items"][0]["body"] == "a pair \U0001f600 is fine"

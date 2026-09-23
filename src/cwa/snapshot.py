@@ -29,6 +29,18 @@ def usable_id(candidate: Mapping[str, Any]) -> str | None:
     return value if isinstance(value, str) and not blank(value) else None
 
 
+def _unpaired_surrogates(value: Any, path: str = "") -> list[str]:
+    """Paths of strings, keys included, holding a surrogate. After a JSON round trip every pair is
+    one character, so any surrogate left is unpaired, and RFC 8785 cannot serialize it (I-JSON)."""
+    if isinstance(value, str):
+        return [f"{path or '/'} holds an unpaired surrogate"] if any("\ud800" <= c <= "\udfff" for c in value) else []
+    if isinstance(value, list):
+        return [p for i, v in enumerate(value) for p in _unpaired_surrogates(v, f"{path}/{i}")]
+    if isinstance(value, dict):
+        return [p for k, v in value.items() for p in _unpaired_surrogates(k, path) + _unpaired_surrogates(v, f"{path}/{k}")]
+    return []
+
+
 def _normalize(document: dict[str, Any]) -> dict[str, Any]:
     """Canonical order, so producers returning in any order yield the same snapshot and payload.
 
@@ -105,7 +117,7 @@ class Snapshot:
                   renderers: Mapping[str, Renderer] = RENDERERS) -> Snapshot:
         """Validate a snapshot.schema.json document and freeze it. The caller's object is copied, never kept."""
         document = json.loads(json.dumps(document))
-        if problems := contract.errors("snapshot", document):
+        if problems := contract.errors("snapshot", document) + _unpaired_surrogates(document):
             raise SnapshotError(problems)
         document = _normalize(document)
 
