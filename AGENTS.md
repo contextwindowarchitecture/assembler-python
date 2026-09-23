@@ -52,6 +52,7 @@ Rules:
 
 ## Documentation
 
+- **Update documentation incrementally.** A commit that changes behavior also updates the docs that describe it: `README.md` status, `docs/DESIGN.md` (milestone status, divergences from the design, diagrams), `status.json` claims, and AGENTS.md when a rule changes. Never batch doc updates at the end of a milestone. When a step needs a spec change, the website docs change in the website commit that makes it.
 - Use Mermaid diagrams in docs and design notes wherever a flow, ordering, structure or plan reads faster as a picture than as prose or a table. Check that every new diagram parses with Mermaid 11 before committing.
 
 ## The contract is vendored, not edited
