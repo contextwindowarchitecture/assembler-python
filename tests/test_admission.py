@@ -239,3 +239,24 @@ def test_only_a_route_verified_mcp_server_may_leave_output_unmarked(fixture_snap
     add_batch(fixture_snapshot, "docs-mcp", "mcp", observation("obs:docs", injection_risk="none"))
     assert exclusions(fixture_snapshot) == [("obs:crm", "untrusted_content_unmarked")]
     assert "obs:docs" in included(fixture_snapshot)
+
+
+# R-16: protection is a floor items cannot lower, and a ceiling only the route can raise.
+
+def test_items_cannot_downgrade_a_protected_slot(fixture_snapshot):
+    assert exclusions(add(fixture_snapshot, "policy-registry", instruction(tier="droppable"))) == [("policy:v13", "protected_tier_changed")]
+
+
+def test_items_cannot_protect_themselves(fixture_snapshot):
+    assert exclusions(add(fixture_snapshot, "policy-corpus", knowledge(tier="protected"))) == [("kb:x", "tier_upgrade_not_allowed")]
+
+
+def test_the_route_can_raise_a_tier_and_items_may_then_claim_it(fixture_snapshot):
+    fixture_snapshot["route_policy"]["tier_upgrades"] = {"evidence.knowledge": "protected"}
+    add(fixture_snapshot, "policy-corpus", knowledge(tier="protected"))
+    assert exclusions(fixture_snapshot) == []
+
+
+def test_items_may_volunteer_a_lower_non_protected_tier(fixture_snapshot):
+    add(fixture_snapshot, "policy-corpus", knowledge(tier="droppable"))
+    assert exclusions(fixture_snapshot) == []

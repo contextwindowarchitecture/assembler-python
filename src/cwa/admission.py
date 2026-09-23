@@ -113,9 +113,29 @@ def _marking(item: Item, ctx: _Context) -> str | None:
     return None
 
 
+_TIER_RANK = {"droppable": 0, "compressible": 1, "protected": 2}
+
+
+def _protected_downgrade(item: Item, ctx: _Context) -> str | None:
+    if SLOT_DEFAULTS[item.slot]["tier"] == "protected" and item.tier not in (None, "protected"):
+        return "protected_tier_changed"
+    return None
+
+
+def _tier_upgrade(item: Item, ctx: _Context) -> str | None:
+    # R-16: only the route raises a tier; an item may claim at most the slot's effective tier.
+    slot_default = SLOT_DEFAULTS[item.slot]["tier"]
+    upgrade = ctx.snapshot.route_policy.document.get("tier_upgrades", {}).get(item.slot, slot_default)
+    effective = max(slot_default, upgrade, key=_TIER_RANK.__getitem__)
+    if item.tier is not None and _TIER_RANK[item.tier] > _TIER_RANK[effective]:
+        return "tier_upgrade_not_allowed"
+    return None
+
+
 # Checks for schema-valid items from authenticated producers, in reasons.json order.
 _CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (
     _duplicate, _slot_permission, _authority, _capability, _governance_trust, _marking,
+    _protected_downgrade, _tier_upgrade,
 )
 
 
