@@ -156,10 +156,29 @@ def _future_freshness(item: Item, ctx: _Context) -> str | None:
     return None
 
 
+def _slot_rules(item: Item, ctx: _Context) -> Mapping[str, Any]:
+    return ctx.snapshot.route_policy.document.get("slots", {}).get(item.slot, {})
+
+
+def _older_than_allowed(item: Item, ctx: _Context) -> bool:
+    max_age = _slot_rules(item, ctx).get("max_age_seconds")
+    return max_age is not None and instants.compare(item.freshness, ctx.snapshot.assembly_time, b_offset_seconds=-max_age) < 0
+
+
+def _stale_state(item: Item, ctx: _Context) -> str | None:
+    return "stale_state" if item.slot.startswith("state.") and _older_than_allowed(item, ctx) else None
+
+
+def _source_prefix(item: Item, ctx: _Context) -> str | None:
+    prefix = _slot_rules(item, ctx).get("source_prefix")
+    return "source_invalid" if prefix is not None and not item.source.startswith(prefix) else None
+
+
 # Checks for schema-valid items from authenticated producers, in reasons.json order.
 _CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (
     _duplicate, _slot_permission, _authority, _capability, _governance_trust, _marking,
     _protected_downgrade, _tier_upgrade, _variant_ids, _revoked, _expired, _future_freshness,
+    _stale_state, _source_prefix,
 )
 
 

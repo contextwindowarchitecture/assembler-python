@@ -314,3 +314,29 @@ def test_route_clock_skew_tolerance(fixture_snapshot, freshness, reason):
 def test_expired_memory_a_producer_failed_to_suppress_is_still_excluded(fixture_snapshot):
     add(fixture_snapshot, "memory-svc", memory(expires="2026-09-01T00:00:00Z"))
     assert exclusions(fixture_snapshot) == [("m:1", "expired")]
+
+
+def task(**fields) -> dict:
+    item = {"id": "task:8821", "slot": "state.task", "source": "workflow-db", "source_version": "1", "authority": "state",
+            "trust": "verified", "freshness": "2026-09-22T11:59:00Z", "body": "refund_request: verify_eligibility=done"}
+    item.update(fields)
+    return item
+
+
+# R-8: state is current at assembly time. R-9: memory names its source turn.
+
+@pytest.mark.parametrize("freshness, reason", [("2026-09-22T11:59:00Z", None), ("2026-09-22T11:58:59.999Z", "stale_state")])
+def test_state_older_than_the_route_allows_is_stale(fixture_snapshot, freshness, reason):
+    fixture_snapshot["route_policy"]["producers"]["workflow"] = {"kind": "state", "slots": ["state.task"]}
+    fixture_snapshot["route_policy"]["slots"] = {"state.task": {"max_age_seconds": 60}}
+    place(fixture_snapshot, "state.task")
+    add_batch(fixture_snapshot, "workflow", "state", task(freshness=freshness))
+    assert exclusions(fixture_snapshot) == ([("task:8821", reason)] if reason else [])
+
+
+@pytest.mark.parametrize("source, reason", [("turn:14", None), ("summary-job:3", "source_invalid")])
+def test_memory_sources_must_name_their_turn(fixture_snapshot, source, reason):
+    fixture_snapshot["route_policy"]["slots"] = {"interaction.memory": {"source_prefix": "turn:"}}
+    place(fixture_snapshot, "interaction.memory")
+    add(fixture_snapshot, "memory-svc", memory(source=source))
+    assert exclusions(fixture_snapshot) == ([("m:1", reason)] if reason else [])
