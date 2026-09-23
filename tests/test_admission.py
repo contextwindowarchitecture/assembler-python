@@ -7,9 +7,6 @@ import pytest
 
 from cwa import Snapshot, assemble
 
-KNOWLEDGE = 1  # batch index of policy-corpus in the fixture snapshot after normalization
-
-
 def knowledge(**fields) -> dict:
     item = {"id": "kb:x", "slot": "evidence.knowledge", "source": "policy-corpus", "source_version": "1",
             "authority": "reference_only", "trust": "verified", "freshness": "2026-09-12T15:30:00Z",
@@ -18,9 +15,12 @@ def knowledge(**fields) -> dict:
     return {k: v for k, v in item.items() if v is not None}
 
 
+def batch(snapshot: dict, producer: str) -> dict:
+    return next(b for b in snapshot["batches"] if b["producer"]["id"] == producer)
+
+
 def add(snapshot: dict, producer: str, *items: dict) -> dict:
-    batch = next(b for b in snapshot["batches"] if b["producer"]["id"] == producer)
-    batch["items"].extend(copy.deepcopy(items))
+    batch(snapshot, producer)["items"].extend(copy.deepcopy(items))
     return snapshot
 
 
@@ -81,7 +81,7 @@ def test_producers_the_route_does_not_list_are_refused_before_structure(fixture_
 
 
 def test_a_producer_whose_kind_differs_from_the_route_is_refused(fixture_snapshot):
-    fixture_snapshot["batches"][KNOWLEDGE]["producer"]["kind"] = "mcp"
+    batch(fixture_snapshot, "policy-corpus")["producer"]["kind"] = "mcp"
     assert exclusions(fixture_snapshot) == [("refunds-eu:v17#p4", "producer_not_authenticated")]
 
 
@@ -114,3 +114,46 @@ def test_ids_used_by_refused_candidates_still_count(fixture_snapshot):
         ("refunds-eu:v17#p4", "duplicate_item_id"),
         ("refunds-eu:v17#p4", "producer_not_authenticated"),
     ]
+
+
+def place(snapshot: dict, *slots: str) -> dict:
+    """Add placements so admitted items in these slots render."""
+    snapshot["profile"]["placement"][-1:-1] = [{"slot": s, "wrap": "xml:" + s} for s in slots]
+    return snapshot
+
+
+def turn(id: str, slot: str = "interaction.history", **fields) -> dict:
+    item = {"id": id, "slot": slot, "source": "conversation:c42", "source_version": "1", "authority": "user",
+            "trust": "unverified", "freshness": "2026-09-22T11:59:00Z", "body": "Earlier turn."}
+    item.update(fields)
+    return item
+
+
+def included(snapshot: dict) -> list[str]:
+    return [row["item_id"] for row in assemble(Snapshot.from_json(snapshot)).trace["included"]]
+
+
+# R-1, R-13, R-14: one authority role per slot; roles classify, they never rank facts.
+
+@pytest.mark.parametrize("fields", [{"authority": "observation"}, {"authority": "untrusted"}, {"authority": "governing"}])
+def test_retrieval_packets_carry_reference_only(fixture_snapshot, fields):
+    assert exclusions(add(fixture_snapshot, "policy-corpus", knowledge(**fields))) == [("kb:x", "authority_not_allowed")]
+
+
+def test_governance_items_cannot_be_untrusted(fixture_snapshot):
+    policy = dict(batch(fixture_snapshot, "policy-registry")["items"][0], id="policy:v13", authority="untrusted")
+    assert exclusions(add(fixture_snapshot, "policy-registry", policy)) == [("policy:v13", "authority_not_allowed")]
+
+
+def test_other_slots_may_lower_to_untrusted(fixture_snapshot):
+    place(fixture_snapshot, "interaction.history")
+    add(fixture_snapshot, "conversation", turn("turn:17", authority="untrusted"))
+    assert exclusions(fixture_snapshot) == []
+    assert "turn:17" in included(fixture_snapshot)
+
+
+def test_prior_model_turns_must_be_untrusted(fixture_snapshot):
+    place(fixture_snapshot, "interaction.history")
+    add(fixture_snapshot, "conversation", turn("turn:17a", lineage="generated"), turn("turn:17b", lineage="generated", authority="untrusted"))
+    assert exclusions(fixture_snapshot) == [("turn:17a", "authority_not_allowed")]
+    assert "turn:17b" in included(fixture_snapshot)

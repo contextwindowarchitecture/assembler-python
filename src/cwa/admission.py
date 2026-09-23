@@ -11,7 +11,7 @@ from typing import Any, Callable, Mapping
 
 from jsonschema import ValidationError
 
-from .contract import POLICY_FIELDS, REASONS, validator
+from .contract import POLICY_FIELDS, REASONS, SLOT_DEFAULTS, validator
 from .model import Item, ProducerIdentity
 from .snapshot import Snapshot, usable_id
 
@@ -75,8 +75,20 @@ def _slot_permission(item: Item, ctx: _Context) -> str | None:
     return None
 
 
+def _authority(item: Item, ctx: _Context) -> str | None:
+    # R-1: the slot's role, or untrusted outside governance and knowledge. Prior model turns in
+    # history are generated content and must be untrusted.
+    role = SLOT_DEFAULTS[item.slot]["authority"]
+    lowered = item.authority == "untrusted" and not item.slot.startswith("governance.") and item.slot != "evidence.knowledge"
+    if item.authority != role and not lowered:
+        return "authority_not_allowed"
+    if item.slot == "interaction.history" and item.lineage == "generated" and item.authority != "untrusted":
+        return "authority_not_allowed"
+    return None
+
+
 # Checks for schema-valid items from authenticated producers, in reasons.json order.
-_CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (_duplicate, _slot_permission)
+_CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (_duplicate, _slot_permission, _authority)
 
 
 def _item_reason(item: Item, ctx: _Context) -> str | None:
