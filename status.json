@@ -39,7 +39,8 @@
         "tests/test_conflicts.py::test_conflict_policy_is_ignored_for_factual_precedence",
         "tests/test_conflicts.py::test_conflict_policy_does_not_reach_across_authority_levels",
         "tests/test_conflicts.py::test_one_governing_peer_excludes_the_peers_that_defer",
-        "tests/test_conformance.py::test_conformance_case"
+        "tests/test_conformance.py::test_conformance_case",
+        "tests/test_messages.py::test_a_cap_bounds_the_largest_rendering_of_a_body"
       ]
     },
     {
@@ -236,7 +237,8 @@
         "tests/test_purity.py::test_assemble_needs_no_network_or_clock",
         "tests/test_fitting.py::test_compressible_items_take_the_longest_variant_that_fits_else_the_shortest",
         "tests/test_fitting.py::test_protected_items_are_never_compressed_or_omitted",
-        "tests/test_conformance.py::test_conformance_case"
+        "tests/test_conformance.py::test_conformance_case",
+        "tests/test_messages.py::test_compressed_rows_count_each_occurrences_own_rendering"
       ]
     },
     {

@@ -8,14 +8,14 @@ from __future__ import annotations
 import hashlib
 import uuid
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from .admission import Admission, admit
 from .conflicts import Resolution, resolve
-from .fitting import Fitted, fit
+from .fitting import Compression, Fitted, fit
 from .model import Item
-from .render import place
+from .render import Occurrence, place
 from .snapshot import Snapshot
 from .trace import validate
 
@@ -111,6 +111,12 @@ def _trace(snapshot: Snapshot, admission: Admission, resolution: Resolution, tra
     return trace
 
 
+def _original_body(snapshot: Snapshot, occurrence: Occurrence, compression: Compression) -> str:
+    """The item's own body as this occurrence renders it, for compressed[].from (R-18)."""
+    original = replace(occurrence.item, body=compression.original_body)
+    return snapshot.renderer.render((replace(occurrence, item=original),)).bodies[0]
+
+
 def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResult:
     admission = admit(snapshot)
     items = admission.items
@@ -134,7 +140,7 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResu
             for o, body in zip(occurrences, rendered.bodies)
         ],
         compressed=[
-            {"slot": o.slot, "item_id": o.item.id, "from": c.original_tokens, "to": snapshot.tokenizer.count(body),
+            {"slot": o.slot, "item_id": o.item.id, "from": snapshot.tokenizer.count(_original_body(snapshot, o, c)), "to": snapshot.tokenizer.count(body),
              "method": c.variant.method, "variant_id": c.variant.id}
             for o, body in zip(occurrences, rendered.bodies) if (c := fitted.compressed.get(o.item.id))
         ],

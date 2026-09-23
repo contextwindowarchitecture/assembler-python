@@ -35,10 +35,10 @@ def tokens(snapshot: Snapshot, items: Iterable[Item], marks: Mapping[str, str] |
 
 
 def body_tokens(snapshot: Snapshot, item: Item) -> int:
-    """Tokens in the item's rendered body, as included[].tokens counts it."""
-    placement = next(p for p in snapshot.profile.placement if p.slot == item.slot)
-    rendered = snapshot.renderer.render((Occurrence(0, placement.slot, placement.wrap, item),))
-    return snapshot.tokenizer.count(rendered.bodies[0])
+    """Tokens in the item's rendered body: the largest of its occurrences' renderings, since a
+    cap bounds the body however it is rendered (R-3, R-16)."""
+    occurrences = tuple(Occurrence(n, p.slot, p.wrap, item) for n, p in enumerate(snapshot.profile.placement) if p.slot == item.slot)
+    return max(snapshot.tokenizer.count(body) for body in snapshot.renderer.render(occurrences).bodies)
 
 
 def _sign(a: object, b: object) -> int:
@@ -95,7 +95,8 @@ def _steps(snapshot: Snapshot) -> list[tuple[str, str]]:
 @dataclass(frozen=True, slots=True)
 class Compression:
     variant: Variant
-    original_tokens: int
+    original_body: str
+    """The item's own body, which each occurrence renders for compressed[].from (R-18)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,7 +131,7 @@ def fit(snapshot: Snapshot, items: tuple[Item, ...], marks: Mapping[str, str] | 
         if tier(snapshot, item) == "compressible" and within:
             variant = max(within, key=lambda s: (s[0], -s[1]))[2]
             kept[item.id] = replace(item, body=variant.body)
-            compressed[item.id] = Compression(variant, body_tokens(snapshot, item))
+            compressed[item.id] = Compression(variant, item.body)
         else:
             omitted.append(kept.pop(item.id))
     # R-16: every droppable item goes, one at a time, before any compressible item is reduced.
@@ -146,7 +147,7 @@ def fit(snapshot: Snapshot, items: tuple[Item, ...], marks: Mapping[str, str] | 
                 omitted.append(kept.pop(item.id))
                 compressed.pop(item.id, None)
             elif variant := _compress(snapshot, item, kept, fits):
-                original = compressed[item.id].original_tokens if item.id in compressed else body_tokens(snapshot, item)
+                original = compressed[item.id].original_body if item.id in compressed else item.body
                 kept[item.id] = replace(item, body=variant.body)
                 compressed[item.id] = Compression(variant, original)
     # Only protected items can remain once every step has run, and those fit.

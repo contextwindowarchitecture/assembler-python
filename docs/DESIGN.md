@@ -566,7 +566,7 @@ flowchart LR
   M4 --> M5["M5 · Hardening<br/>R-21 R-22 R-23<br/>conformance-report → website"]
 ```
 
-**M4 status (2026-09-22): in progress. Placement, profiles and the message renderer** (R-7, R-19, R-20). The maintainer chose the render IR (below) and asked for the two example profiles a single system prompt cannot realize to be revised to version 3. Spec first again: website `16a5cca` defines the placement checks and `b303ca4` adds three placement cases, vendored here as pending.
+**M4 status (2026-09-22): in progress. Placement, profiles and the message renderer** (R-7, R-19, R-20). The maintainer chose the render IR (below) and asked for the two example profiles a single system prompt cannot realize to be revised to version 3, which website `1a6ede5` did. Spec first again: website `16a5cca` defines the placement checks and `b303ca4` adds three placement cases, vendored here as pending.
 
 ```mermaid
 flowchart LR
@@ -575,6 +575,7 @@ flowchart LR
 
 - **Profile checks happen with the snapshot** (R-20). A profile for another route, or one that does not place `governance.instructions`, `interaction.query` and, on a parser route, `governance.output_contract`, is a `SnapshotError`. It could never assemble, so it has no trace.
 - **Placement is the last admission check** (R-20). An item in a slot the profile does not place is excluded with `slot_unplaced`, after every other check. A protected item is kept instead, and assembly refuses with `protected_slot_unplaced` right after `required_slot_missing`. Placement no longer raises `NotImplementedError`, and the three placement cases pass.
+- **One body, two renderings.** A governance slot placed as both `system` (raw) and `xml:` (escaped), as `document-analysis` v3 now is, renders one body two ways. Caps and variant comparisons use the larger rendering, and each `compressed[]` row counts its own occurrence (website `3227b9a`).
 - **Render IR (D-1), as chosen and built** (website `35b827e`, cases `c131acc`). `cwa-messages/v1` (`src/cwa/render/messages.py`) emits RFC 8785 JSON `{messages, system, tools}`. Only governance slots may use `system` or `tools` wraps (`tools` only for capabilities), and every `system` placement comes before every `xml:` placement; anything else is a `SnapshotError`. One user message holds every `xml:` occurrence in `fixture-xml/v1` grammar, with history turns marked `speaker="user"` or `speaker="assistant"` (from `lineage: generated`) and never split into their own messages (R-7). `input_tokens` is the sum of the tokenizer's counts of each system text, tool text and message content, so a renderer now declares the texts it counts (`Rendered.texts`). `included[]` follows placement order, which the spec now says explicitly, since the IR's sorted keys put `messages` before `system`. With it R-7 and R-10 are implemented: the `messages-render` case is also the injection case DA-6 asked for.
 
 **M3 status (2026-09-22): done. Conflicts** (R-6, R-11, and the last clause of R-3). As in M2, the spec came first. Website `89660ed` defines resolution, and `271f4c3` adds five conflict conformance cases generated from intent tables, vendored here as pending. The maintainer took the recommended option on each open question:

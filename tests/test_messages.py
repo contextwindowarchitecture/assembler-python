@@ -108,3 +108,48 @@ def test_the_payload_is_canonical_json_and_its_size_is_the_sum_of_its_texts(fixt
     texts = [entry["text"] for entry in payload["system"] + payload["tools"]] + [payload["messages"][0]["content"]]
     assert result.trace["result"]["input_tokens"] == sum(count(text) for text in texts)
     assert result.trace["result"]["input_tokens"] != count(result.payload.decode())
+
+
+# A body placed as both system (raw) and xml: (escaped) has two renderings. Caps and variant
+# comparisons use the larger; compressed rows count each occurrence's own (conformance/README.md,
+# Fitting). The fixture tokenizer counts both alike, so these tests count characters.
+
+class Characters:
+    id, exact, margin = "test-characters/v1", True, 0.0
+
+    def count(self, text: str) -> int:
+        return len(text)
+
+
+def characters(snapshot: dict) -> Snapshot:
+    snapshot["tokenizer"] = Characters.id
+    return Snapshot.from_json(snapshot, tokenizers={Characters.id: Characters()})
+
+
+REPEATED = [("governance.instructions", "system"), ("evidence.knowledge", "xml:evidence"),
+            ("governance.instructions", "xml:instructions"), ("interaction.query", "xml:query")]
+
+
+@pytest.mark.parametrize("extra, refused", [(0, True), (len("&lt;&gt;") - len("<>"), False)])
+def test_a_cap_bounds_the_largest_rendering_of_a_body(fixture_snapshot, extra, refused):
+    body = "Refunds need <manager> approval."
+    items(fixture_snapshot, "policy-registry")[0].update(body=body, token_budget=len(body) + extra)
+    result = assemble(characters(messages(fixture_snapshot, REPEATED)))
+    assert result.refused is refused
+    assert result.trace["refused"]["reason"] == ("protected_content_over_budget" if refused else None)
+
+
+def test_compressed_rows_count_each_occurrences_own_rendering(fixture_snapshot):
+    fixture_snapshot["route_policy"]["producers"]["policy-registry"]["slots"].append("governance.examples")
+    fixture_snapshot["route_policy"]["tier_upgrades"] = {"governance.examples": "compressible"}
+    body, short = "Use <b> for key terms & keep lists short.", "Use <b> & lists."
+    example = {**items(fixture_snapshot, "policy-registry")[0], "id": "ex:style", "slot": "governance.examples", "body": body,
+               "token_budget": len(short) + len("&lt;&gt;&amp;") - len("<>&"),
+               "variants": [{"id": "ex:style~short", "body": short, "method": "extract", "lineage": "extracted"}]}
+    items(fixture_snapshot, "policy-registry").append(example)
+    placement = [("governance.instructions", "system"), ("governance.examples", "system"), ("evidence.knowledge", "xml:evidence"),
+                 ("governance.examples", "xml:examples"), ("interaction.query", "xml:query")]
+    trace = assemble(characters(messages(fixture_snapshot, placement))).trace
+    escaped = lambda text: text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    assert [(row["from"], row["to"]) for row in trace["compressed"]] == [
+        (len(body), len(short)), (len(escaped(body)), len(escaped(short)))]
