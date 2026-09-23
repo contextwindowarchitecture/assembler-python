@@ -5,7 +5,7 @@
     "language": "python"
   },
   "contract": {
-    "website_commit": "d70e14be0351b07929ebaf12c1222b90d0ddcf20",
+    "website_commit": "05266860655ea82ce3b552edae93db6a5fff3d8e",
     "dirty": false
   },
   "cases": [
@@ -65,6 +65,28 @@
         "R-21"
       ],
       "outcome": "passed"
+    },
+    {
+      "id": "budget-slot-cap-before-pressure",
+      "rules": [
+        "R-16",
+        "R-18",
+        "R-21"
+      ],
+      "outcome": "failed",
+      "detail": "payload bytes differ"
+    },
+    {
+      "id": "budget-slot-caps",
+      "rules": [
+        "R-3",
+        "R-16",
+        "R-18",
+        "R-21",
+        "R-22"
+      ],
+      "outcome": "failed",
+      "detail": "payload bytes differ"
     },
     {
       "id": "budget-token-caps",
@@ -254,6 +276,16 @@
         "R-21"
       ],
       "outcome": "passed"
+    },
+    {
+      "id": "protected-over-slot-cap",
+      "rules": [
+        "R-16",
+        "R-17",
+        "R-21"
+      ],
+      "outcome": "failed",
+      "detail": "a payload, but a refusal was expected"
     },
     {
       "id": "required-slot-missing",

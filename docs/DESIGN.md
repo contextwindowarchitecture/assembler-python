@@ -564,6 +564,14 @@ flowchart LR
   M2 --> M3["M3 · Conflicts<br/>R-6 R-11b R-3"]
   M3 --> M4["M4 · Registry, profiles,<br/>message renderer<br/>R-19b R-20 R-7"]
   M4 --> M5["M5 · Hardening<br/>R-21 R-22 R-23<br/>conformance-report → website"]
+  M5 --> M6["M6 · Per-slot budgets<br/>route max_tokens<br/>R-3 R-16 R-17"]
+```
+
+**M6 status (2026-09-22): in progress. Per-slot route budgets** (R-3, R-16, R-17). The maintainer asked for the per-slot allocations M2 deferred to be planned and built, as a ceiling only, with a protected item that pushes its slot over the cap refusing under the existing `protected_content_over_budget` (D-12). Spec first: website `e01eb52` adds the route field `slots.<slot>.max_tokens`, the R-3 and R-16 text and a new Fitting step, and `0526686` adds three cases, vendored here as pending. `tests/test_status.py` rejects a claim while a case tagged with it fails, so until the cases pass `status.json` holds the requirements they tag (R-3, R-16, R-17, R-18, R-21 and R-22) at *in progress*.
+
+```mermaid
+flowchart LR
+  S["Spec: max_tokens,<br/>R-3 and R-16 text,<br/>Fitting step 3"] --> C["Cases: slot caps,<br/>cap before pressure,<br/>protected over slot cap"] --> V["Vendor; cases pending,<br/>claims in progress"] --> I["Implement slot caps<br/>in fitting.py"] --> R["Restore claims,<br/>report, website import"]
 ```
 
 **M5 status (2026-09-22): done. Hardening** (R-21, R-22, R-23). The maintainer took the recommended option on all four open questions (D-7 to D-10, §9), and on D-11, which the work turned up. Spec first again: each spec change lands in the website, is vendored, and fails here before it is implemented.
@@ -689,6 +697,7 @@ Result: `src/cwa/conflicts.py` resolves every group kind and every escalation ac
 | D-9 | How does a pure core record R-22 timings? | **Decided 2026-09-22:** an optional caller-supplied clock; no clock, no timings. |
 | D-10 | Is `context.snapshot_digest` portable? | **Decided 2026-09-22:** yes. The spec fixes the snapshot normalization and RFC 8785 serialization, and conformance compares the digest. |
 | D-11 | Which timestamps are valid? (found in M5) | **Decided 2026-09-22:** RFC 3339 §5.6 without leap seconds, ASCII digits, colon offsets up to ±23:59, enforced by a pattern beside `format: date-time`. |
+| D-12 | How does a route cap a slot's share of the payload? (M6) | **Decided 2026-09-22:** `slots.<slot>.max_tokens`, a ceiling only; floors that reserve room for a slot stay deferred. It holds whether or not the payload fits, after item caps and before budget pressure, and the slot sheds only its own items in tier order. Protected items alone over it refuse with `protected_content_over_budget`, so no new reason code. It is named `max_tokens` rather than the `token_budget` first proposed, because `default_overrides.<slot>.token_budget` already sets each item's default cap. |
 
 ## 10. What to revisit as it grows
 

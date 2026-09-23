@@ -1,0 +1,28 @@
+{
+  "trace_id": "protected-over-slot-cap",
+  "profile": {
+    "id": "fitting-fixture",
+    "version": 1
+  },
+  "budget": {
+    "input": 4096,
+    "reserved_output": 1024
+  },
+  "result": null,
+  "included": [],
+  "compressed": [],
+  "excluded": [],
+  "conflicts": [],
+  "refused": {
+    "bool": true,
+    "reason": "protected_content_over_budget"
+  },
+  "context": {
+    "assembly_time": "2026-09-22T12:00:00Z",
+    "route_policy_version": "protected-over-slot-cap/v1",
+    "tokenizer": "fixture-whitespace/v1",
+    "renderer": "fixture-xml/v1",
+    "snapshot_digest": "7234e5f6e63d849a74738a4db13c7cba940d1d7f33918161467351c6178f796a"
+  },
+  "defaults_filled": []
+}

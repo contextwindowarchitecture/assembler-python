@@ -1,12 +1,14 @@
 """Builds the budget-fitting and refusal conformance cases from tables of intended outcomes.
 
 Each case lists its candidates, the admission reason for any it excludes, the token_budget cap
-actions it intends ("caps"), and the budget-pressure actions it intends ("actions"), each in order:
-("omit", id) or ("compress", id, variant_id). Expected traces and
+actions it intends ("caps"), the max_tokens slot-cap actions it intends ("slot_caps"), and the
+budget-pressure actions it intends ("actions"), each in order: ("omit", id) or
+("compress", id, variant_id). Expected traces and
 payloads come from those tables, not from a fitting algorithm, so the cases can fail an
 implementation. The generator only checks that each table agrees with the budget: the payload
-fits after the last action and not before it, and each chosen variant is the one
-conformance/README.md's Fitting section selects.
+fits after the last action and not before it, each capped slot is within its cap after its last
+slot-cap action and not before it, and each chosen variant is the one conformance/README.md's
+Fitting section selects.
 """
 import copy, hashlib, json, os, re, sys
 sys.dont_write_bytecode = True  # importing digest must not leave a __pycache__ for implementations to vendor
@@ -107,6 +109,11 @@ def build(case):
     size = lambda body: count(esc(body))
     over_cap = lambda it: it["token_budget"] is not None and size(it["body"]) > it["token_budget"]
     protected = {i: v for i, v in kept.items() if tier(v[0]) == "protected"}
+    slot_caps = {slot: rules["max_tokens"] for slot, rules in policy["slots"].items() if "max_tokens" in rules}
+    # A slot's size sums included[].tokens: every occurrence of every kept item in the slot.
+    slot_size = lambda state, slot: placement.count(slot) * sum(count(esc(b)) for it, b in state.values() if it["slot"] == slot)
+    over_slot_cap = lambda state, slot: slot_size(state, slot) > slot_caps[slot]
+    slot_key = lambda slot: (policy["slots"].get(slot, {}).get("priority", 0), U16(slot))
 
     # Placement (R-20): the profile places the required slots, unplaced items are excluded unless
     # protected, and an admitted protected item in an unplaced slot refuses.
@@ -121,10 +128,12 @@ def build(case):
         f"{name}: protected items {unplaced} are unplaced, so the refusal is protected_slot_unplaced"
 
     if refusal == "protected_content_over_budget":
-        assert not fits(protected) or any(over_cap(v[0]) for v in protected.values()), f"{name}: protected items fit"
+        assert not fits(protected) or any(over_cap(v[0]) for v in protected.values()) or \
+            any(over_slot_cap(protected, s) for s in slot_caps), f"{name}: protected items fit"
     compressed = {}
     if refusal not in ("required_slot_missing", "protected_slot_unplaced", "protected_content_over_budget"):
         assert not any(over_cap(v[0]) for v in protected.values()), f"{name}: a protected item exceeds its cap"
+        assert not any(over_slot_cap(protected, s) for s in slot_caps), f"{name}: protected items exceed a slot cap"
         assert {i for i, it in admitted.items() if over_cap(it)} == {a[1] for a in caps}, f"{name}: caps must list exactly the items over their cap"
         for action in caps:
             it = admitted[action[1]]
@@ -139,6 +148,33 @@ def build(case):
                 assert chosen["id"] == action[2], f"{name}: {it['id']} should take {chosen['id']} for its cap"
                 kept[it["id"]] = (it, chosen["body"])
                 compressed[it["id"]] = chosen
+        slot_actions = case.get("slot_caps", [])
+        acted = [admitted[a[1]]["slot"] for a in slot_actions]
+        assert set(acted) == {s for s in slot_caps if over_slot_cap(kept, s)}, f"{name}: slot_caps must act on exactly the slots over their cap"
+        assert acted == sorted(acted, key=slot_key), f"{name}: slots are capped in shedding order"
+        for action in slot_actions:
+            it = admitted[action[1]]
+            slot = it["slot"]
+            assert over_slot_cap(kept, slot), f"{name}: {slot} is already within its cap before {action}"
+            assert tier(it) != "protected", f"{name}: {it['id']} is protected"
+            assert tier(it) == "droppable" or not any(tier(v[0]) == "droppable" for v in kept.values() if v[0]["slot"] == slot), \
+                f"{name}: droppable items leave {slot} before {it['id']} is reduced"
+            if action[0] == "omit":
+                del kept[it["id"]]
+                excluded.append({"item_id": it["id"], "reason": "over_budget", "stage": "assembler", "slot": slot})
+                compressed.pop(it["id"], None)
+            else:
+                shorter = [v for v in it["variants"] if size(v["body"]) < size(kept[it["id"]][1])]
+                chosen = next(v for v in shorter if v["id"] == action[2])
+                within = lambda v: not over_slot_cap({**kept, it["id"]: (it, v["body"])}, slot)
+                if within(chosen):
+                    assert not any(within(v) for v in shorter if size(v["body"]) > size(chosen["body"])), f"{name}: a longer variant of {it['id']} is within the slot cap"
+                else:
+                    assert not any(within(v) for v in shorter), f"{name}: a variant of {it['id']} is within the slot cap, so the shortest is wrong"
+                    assert size(chosen["body"]) == min(size(v["body"]) for v in shorter), f"{name}: {chosen['id']} is not the shortest variant"
+                kept[it["id"]] = (it, chosen["body"])
+                compressed[it["id"]] = chosen
+        assert not any(over_slot_cap(kept, s) for s in slot_caps), f"{name}: a slot is still over its cap"
         assert fits(kept) == (not actions), f"{name}: the items {'fit' if fits(kept) else 'do not fit'} before budget pressure"
 
     for n, action in enumerate(actions):
@@ -313,6 +349,52 @@ CASES = [
         "actions": [("compress", "kb:a", "kb:a~short")],
     },
     {
+        "id": "budget-slot-caps",
+        "rules": ["R-3", "R-16", "R-18", "R-21", "R-22"],
+        "description": "Slots over the route's max_tokens shed their own items although the payload fits, slot by slot in shedding order: droppable items first, then the slot's route steps, "
+                       "then variants, the longest that brings the slot within its cap or else the shortest; a slot cap follows an item's own cap, and uncapped slots are untouched.",
+        "budget": 4096,
+        "policy": {"fitting_order": [{"slot": "interaction.history", "action": "omit"}],
+                   "slots": {"evidence.knowledge": {"max_tokens": 12}, "interaction.history": {"max_tokens": 13, "priority": -1, "order_by": ["-freshness"]}}},
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("ex:1", "governance.examples", "Example: refunds within thirty days are approved."), "admit"),
+            (item("user:plan", "state.user", "plan=pro since 2026-09-01", scope={"tenant": "acme", "user": "u_91"}), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within thirty days of purchase when no prior refund was issued.",
+                  relevance=0.9, token_budget=12, variants=[variant("kb:a~mid", "Pro plans refund in full within thirty days of purchase."),
+                                                           variant("kb:a~short", "Pro: full refund, 30 days.")]), "admit"),
+            (item("kb:b", "evidence.knowledge", "Annual plans refund pro rata for unused months, less any discount applied at purchase time.", relevance=0.7,
+                  variants=[variant("kb:b~mid", "Annual plans refund pro rata for unused months."), variant("kb:b~short", "Annual: pro rata.")]), "admit"),
+            (item("kb:faq", "evidence.knowledge", "Refunds are issued to the original payment method within ten business days.", relevance=0.95, tier="droppable"), "admit"),
+            (item("kb:gift", "evidence.knowledge", "Gift cards are not refundable.", relevance=0.6, token_budget=3), "admit"),
+            (item("turn:15", "interaction.history", "We upgraded to Pro two weeks ago but the seats are wrong.", freshness="2026-09-22T11:52:00Z",
+                  variants=[variant("turn:15~sum", "User upgraded to Pro; seats wrong.", "summary")]), "admit"),
+            (item("turn:16", "interaction.history", "Support said seats cannot be changed mid-cycle.", freshness="2026-09-22T11:54:00Z"), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "caps": [("compress", "kb:a", "kb:a~mid"), ("omit", "kb:gift")],
+        "slot_caps": [("omit", "turn:15"), ("omit", "kb:faq"), ("compress", "kb:b", "kb:b~short"), ("compress", "kb:a", "kb:a~short")],
+    },
+    {
+        "id": "budget-slot-cap-before-pressure",
+        "rules": ["R-16", "R-18", "R-21"],
+        "description": "A slot cap is enforced before budget pressure, so the tokens it frees count: the knowledge slot takes the variant that brings it within max_tokens, "
+                       "the payload then fits, and the droppable example that budget pressure would have omitted first stays.",
+        "budget": 60,
+        "policy": {"slots": {"evidence.knowledge": {"max_tokens": 20}}},
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("ex:1", "governance.examples", "Example: refunds within thirty days are approved."), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within thirty days of purchase when no prior refund was issued.",
+                  relevance=0.9, variants=[variant("kb:a~mid", "Pro plans refund in full within thirty days of purchase."),
+                                           variant("kb:a~short", "Pro: full refund, 30 days.")]), "admit"),
+            (item("kb:b", "evidence.knowledge", "Annual plans refund pro rata for unused months, less any discount applied at purchase time.", relevance=0.7,
+                  variants=[variant("kb:b~mid", "Annual plans refund pro rata for unused months."), variant("kb:b~short", "Annual: pro rata.")]), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "slot_caps": [("compress", "kb:b", "kb:b~short")],
+    },
+    {
         "id": "protected-over-cap",
         "rules": ["R-16", "R-17", "R-21"],
         "description": "A protected item whose body exceeds its own token_budget refuses the assembly, although the payload fits budget.input; nothing is truncated or shed, and the knowledge item over its own cap gets no row.",
@@ -320,6 +402,22 @@ CASES = [
         "items": [
             (item("policy:v12", "governance.instructions", POLICY_TEXT, token_budget=5), "admit"),
             (item("kb:a", "evidence.knowledge", "Pro plans refund in full within 30 days.", relevance=0.9, token_budget=4), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "refuse": "protected_content_over_budget",
+    },
+    {
+        "id": "protected-over-slot-cap",
+        "rules": ["R-16", "R-17", "R-21"],
+        "description": "A protected item within its own token_budget still refuses the assembly when its slot, placed twice, renders it past the route's max_tokens; "
+                       "the payload fits budget.input, and the knowledge slot over its own cap gets no row.",
+        "budget": 4096,
+        "placement": PLACEMENT[:4] + ["state.task", "state.task"] + PLACEMENT[5:],
+        "policy": {"slots": {"state.task": {"max_tokens": 5}, "evidence.knowledge": {"max_tokens": 4}}},
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("task:8821", "state.task", "refund_request: verify_eligibility=done, collect_reason=pending", token_budget=3), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within 30 days.", relevance=0.9), "admit"),
             (item("turn:18", "interaction.query", QUERY), "admit"),
         ],
         "refuse": "protected_content_over_budget",
