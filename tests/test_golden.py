@@ -11,14 +11,9 @@ def test_fixture_payload_hash_and_tokens(fixture_snapshot):
     assert [row["tokens"] for row in result.trace["included"]] == [9, 10, 6]
 
 
-def test_assembly_is_repeatable_and_input_order_does_not_matter(fixture_snapshot):
+def test_assembly_is_repeatable(fixture_snapshot):
     first = assemble(Snapshot.from_json(fixture_snapshot), trace_id="t")
-    fixture_snapshot["batches"].reverse()
-    fixture_snapshot["batches"][1]["items"].reverse()
-    second = assemble(Snapshot.from_json(fixture_snapshot), trace_id="t")
-    assert first.payload == second.payload
-    assert first.trace == second.trace
-    assert first.trace["context"]["snapshot_digest"] == second.trace["context"]["snapshot_digest"]
+    assert assemble(Snapshot.from_json(fixture_snapshot), trace_id="t") == first
 
 
 def test_defaults_filled_are_traced_as_records(fixture_snapshot):

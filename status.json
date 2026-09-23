@@ -262,7 +262,8 @@
       "id": "R-23",
       "status": "in progress",
       "evidence": [
-        "tests/test_golden.py::test_assembly_is_repeatable_and_input_order_does_not_matter",
+        "tests/test_golden.py::test_assembly_is_repeatable",
+        "tests/test_conformance.py::test_input_order_never_changes_the_outcome",
         "tests/test_purity.py::test_assemble_needs_no_network_or_clock",
         "tests/test_admission.py::test_items_without_a_usable_id_are_recorded_by_producer_and_position"
       ]

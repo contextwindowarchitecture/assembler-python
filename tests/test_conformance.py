@@ -1,6 +1,9 @@
 """Runs every vendored conformance case (conformance/README.md)."""
 from __future__ import annotations
 
+import copy
+import random
+
 import pytest
 
 from cwa import Snapshot, assemble
@@ -31,3 +34,30 @@ def test_conformance_case(case: str) -> None:
     else:
         assert result.payload is None
     assert comparable(result.trace) == comparable(read_json(directory / "expected.trace.json"))
+
+
+def _shuffled(document: dict, rng: random.Random) -> dict:
+    """The same snapshot as producers might return it: batches, candidates, producer exclusions,
+    groups and group members in any order. Candidates without a usable id keep their relative
+    order, which R-2 makes significant."""
+    document = copy.deepcopy(document)
+    rng.shuffle(document["batches"])
+    for batch in document["batches"]:
+        named = [c for c in batch["items"] if isinstance(c, dict) and isinstance(c.get("id"), str) and c["id"].strip()]
+        rng.shuffle(named)
+        batch["items"] = named + [c for c in batch["items"] if not any(c is n for n in named)]
+        rng.shuffle(batch["excluded"])
+    rng.shuffle(document["conflicts"])
+    for group in document["conflicts"]:
+        rng.shuffle(group["items"])
+    return document
+
+
+@pytest.mark.parametrize("case", sorted(p.name for p in CASES.iterdir()))
+def test_input_order_never_changes_the_outcome(case: str) -> None:
+    """R-23 (DA-15): the payload, the trace and the snapshot digest ignore the order of the input."""
+    document = read_json(CASES / case / "snapshot.json")
+    expected = assemble(Snapshot.from_json(document), trace_id="t")
+    for seed in range(10):
+        shuffled = assemble(Snapshot.from_json(_shuffled(document, random.Random(seed))), trace_id="t")
+        assert (shuffled.payload, shuffled.trace) == (expected.payload, expected.trace), f"seed {seed}"
