@@ -1,9 +1,7 @@
 """assemble(): a pure function from a frozen Snapshot to a payload and a trace.
 
-It admits, checks required slots, fits the budget, checks evidence, places, renders, counts, hashes
-and traces.
-Conflict resolution (M3) is not implemented yet, so any snapshot that would need it raises
-NotImplementedError rather than producing a payload the spec would not allow.
+It admits, resolves declared conflicts, checks required slots, fits the budget, checks evidence,
+places, renders, counts, hashes and traces.
 """
 from __future__ import annotations
 
@@ -14,6 +12,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .admission import Admission, admit
+from .conflicts import Resolution, resolve
 from .fitting import Fitted, fit
 from .model import Item
 from .render import place
@@ -72,8 +71,8 @@ def _refusal(snapshot: Snapshot, items: tuple[Item, ...]) -> tuple[str | None, F
     return None, fitted, None
 
 
-def _trace(snapshot: Snapshot, admission: Admission, trace_id: str | None, omitted: tuple[Item, ...] = (),
-           **outcome: Any) -> dict[str, Any]:
+def _trace(snapshot: Snapshot, admission: Admission, resolution: Resolution, trace_id: str | None,
+           omitted: tuple[Item, ...] = (), **outcome: Any) -> dict[str, Any]:
     trace = {
         "trace_id": trace_id or str(uuid.uuid4()),
         "profile": {"id": snapshot.profile.id, "version": snapshot.profile.version},
@@ -87,7 +86,7 @@ def _trace(snapshot: Snapshot, admission: Admission, trace_id: str | None, omitt
         ] + [{"item_id": e.item_id, "reason": e.reason, "stage": "assembler", **({"slot": e.slot} if e.slot else {})}
              for e in admission.excluded
         ] + [{"item_id": item.id, "reason": "over_budget", "stage": "assembler", "slot": item.slot} for item in omitted],
-        "conflicts": [],
+        "conflicts": [dict(record) for record in resolution.records],
         "refused": {"bool": False, "reason": None},
         "context": {
             "assembly_time": snapshot.assembly_time,
@@ -109,20 +108,20 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResu
     placed = {placement.slot for placement in snapshot.profile.placement}
     if unplaced := sorted({item.slot for item in items} - placed):
         raise NotImplementedError(f"admitted items in unplaced slots {unplaced} need placement checks (M4)")
-    if snapshot.conflicts:
-        raise NotImplementedError("conflict resolution lands in M3")
+    # Conflicts resolve before any refusal check, so every trace records them (R-11).
+    resolution = resolve(snapshot, items)
     reason, fitted, recovery = _refusal(snapshot, items)
     if reason:
         # R-17: a refusal has no payload; exclusions found so far, including fitting's, stay in the trace.
         outcome = {"refused": {"bool": True, "reason": reason}, **({"recovery": {"action": recovery}} if recovery else {})}
-        return AssemblyResult(payload=None, trace=_trace(snapshot, admission, trace_id, fitted.omitted if fitted else (), **outcome))
+        return AssemblyResult(payload=None, trace=_trace(snapshot, admission, resolution, trace_id, fitted.omitted if fitted else (), **outcome))
 
     occurrences = place(snapshot.profile, fitted.items)
     rendered = snapshot.renderer.render(occurrences)
     input_tokens = snapshot.tokenizer.count(rendered.payload.decode("utf-8"))
 
     return AssemblyResult(payload=rendered.payload, trace=_trace(
-        snapshot, admission, trace_id, fitted.omitted,
+        snapshot, admission, resolution, trace_id, fitted.omitted,
         result={"input_tokens": input_tokens, "hash": hashlib.sha256(rendered.payload).hexdigest()},
         included=[
             {"slot": o.slot, "item_id": o.item.id, "tokens": snapshot.tokenizer.count(body), "source_version": o.item.source_version}
