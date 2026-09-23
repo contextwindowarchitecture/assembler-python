@@ -205,7 +205,7 @@ An implementation reports a run as `conformance-report.json`, valid against `sch
 It also holds one entry per directory under `rejections/`, ordered by id, in `rejections`, with the case's `rules` and one outcome:
 
 - `rejected`: the implementation rejected the snapshot before assembly, with no payload and no trace;
-- `accepted`: it assembled or refused instead. `detail` says what it did;
+- `failed`: anything else: it assembled a payload, refused, or raised something other than a rejection. `detail` says what happened;
 - `skipped`: it does not provide the case's tokenizer or renderer. `detail` names it.
 
 Only `passed` and `rejected` count. A report without `rejections` has not run them. A trace that validates against `schema/trace.schema.json` but differs from the expected one has failed: schema validation alone is not conformance (R-21). The Assembler page imports the reference assembler's report beside its `status.json`.

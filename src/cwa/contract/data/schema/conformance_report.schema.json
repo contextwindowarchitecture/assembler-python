@@ -133,7 +133,7 @@
           "outcome": {
             "enum": [
               "rejected",
-              "accepted",
+              "failed",
               "skipped"
             ]
           },
@@ -151,7 +151,7 @@
           "properties": {
             "outcome": {
               "enum": [
-                "accepted",
+                "failed",
                 "skipped"
               ]
             }
