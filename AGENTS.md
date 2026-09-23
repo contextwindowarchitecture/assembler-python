@@ -26,10 +26,11 @@ Rules:
 - Conformance cases (`conformance/cases/`) come from the website repo. When a milestone needs a new spec-level case, add it there first (with its own website tests), re-vendor, and let it fail here before implementing.
 - While its milestone is in progress, a vendored case that cannot pass yet goes in `PENDING` in `tests/test_conformance.py`. That marks it as a strict expected failure, so the suite stays green and fails as soon as the case starts passing. Remove it from `PENDING` in the commit that makes it pass.
 - Before claiming a test protects something, break the code on purpose and watch the test fail. Restore the code afterwards.
-- A conformance-matrix row moves to *implemented* only when tests cover every assembler-scoped clause of that requirement (`contract/assembler-scope.json` in the website repo).
+- A conformance-matrix row moves to *implemented* (or *boundary-checked*) only when tests cover every assembler-scoped clause of that requirement. Record the claim in `status.json` and cite the tests. `tests/test_status.py` rejects statuses that don't fit the scope, and claims whose cited tests don't exist. The website imports `status.json` into its matrix.
 
 ## Commits
 
+- **Gate every commit on the suite's exit code.** When piping pytest output, run `set -o pipefail` first, or `| tail` will report success for a failing run.
 - **Commit incrementally**, without being asked, at each green step: one behavior, or one refactor, per commit. Every commit must pass the full suite, so history stays bisectable. Don't commit a red test on its own; the test and the code that satisfies it go together.
 - **Never push.** The remote is `origin` (https://github.com/contextwindowarchitecture/assembler), but agents don't push, open pull requests, or fetch-and-rebase. The maintainer publishes commits.
 - **Use [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/):** `type(scope): summary` in the imperative mood, lower case, no trailing period, at most 72 characters.

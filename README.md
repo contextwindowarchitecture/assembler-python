@@ -2,7 +2,7 @@
 
 Reference assembler for the [Context Window Architecture](https://contextwindowarchitecture.io) v2 draft. It turns a frozen snapshot of candidate items into a rendered payload and a trace, without calling a model or reading anything outside the snapshot.
 
-**Status: M0 walking skeleton, not released.** It places, renders, counts, hashes and traces, and reproduces the published fixture byte for byte. Admission, budget fitting and conflict resolution are not implemented; snapshots that need them raise `NotImplementedError` instead of producing a payload the spec would not allow. See [docs/DESIGN.md](docs/DESIGN.md) for the design and milestones.
+**Status: M1 admission, not released.** Every candidate is admitted or excluded with exactly one registered reason, following the spec's precedence. Admitted items are placed, rendered, counted, hashed and traced, and both published conformance cases pass byte for byte. Budget fitting, conflict resolution and placement checks are not implemented; snapshots that need them raise `NotImplementedError` instead of producing a payload the spec would not allow. [status.json](status.json) lists what is claimed per requirement and the tests behind each claim. See [docs/DESIGN.md](docs/DESIGN.md) for the design and milestones.
 
 ## Use
 
