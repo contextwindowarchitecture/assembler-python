@@ -82,7 +82,8 @@ def resolve(snapshot: Snapshot, items: tuple[Item, ...], producers: Mapping[str,
     """Decide every declared group against the admitted items; producers maps each to its
     authenticated producer id."""
     admitted = {item.id: item for item in items}
-    records, excluded, marks, refusing = [], [], {}, []
+    records, excluded, refusing = [], [], []
+    marks: dict[str, str] = {}
     for group in snapshot.conflicts:
         members = [admitted[i] for i in group.items if i in admitted]
         if len(members) < 2:

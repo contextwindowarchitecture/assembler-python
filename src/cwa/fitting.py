@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from functools import cmp_to_key
-from typing import Callable, Iterable, Mapping
+from typing import Any, Callable, Iterable, Mapping
 
 from . import instants
 from .strings import utf16
@@ -54,7 +54,7 @@ def slot_tokens(snapshot: Snapshot, items: Iterable[Item], slot: str) -> int:
     return sum(sum(_occurrence_tokens(snapshot, item)) for item in items if item.slot == slot)
 
 
-def _sign(a: object, b: object) -> int:
+def _sign(a: Any, b: Any) -> int:
     return (a > b) - (a < b)
 
 
@@ -151,8 +151,10 @@ def fit(snapshot: Snapshot, items: tuple[Item, ...], marks: Mapping[str, str] | 
     compressed: dict[str, Compression] = {}
     # R-16: token_budget caps hold whether or not the payload fits.
     for item in _shedding_order(snapshot, (i for i in items if i not in protected and _over_cap(snapshot, i))):
+        cap = item.token_budget
+        assert cap is not None  # _over_cap
         within = [(n, index, variant) for index, variant in enumerate(item.variants)
-                  if (n := body_tokens(snapshot, replace(item, body=variant.body))) <= item.token_budget]
+                  if (n := body_tokens(snapshot, replace(item, body=variant.body))) <= cap]
         if tier(snapshot, item) == "compressible" and within:
             variant = max(within, key=lambda s: (s[0], -s[1]))[2]
             kept[item.id] = replace(item, body=variant.body)
@@ -160,8 +162,10 @@ def fit(snapshot: Snapshot, items: tuple[Item, ...], marks: Mapping[str, str] | 
         else:
             omitted.append(kept.pop(item.id))
     # R-16: each slot cap holds whether or not the payload fits, and sheds only the slot's own items.
-    for slot, cap in caps.items():
-        _shed(snapshot, kept, omitted, compressed, lambda selection, slot=slot, cap=cap: slot_tokens(snapshot, selection, slot) <= cap, {slot})
+    for slot, slot_cap in caps.items():
+        def within_cap(selection: Iterable[Item], slot: str = slot, cap: int = slot_cap) -> bool:
+            return slot_tokens(snapshot, selection, slot) <= cap
+        _shed(snapshot, kept, omitted, compressed, within_cap, {slot})
     # R-16: budget pressure, the only shedding a slot floor guards.
     _shed(snapshot, kept, omitted, compressed, fits, set(SLOT_DEFAULTS), _slot_floors(snapshot))
     if not fits(kept.values()):

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Mapping, cast
 
 from jsonschema import ValidationError
 
@@ -48,7 +48,8 @@ class Admission:
 
 def _schema_codes(error: ValidationError) -> list[str]:
     if error.validator == "required":
-        return [f"missing_field:{name}" for name in error.validator_value if name not in error.instance]
+        required, instance = cast(list[str], error.validator_value), cast(dict[str, Any], error.instance)
+        return [f"missing_field:{name}" for name in required if name not in instance]
     if error.validator == "enum" and list(error.absolute_path) == ["slot"]:
         return ["unknown_slot"]
     if error.validator == "enum" and list(error.absolute_path) == ["authority"]:

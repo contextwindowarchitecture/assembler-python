@@ -25,11 +25,15 @@ class Supersession:
     """(item, id of the latest item kept for its call) for each superseded item, in item id order."""
 
 
+def _by_freshness(a: Item, b: Item) -> int:
+    return instants.compare(a.freshness, b.freshness)
+
+
 def supersede(snapshot: Snapshot, items: tuple[Item, ...], producers: Mapping[str, str]) -> Supersession:
     """producers: the authenticated producer of each item, by item id."""
     named = {item_id for group in snapshot.conflicts for item_id in group.items}
     exempt = lambda item: item.id in named or tier(snapshot, item) == "protected"
-    by_freshness = cmp_to_key(lambda a, b: instants.compare(a.freshness, b.freshness))
+    by_freshness = cmp_to_key(_by_freshness)
     kept_for: dict[str, tuple[Item, str]] = {}
     for slot, rules in snapshot.route_policy.document.get("slots", {}).items():
         if rules.get("supersede") != "source":

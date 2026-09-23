@@ -40,7 +40,8 @@ def _label(noun: str, name: str, version: Any) -> str:
 
 def _identities(profiles: Iterable[Document], route_policies: Iterable[Document]) -> tuple[dict, list[str]]:
     """{(kind, name, version): (document, digest)} for valid documents, and the problems found."""
-    found, problems = {}, []
+    found: dict[tuple[str, str, Any], tuple[Document, str]] = {}
+    problems: list[str] = []
     for (key, noun, name), schema, documents, measure in (
             (_KINDS[0], "profile", profiles, profile_digest), (_KINDS[1], "route_policy", route_policies, route_policy_digest)):
         for index, document in enumerate(documents):

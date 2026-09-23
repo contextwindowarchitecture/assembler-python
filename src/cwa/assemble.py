@@ -133,7 +133,8 @@ class _Stopwatch:
     and the trace has no timings. A clock that runs backwards records 0, never a negative time."""
 
     def __init__(self, clock: Callable[[], float] | None):
-        self._clock, self._timings = clock, {}
+        self._clock = clock
+        self._timings: dict[str, float] = {}
         self._last = clock() if clock else 0.0
 
     def lap(self, stage: str) -> None:
@@ -171,6 +172,7 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None, clock: Callable
         return AssemblyResult(payload=None, trace=_trace(snapshot, admission, resolution, supersession, deduplication, diversity, trace_id, fitted.omitted if fitted else (),
                                                          **outcome, **watch.recorded()))
 
+    assert fitted is not None  # every refusal returned above
     occurrences = place(snapshot.profile, fitted.items, resolution.marks)
     rendered = snapshot.renderer.render(occurrences)
     input_tokens = rendered.tokens(snapshot.tokenizer)

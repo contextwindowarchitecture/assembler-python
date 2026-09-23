@@ -41,6 +41,12 @@ def _unpaired_surrogates(value: Any, path: str = "") -> list[str]:
     return []
 
 
+def _item_order(item: Any) -> tuple[int, bytes, bytes]:
+    """Items with a usable id by id, then by content; the rest after them, in their supplied order."""
+    item_id = usable_id(item)
+    return (0, utf16(item_id), canonical_json(item)) if item_id else (1, b"", b"")
+
+
 def _normalize(document: dict[str, Any]) -> dict[str, Any]:
     """Canonical order, so producers returning in any order yield the same snapshot and payload.
 
@@ -49,7 +55,7 @@ def _normalize(document: dict[str, Any]) -> dict[str, Any]:
     {producer}#invalid-{n} trace ids stable across replays.
     """
     for batch in document["batches"]:
-        batch["items"].sort(key=lambda item: (0, utf16(usable_id(item)), canonical_json(item)) if usable_id(item) else (1, b"", b""))
+        batch["items"].sort(key=_item_order)
         batch["excluded"].sort(key=lambda row: (utf16(row["item_id"]), canonical_json(row)))
     document["batches"].sort(key=lambda batch: utf16(batch["producer"]["id"]))
     document["conflicts"].sort(key=lambda group: utf16(group["id"]))
@@ -133,36 +139,37 @@ class Snapshot:
         if redefined := sorted(set(tokenizers) & set(TOKENIZERS)):
             raise ValueError(f"tokenizer {', '.join(redefined)} is built in; give yours another id")
         tokenizers = {**TOKENIZERS, **tokenizers}
-        document = json.loads(json.dumps(document))
-        if problems := contract.errors("snapshot", document) + _unpaired_surrogates(document):
+        data: dict[str, Any] = json.loads(json.dumps(document))
+        if problems := contract.errors("snapshot", data) + _unpaired_surrogates(data):
             raise SnapshotError(problems)
-        document = _normalize(document)
+        data = _normalize(data)
 
         problems = []
-        tokenizer, renderer = tokenizers.get(document["tokenizer"]), renderers.get(document["renderer"])
+        tokenizer, renderer = tokenizers.get(data["tokenizer"]), renderers.get(data["renderer"])
         if tokenizer is None:
-            problems.append(f"unknown tokenizer {document['tokenizer']!r}")
+            problems.append(f"unknown tokenizer {data['tokenizer']!r}")
         if renderer is None:
-            problems.append(f"unknown renderer {document['renderer']!r}")
-        p = document["profile"]
+            problems.append(f"unknown renderer {data['renderer']!r}")
+        p = data["profile"]
         profile = Profile(p["spec"], p["id"], p["version"], p["route"], p["model_family"], p["route_policy_version"],
                           tuple(Placement(e["slot"], e["wrap"]) for e in p["placement"]), copy.deepcopy(p["evaluation"]))
         if renderer is not None:
             problems += renderer.profile_errors(profile)
-        policy = document["route_policy"]
+        policy = data["route_policy"]
         problems += _profile_errors(profile, policy)
-        producer_ids = [b["producer"]["id"] for b in document["batches"]]
+        producer_ids = [b["producer"]["id"] for b in data["batches"]]
         if duplicates := sorted({i for i in producer_ids if producer_ids.count(i) > 1}):
             problems.append(f"producer ids appear in more than one batch: {', '.join(duplicates)}")
-        problems += _conflict_errors(document) + _report_errors(document)
+        problems += _conflict_errors(data) + _report_errors(data)
         if problems:
             raise SnapshotError(problems)
+        assert tokenizer is not None and renderer is not None  # an unknown one is a problem above
 
-        grant = document.get("capabilities")
+        grant = data.get("capabilities")
         return cls(
-            assembly_time=document["assembly_time"],
-            scope=dict(document["scope"]),
-            budget=Budget(**document["budget"]),
+            assembly_time=data["assembly_time"],
+            scope=dict(data["scope"]),
+            budget=Budget(**data["budget"]),
             profile=profile,
             route_policy=RoutePolicy(policy["route"], policy["version"], copy.deepcopy(policy)),
             tokenizer=tokenizer,
@@ -173,11 +180,11 @@ class Snapshot:
                     candidates=tuple(b["items"]),
                     excluded=tuple(ProducerExclusion(**row) for row in b["excluded"]),
                 )
-                for b in document["batches"]
+                for b in data["batches"]
             ),
             capabilities=CapabilityGrant(grant["policy_producer"], grant["allow_list_version"], tuple(grant["allowed_ids"])) if grant else None,
-            conflicts=tuple(ConflictGroup(g["id"], g["kind"], tuple(g["items"]), g.get("fact")) for g in document["conflicts"]),
-            _document=document,
+            conflicts=tuple(ConflictGroup(g["id"], g["kind"], tuple(g["items"]), g.get("fact")) for g in data["conflicts"]),
+            _document=data,
         )
 
     @classmethod

@@ -47,6 +47,7 @@ def _number(value: float) -> str:
         return "0"
     sign = "-" if value < 0 else ""
     _, digit_tuple, exponent = Decimal(repr(abs(value))).as_tuple()
+    assert isinstance(exponent, int)  # finite, checked above
     digits = "".join(map(str, digit_tuple)).rstrip("0")
     exponent += len("".join(map(str, digit_tuple))) - len(digits)
     k, n = len(digits), exponent + len(digits)
