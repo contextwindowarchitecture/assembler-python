@@ -566,6 +566,21 @@ flowchart LR
   M4 --> M5["M5 · Hardening<br/>R-21 R-22 R-23<br/>conformance-report → website"]
 ```
 
+**M5 status (2026-09-22): in progress. Hardening** (R-21, R-22, R-23). The maintainer took the recommended option on all four open questions (D-7 to D-10, §9). Spec first again: each spec change lands in the website, is vendored, and fails here before it is implemented.
+
+```mermaid
+flowchart LR
+  H["Assembler-only hardening<br/>purity, replay, import lint,<br/>reason coverage"] --> O["Spec: UTF-16 order<br/>+ astral-id case (D-7)"] --> OI["Implement order"]
+  OI --> D["Spec: snapshot digest (D-10),<br/>eligibility in included[]"] --> DI["Implement,<br/>compare digests"]
+  DI --> T["Injected clock,<br/>timings (D-9)"]
+  T --> R["Spec: conformance report<br/>schema + matrix (D-8)"] --> RI["Runner, committed report,<br/>status gate"] --> S["status.json R-21..R-23,<br/>website import"]
+```
+
+- **Order (D-7).** Wherever the spec orders strings, it compares UTF-16 code units, as RFC 8785 already orders member names. Only ids with characters outside the Basic Multilingual Plane notice.
+- **Snapshot digest (D-10).** The spec defines the normalization and RFC 8785 serialization this assembler already uses, so every implementation computes the same `context.snapshot_digest` and conformance compares it.
+- **Timings (D-9).** `assemble(snapshot, clock=...)` takes an optional monotonic clock from the caller. Without one, the trace has no `timings` and assembly reads no clock. `included[]` rows also gain `eligibility` (R-22).
+- **Conformance report (D-8).** A schema'd, language-neutral `conformance-report.json` records each case's outcome. This assembler commits one beside `status.json`, the website matrix imports both, and an *implemented* claim is rejected while a case tagged with its rule fails.
+
 **M4 status (2026-09-22): done. Placement, profiles, the message renderer and the registry** (R-7, R-19, R-20). The maintainer chose the render IR (below) and asked for the two example profiles a single system prompt cannot realize to be revised to version 3, which website `1a6ede5` did. Spec first again: website `16a5cca` defines the placement checks and `b303ca4` adds three placement cases, vendored here as pending.
 
 ```mermaid
@@ -595,8 +610,6 @@ Result: all twenty-four vendored conformance cases pass, and `status.json` claim
 - **Placement is an admission check.** The old step 5 ran after conflicts; the built check runs last in admission, so an unplaced item never joins a conflict group, and a group it would have joined can become moot.
 - **The payload's size is a renderer's business.** A text renderer counts its payload, and `cwa-messages/v1` sums its texts, so JSON punctuation and role names are never counted.
 - **`included[]` is in placement order**, which for a text renderer is the same as payload order.
-
-**Next: M5.** Hardening: R-21, R-22, R-23, the code-point versus UTF-16 ordering question, and `conformance-report.json` for the website.
 
 **M3 status (2026-09-22): done. Conflicts** (R-6, R-11, and the last clause of R-3). As in M2, the spec came first. Website `89660ed` defines resolution, and `271f4c3` adds five conflict conformance cases generated from intent tables, vendored here as pending. The maintainer took the recommended option on each open question:
 
@@ -666,6 +679,10 @@ Result: `src/cwa/conflicts.py` resolves every group kind and every escalation ac
 | D-4 | Are conformance *test cases* part of the spec or of the implementation? The implementation itself lives in `cwa-assembler`. | **Decided 2026-09-22:** website repo, beside `examples/`; `cwa-assembler` vendors them by hash. Layout lands with M0, together with a snapshot schema. |
 | D-5 | History assistant turns (DA-22) | **Decided and applied 2026-09-22:** prior model turns are identified by `lineage: generated` (no schema change) and carry `untrusted` (R-1); every prior turn renders inside the history wrapper as a transcript, never as platform messages (R-7). |
 | D-6 | Bundle the schema amendments (DA-9, 10, 13, 14, 18, 24) into one v2-draft revision in the website repo | **Applied 2026-09-22** before M0. See `website/CONTRACT_DECISIONS.md` "Budget and trace amendments". |
+| D-7 | How are strings ordered? (M2 follow-up) | **Decided 2026-09-22:** UTF-16 code units everywhere, as RFC 8785 orders member names. |
+| D-8 | What is `conformance-report.json`? | **Decided 2026-09-22:** a website schema for per-case outcomes, emitted by each implementation's runner and imported into the matrix beside `status.json`. |
+| D-9 | How does a pure core record R-22 timings? | **Decided 2026-09-22:** an optional caller-supplied clock; no clock, no timings. |
+| D-10 | Is `context.snapshot_digest` portable? | **Decided 2026-09-22:** yes. The spec fixes the snapshot normalization and RFC 8785 serialization, and conformance compares the digest. |
 
 ## 10. What to revisit as it grows
 
