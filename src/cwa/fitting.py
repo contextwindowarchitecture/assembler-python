@@ -13,14 +13,14 @@ from .model import Item
 from .render import place
 from .snapshot import Snapshot
 
-_TIER_RANK = {"droppable": 0, "compressible": 1, "protected": 2}
+TIER_RANK = {"droppable": 0, "compressible": 1, "protected": 2}
 
 
 def slot_tier(snapshot: Snapshot, slot: str) -> str:
     """The slot's default tier, raised by the route's tier_upgrades (R-16)."""
     default = SLOT_DEFAULTS[slot]["tier"]
     upgrade = snapshot.route_policy.document.get("tier_upgrades", {}).get(slot, default)
-    return max(default, upgrade, key=_TIER_RANK.__getitem__)
+    return max(default, upgrade, key=TIER_RANK.__getitem__)
 
 
 def tier(snapshot: Snapshot, item: Item) -> str:
