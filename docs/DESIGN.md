@@ -529,6 +529,15 @@ flowchart LR
   M4 --> M5["M5 · Hardening<br/>R-21 R-22 R-23<br/>conformance-report → website"]
 ```
 
+**M2 kickoff (next): budget fitting and refusal.** Start test-first from the spec side:
+
+1. **Route-policy schema (website):** add `parser` (R-4), `requires_evidence` and `slots.<slot>.min_included` (R-12), per-slot `priority`/`order_by` and a compressible fitting order (R-16, Appendix A option B, defaulting to variants before omission).
+2. **Reasons registry (website):** decide whether an invalid snapshot becomes a refusal code (`invalid_snapshot`) or stays a pre-assembly `SnapshotError` (§8 M0 note).
+3. **Conformance cases (website):** budget pressure (drop droppable, then variants, then omit; protected never touched), `protected_content_over_budget`, `required_slot_missing`, and `evidence_required` with each `recovery.action` from §4.5. Each case gets a generator with an intent table, like `admission-reasons`.
+4. **Assembler:** replace the M2 `NotImplementedError` in `assemble.py`. Add `excluded[].slot` and refusal traces (`result: null`, `included: []`), which moves R-4, R-12, R-16, R-17 and parts of R-21/R-22. Diagram the shedding sequence and the refusal paths in §4.4.
+
+**Follow-up for M5:** trace and placement ordering compare ids by code point; JavaScript's default sort uses UTF-16 code units. They differ only for ids with characters outside the Basic Multilingual Plane. Pick one in the spec (JCS already uses UTF-16) and apply it everywhere ids are sorted.
+
 **M1 status (2026-09-22): done.** Admission is implemented test-first as an ordered table of checks in `src/cwa/admission.py`, and the website's `admission-reasons` conformance case (42 candidates) passes byte for byte. `status.json` records the result: R-1 and R-2 are implemented, R-8, R-9, R-13, R-14 and R-15 are boundary-checked, and eight more requirements are in progress. It diverged from this document in five ways, each now written into the spec:
 
 - **Precedence comes from the registry.** The check order is the order of `contract/reasons.json` (R-21), not the table in §4.1. The producer check comes *first*: a batch from a producer the route doesn't list is refused before anyone reads its items. Several missing fields tie-break alphabetically.

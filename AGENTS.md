@@ -60,7 +60,7 @@ Rules:
 `src/cwa/contract/data/` and `conformance/` are copies of the website repo's `schema/`, `contract/` and `conformance/`, pinned by SHA-256 in `contract.lock.json`. `tests/test_contract_lock.py` fails if they are edited here. To change the spec:
 
 1. Change the website repo and run its `npm test`.
-2. Commit there.
+2. Commit there on branch `assembler-v0.0.1`, following the same commit rules: incremental, Conventional Commits, `-s`, never push. This is standing permission; no need to ask.
 3. Re-vendor here and commit the lock update: `build(contract): vendor website <short-sha>`.
 
 Re-vendor only from a committed website state. The lock records `"dirty": true` otherwise.
