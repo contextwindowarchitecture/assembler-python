@@ -11,6 +11,7 @@ uv run pytest tests/test_x.py::test_name                         # one test
 python scripts/vendor_contract.py --website ../website           # re-vendor the contract after a website change
 python scripts/vendor_contract.py --website ../website --check   # fail on drift
 uv run python -m cwa.conformance > conformance-report.json         # regenerate the committed conformance report
+uv run python scripts/bench.py                                     # time assemble(); record changes in DESIGN.md §7
 ```
 
 ## Test-driven development

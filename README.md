@@ -49,6 +49,7 @@ snapshot = Snapshot.freeze(profile=profile, route_policy=registry.route_policy("
 uv sync
 uv run pytest
 uv run python -m cwa.conformance > conformance-report.json   # regenerate the committed report
+uv run python scripts/bench.py                                # time assemble() against DESIGN.md §7
 ```
 
 The package ships `py.typed`, and the suite runs mypy over `src/cwa`, so its annotations stay usable by your type checker. [conformance-report.json](conformance-report.json) records each published case's outcome, and each rejection case's, in the website's `conformance_report.schema.json` format; a test fails when it is stale.

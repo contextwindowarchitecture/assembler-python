@@ -609,6 +609,19 @@ flowchart LR
 
 The assembler is a library, not a service. Scaling is the application's concern. The one thing that grows badly is a **remote** tokenizer, which is why DA-2 keeps it out of the core.
 
+**Measured (M14, 2026-09-23).** `scripts/bench.py` assembles fixture-three-slot with n retrieved passages. "fits" has an unlimited budget; "tight" has 60 tokens, so nearly every passage is omitted. Times are from one Apple Silicon laptop under Python 3.14.
+
+| Items | Budget | Omitted | Tokenizer calls | Characters tokenized | Time (ms) |
+|---:|---|---:|---:|---:|---:|
+| 10 | fits | 0 | 26 | 6,250 | 1.8 |
+| 10 | tight | 8 | 46 | 26,790 | 1.8 |
+| 100 | fits | 0 | 206 | 54,040 | 10.2 |
+| 100 | tight | 98 | 406 | 2,000,395 | 24.5 |
+| 500 | fits | 0 | 1,006 | 268,440 | 50.3 |
+| 500 | tight | 498 | 2,006 | 48,998,355 | 351.2 |
+
+Tokenizer calls grow linearly, about 2 per occurrence plus 2 per reduction, and `tests/test_scale.py` pins that. The expectations above were wrong in two ways. No cache was built, and "Fit iterations: usually 1–2" holds only when little sheds: each reduction is its own fit test, and each fit test renders and counts the whole payload. So the **characters tokenized grow quadratically** under heavy shedding, about 49 million for 500 passages, and time follows once shedding dominates. At the 500-item ceiling this is a third of a second; at a few thousand it would be seconds. Any faster fit must reach byte-identical decisions in every language, so it is a spec question, not a local optimization. The options are summing per-occurrence counts, which is exact only for tokenizers that are additive across the renderer's separators, or binary search over a step's reductions, which assumes the payload count only falls as items go. Neither is built.
+
 ---
 
 ## 8. Build plan
@@ -641,7 +654,7 @@ flowchart LR
 - **M13 · Second implementation.** A minimal JavaScript assembler passes every conformance case, which shows the suite is language-neutral (§10).
 - **M14 · Release hygiene.** A LICENSE in both repos (the maintainer chooses which), CI running both suites, a CHANGELOG, `py.typed`, and a benchmark for §7's expectations.
 
-**M14 status (2026-09-23): in progress. Release hygiene.** The maintainer chose Apache-2.0 for both repos, CI with a Python and Node version matrix and a contract-drift check, a CHANGELOG generated from the Conventional Commit history, and a benchmark script plus a deterministic count of tokenizer calls. Done so far: the license (assembler `4f7d934`, website `58d4e5e`), and `py.typed`. Before shipping the marker, mypy found 20 errors, from unannotated containers to Optionals the code guarded without telling the checker. `1855d78` fixes them with no behavior change, and `tests/test_packaging.py` runs mypy in the suite, so the promise `py.typed` makes holds at every commit.
+**M14 status (2026-09-23): in progress. Release hygiene.** The maintainer chose Apache-2.0 for both repos, CI with a Python and Node version matrix and a contract-drift check, a CHANGELOG generated from the Conventional Commit history, and a benchmark script plus a deterministic count of tokenizer calls. Done so far: the license (assembler `4f7d934`, website `58d4e5e`), and `py.typed`. Before shipping the marker, mypy found 20 errors, from unannotated containers to Optionals the code guarded without telling the checker. `1855d78` fixes them with no behavior change, and `tests/test_packaging.py` runs mypy in the suite, so the promise `py.typed` makes holds at every commit. The benchmark is `scripts/bench.py`, with its numbers in §7, and `tests/test_scale.py` pins linear tokenizer calls; a mutation that counted every body in each fit test was caught. It found that the characters tokenized grow quadratically under heavy shedding (§7), which is reported for a decision rather than optimized here.
 
 **M12 status (2026-09-23): done. Invalid-snapshot rejection** (R-17). The maintainer took the recommended option on all four questions (D-20). Rejection, not refusal: M0's `SnapshotError` already matched the conformance README, so M12 mostly made it normative and testable. Spec first: website `03e56b8` amends R-17 and gathers the checks into README Snapshot checks. That includes one rule this assembler enforced but the spec never stated, a producer heading at most one batch, which a port could otherwise have skipped and still passed every case. It also adds `checkSnapshot` to the website's `contract.js`, a JavaScript reference for every check. `fd24188` and `ffcc379` add the report's `rejections` list, with outcomes `rejected`, `failed` or `skipped`; `failed` was first called `accepted` until a crash showed it needed the same word assembly cases use. `a50f31f` adds fourteen rejection cases, one per check. Here `run_rejection` reports them, the status gate counts a rejection case only when it is rejected, and `tests/test_rejections.py` checks each. Mutations were each caught: dropping the producer check, and a report marking a rejection failed.
 
