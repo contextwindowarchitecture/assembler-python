@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/contextwindowarchitecture/assembler"
+Repository = "https://github.com/contextwindowarchitecture/assembler-python"
 Specification = "https://contextwindowarchitecture.io/spec.html"
 
 [dependency-groups]
