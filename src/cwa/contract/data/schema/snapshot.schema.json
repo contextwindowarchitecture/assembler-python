@@ -40,6 +40,12 @@
         "reserved_output": {
           "type": "integer",
           "minimum": 0
+        },
+        "margin_percent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Optional safety margin, in percent, for a tokenizer that estimates: the payload fits only when its token count times (100 + margin_percent) / 100, rounded up, is at most input (R-16). Absent means 0."
         }
       }
     },

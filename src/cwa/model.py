@@ -16,6 +16,12 @@ def _frozen(mapping: Mapping[str, Any] | None) -> Mapping[str, Any]:
 class Budget:
     input: int
     reserved_output: int
+    margin_percent: int | None = None
+    """Headroom for an estimating tokenizer (R-16); None when the snapshot sets none, which counts as 0."""
+
+    def charged(self, tokens: int) -> int:
+        """The count the fit test compares with input: tokens x (100 + margin) / 100, rounded up."""
+        return (tokens * (100 + (self.margin_percent or 0)) + 99) // 100
 
 
 @dataclass(frozen=True, slots=True)

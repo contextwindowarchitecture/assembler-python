@@ -5,7 +5,7 @@
     "language": "python"
   },
   "contract": {
-    "website_commit": "6ff86575900f98dd804e1e26e13745e078f74089",
+    "website_commit": "a3ad83731e6c722e260508901a3fedc60ae76da4",
     "dirty": false
   },
   "cases": [
@@ -34,6 +34,23 @@
         "R-16",
         "R-21",
         "R-22"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "budget-margin",
+      "rules": [
+        "R-16",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "budget-margin-protected",
+      "rules": [
+        "R-16",
+        "R-17",
+        "R-21"
       ],
       "outcome": "passed"
     },
@@ -428,6 +445,15 @@
         "R-25"
       ],
       "outcome": "passed"
+    },
+    {
+      "id": "tokenizer-estimate-utf8",
+      "rules": [
+        "R-16",
+        "R-21"
+      ],
+      "outcome": "skipped",
+      "detail": "no tokenizer estimate-utf8/v1"
     }
   ]
 }

@@ -32,6 +32,10 @@ T = "2026-09-22T12:00:00Z"
 SCOPE = {"tenant": "acme", "user": "u_91", "session": "s_7", "task": "refund_request"}
 WS = re.compile(r"[^\t\n\v\f\r    -     　﻿]+")
 count = lambda text: len(WS.findall(text))
+# conformance/README.md, Tokenizers and renderers.
+TOKENIZERS = {"fixture-whitespace/v1": count, "estimate-utf8/v1": lambda text: (len(text.encode("utf-8")) + 3) // 4}
+# The charged count a margin reserves headroom on (R-16): n × (100 + m) / 100, rounded up.
+charged = lambda n, margin: (n * (100 + margin) + 99) // 100
 esc = lambda s: s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
@@ -60,7 +64,7 @@ PLACEMENT = ["governance.instructions", "governance.examples", "governance.outpu
 BASE_SLOTS = {"evidence.knowledge": {"min_relevance": 0.5, "required_scope": ["tenant"]}}
 
 
-def render(placement, kept):
+def render(placement, kept, count=count):
     """kept: {id: (item, body)}. Returns payload bytes and included rows, per the fixture renderer."""
     parts, included = [], []
     for slot in placement:
@@ -72,12 +76,14 @@ def render(placement, kept):
     return "".join(parts).encode(), included
 
 
-def tokens(placement, kept):
-    return count(render(placement, kept)[0].decode())
+def tokens(placement, kept, count=count):
+    return count(render(placement, kept, count)[0].decode())
 
 
 def build(case):
     name, budget, placement = case["id"], case["budget"], case.get("placement", PLACEMENT)
+    tokenizer, margin = case.get("tokenizer", "fixture-whitespace/v1"), case.get("margin")
+    count = TOKENIZERS[tokenizer]
     rows = case["items"]  # (item, admission intent: "admit" or a reason)
     policy = {"route": "support-chat", "version": f"{name}/v1",
               "producers": {p: {"kind": k, "slots": sorted(s for s, q in PRODUCER.items() if q == p)} for p, k in KINDS.items()},
@@ -94,8 +100,8 @@ def build(case):
     batches = {}
     for it, _ in rows:
         batches.setdefault(PRODUCER[it["slot"]], []).append(it)
-    snapshot = {"assembly_time": T, "scope": SCOPE, "budget": {"input": budget, "reserved_output": 1024}, "profile": profile,
-                "route_policy": policy, "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1",
+    snapshot = {"assembly_time": T, "scope": SCOPE, "budget": {"input": budget, "reserved_output": 1024, **({"margin_percent": margin} if margin is not None else {})}, "profile": profile,
+                "route_policy": policy, "tokenizer": tokenizer, "renderer": "fixture-xml/v1",
                 "batches": [{"producer": {"id": p, "kind": KINDS[p]}, "items": batches[p], "excluded": []} for p in sorted(batches, key=U16)],
                 "conflicts": []}
 
@@ -103,7 +109,7 @@ def build(case):
     excluded = [{"item_id": i, "reason": r, "stage": "assembler", "slot": s} for _, i, r, s in admission]
     admitted = {it["id"]: it for it, r in rows if r == "admit"}
     kept = {i: (it, it["body"]) for i, it in admitted.items()}
-    fits = lambda state: tokens(placement, state) <= budget
+    fits = lambda state: charged(tokens(placement, state, count), margin or 0) <= budget
     refusal, recovery, actions, caps = case.get("refuse"), case.get("recovery"), case.get("actions", []), case.get("caps", [])
     rank = {"droppable": 0, "compressible": 1, "protected": 2}
     upgrades = policy.get("tier_upgrades", {})
@@ -217,7 +223,7 @@ def build(case):
         stuck = [i for i, (x, _) in kept.items() if tier(x) != "protected" and x["slot"] not in frozen]
         assert not stuck, f"{name}: {stuck} could still be shed"
 
-    payload, included = render(placement, kept)
+    payload, included = render(placement, kept, count)
     trace = {
         "trace_id": name, "profile": {"id": profile["id"], "version": 1}, "budget": snapshot["budget"],
         "result": None if refusal else {"input_tokens": count(payload.decode()), "hash": hashlib.sha256(payload).hexdigest()},
@@ -227,7 +233,7 @@ def build(case):
              "method": compressed[row["item_id"]]["method"], "variant_id": compressed[row["item_id"]]["id"]}
             for row in included if row["item_id"] in compressed],
         "excluded": excluded, "conflicts": [], "refused": {"bool": bool(refusal), "reason": refusal},
-        "context": {"spec": "cwa/draft", "assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1", "snapshot_digest": snapshot_digest(snapshot)},
+        "context": {"spec": "cwa/draft", "assembly_time": T, "route_policy_version": policy["version"], "tokenizer": tokenizer, "renderer": "fixture-xml/v1", "snapshot_digest": snapshot_digest(snapshot)},
         "defaults_filled": [{"item_id": i, "field": f} for i, f in
                             sorted(((it["id"], f) for it, _ in rows for f in POLICY if f not in it), key=lambda x: (U16(x[0]), POLICY.index(x[1])))],
     }
@@ -618,6 +624,55 @@ CASES = [
             (item("turn:18", "interaction.query", QUERY), "admit"),
         ],
         "refuse": "protected_slot_unplaced",
+    },
+    {
+        "id": "budget-margin",
+        "rules": ["R-16", "R-21"],
+        "description": "budget.margin_percent charges the payload 10% more: 58 tokens fit budget.input 60 unscaled but charge 64, so a droppable item is shed until the charged count fits; traced counts stay unscaled and the trace's budget repeats the margin.",
+        "budget": 60,
+        "margin": 10,
+        "policy": {"slots": {"governance.examples": {"priority": 1}}},
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("ex:1", "governance.examples", "Example: refunds within thirty days are approved.", freshness="2026-09-01T00:00:00Z"), "admit"),
+            (item("ex:2", "governance.examples", "Example: annual plans refund pro rata.", freshness="2026-09-10T00:00:00Z"), "admit"),
+            (item("user:plan", "state.user", "plan=pro since 2026-09-01", scope={"tenant": "acme", "user": "u_91"}), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within 30 days.", relevance=0.9), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "actions": [("omit", "user:plan")],
+    },
+    {
+        "id": "budget-margin-protected",
+        "rules": ["R-16", "R-17", "R-21"],
+        "description": "The margin applies to the protected-content test too: the protected items alone count 29, within budget.input 30, but charge 32 under a 10% margin, so assembly refuses with protected_content_over_budget.",
+        "budget": 30,
+        "margin": 10,
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("task:8821", "state.task", "refund_request: verify_eligibility=done, collect_reason=pending, issue_refund=pending"), "admit"),
+            (item("ex:1", "governance.examples", "Example: refunds within thirty days are approved."), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within 30 days.", relevance=0.9), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "refuse": "protected_content_over_budget",
+    },
+    {
+        "id": "tokenizer-estimate-utf8",
+        "rules": ["R-16", "R-21"],
+        "description": "estimate-utf8/v1 counts UTF-8 bytes divided by 4, rounded up, per rendered text: accented Latin, Japanese and an emoji take 2, 3 and 4 bytes a character. The payload counts 134 and charges 161 under a 20% margin, over budget.input 150, so a droppable item is shed.",
+        "budget": 150,
+        "margin": 20,
+        "tokenizer": "estimate-utf8/v1",
+        "policy": {"slots": {"governance.examples": {"priority": 1}}},
+        "items": [
+            (item("policy:v12", "governance.instructions", "Répondez en français ; citez la politique vérifiée."), "admit"),
+            (item("ex:1", "governance.examples", "例：購入後30日以内の返金は承認されます。", freshness="2026-09-01T00:00:00Z"), "admit"),
+            (item("user:plan", "state.user", "plan=pro 🚀 since 2026-09-01", scope={"tenant": "acme", "user": "u_91"}), "admit"),
+            (item("kb:a", "evidence.knowledge", "Les forfaits Pro sont remboursés intégralement sous 30 jours.", relevance=0.9), "admit"),
+            (item("turn:18", "interaction.query", "Puis-je être remboursé ? 返金できますか？"), "admit"),
+        ],
+        "actions": [("omit", "user:plan")],
     },
     {
         "id": "placement-required-slot-first",

@@ -88,7 +88,8 @@ def _trace(snapshot: Snapshot, admission: Admission, resolution: Resolution, sup
     trace = {
         "trace_id": trace_id or str(uuid.uuid4()),
         "profile": {"id": snapshot.profile.id, "version": snapshot.profile.version},
-        "budget": {"input": snapshot.budget.input, "reserved_output": snapshot.budget.reserved_output},
+        "budget": {"input": snapshot.budget.input, "reserved_output": snapshot.budget.reserved_output,
+                   **({"margin_percent": snapshot.budget.margin_percent} if snapshot.budget.margin_percent is not None else {})},
         "result": None,
         "included": [],
         "compressed": [],

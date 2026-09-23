@@ -192,7 +192,7 @@
     },
     {
       "id": "R-16",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_admission.py::test_items_cannot_downgrade_a_protected_slot",
         "tests/test_admission.py::test_items_cannot_protect_themselves",
@@ -237,7 +237,11 @@
         "tests/test_fitting.py::test_capped_slots_shed_in_slot_shedding_order",
         "tests/test_fitting.py::test_slot_caps_run_before_budget_pressure",
         "tests/test_messages.py::test_a_slot_cap_sums_each_occurrences_own_rendering",
-        "tests/test_properties.py::test_every_capped_slot_fits_its_max_tokens"
+        "tests/test_properties.py::test_every_capped_slot_fits_its_max_tokens",
+        "tests/test_fitting.py::test_a_margin_sheds_until_the_charged_count_fits",
+        "tests/test_fitting.py::test_the_charged_count_rounds_up",
+        "tests/test_fitting.py::test_traced_counts_stay_unscaled_and_the_budget_repeats_the_margin",
+        "tests/test_fitting.py::test_caps_compare_unscaled_counts"
       ]
     },
     {
@@ -307,7 +311,7 @@
     },
     {
       "id": "R-21",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason",

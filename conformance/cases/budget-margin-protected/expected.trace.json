@@ -1,0 +1,30 @@
+{
+  "trace_id": "budget-margin-protected",
+  "profile": {
+    "id": "fitting-fixture",
+    "version": 1
+  },
+  "budget": {
+    "input": 30,
+    "reserved_output": 1024,
+    "margin_percent": 10
+  },
+  "result": null,
+  "included": [],
+  "compressed": [],
+  "excluded": [],
+  "conflicts": [],
+  "refused": {
+    "bool": true,
+    "reason": "protected_content_over_budget"
+  },
+  "context": {
+    "spec": "cwa/draft",
+    "assembly_time": "2026-09-22T12:00:00Z",
+    "route_policy_version": "budget-margin-protected/v1",
+    "tokenizer": "fixture-whitespace/v1",
+    "renderer": "fixture-xml/v1",
+    "snapshot_digest": "948d2288bba428f47b0a0a2be27579a80e27e297f3e91f8b20a06b0c35275e88"
+  },
+  "defaults_filled": []
+}

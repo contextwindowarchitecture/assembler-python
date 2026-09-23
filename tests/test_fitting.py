@@ -283,3 +283,40 @@ def test_floors_do_not_guard_slot_caps():
     snapshot = case("budget-slot-floor-under-cap")
     assert omitted(snapshot) == ["turn:15", "ex:1", "kb:b"]
     assert "turn:16" in included(snapshot)
+
+
+# budget-margin (R-16, budget.margin_percent): the payload renders 58 tokens, within budget.input 60, but a 10%
+# margin charges ceil(58 x 1.1) = 64. Omitting user:plan leaves 52, charged 58; omitting ex:1 too leaves 42, charged 47.
+
+def test_a_margin_sheds_until_the_charged_count_fits():
+    snapshot = case("budget-margin")
+    assert omitted(snapshot) == ["user:plan"]
+    del snapshot["budget"]["margin_percent"]
+    assert omitted(snapshot) == []
+
+
+def test_the_charged_count_rounds_up():
+    snapshot = case("budget-margin")
+    snapshot["budget"]["input"] = 58  # 52 x 1.1 = 57.2, charged 58: fits
+    assert omitted(snapshot) == ["user:plan"]
+    snapshot["budget"]["input"] = 57  # charged 58 does not fit, though 57.2 rounds down to 57
+    assert omitted(snapshot) == ["user:plan", "ex:1"]
+
+
+def test_traced_counts_stay_unscaled_and_the_budget_repeats_the_margin():
+    trace = assemble(Snapshot.from_json(case("budget-margin"))).trace
+    assert trace["result"]["input_tokens"] == 52
+    assert trace["budget"] == {"input": 60, "reserved_output": 1024, "margin_percent": 10}
+    assert "margin_percent" not in assemble(Snapshot.from_json(case("budget-droppable-order"))).trace["budget"]
+    snapshot = case("budget-droppable-order")
+    snapshot["budget"]["margin_percent"] = 0
+    assert assemble(Snapshot.from_json(snapshot)).trace["budget"]["margin_percent"] == 0
+
+
+def test_caps_compare_unscaled_counts():
+    snapshot = case("budget-margin")
+    snapshot["budget"]["input"] = 4096
+    candidate(snapshot, "kb:a")["token_budget"] = 8  # kb:a renders 8 tokens: at its cap, however large the margin
+    snapshot["route_policy"]["slots"]["governance.examples"]["max_tokens"] = 13  # ex:1 7 + ex:2 6: at the slot cap
+    snapshot["budget"]["margin_percent"] = 100
+    assert omitted(snapshot) == []

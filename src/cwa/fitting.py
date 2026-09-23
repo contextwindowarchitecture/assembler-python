@@ -1,6 +1,7 @@
 """Fitting: reduce admitted items until the rendered payload fits budget.input (R-16, R-17).
 
-"Fits" always means the whole payload, rendered and counted with the snapshot's tokenizer. A route's
+"Fits" always means the whole payload, rendered and counted with the snapshot's tokenizer, charged the
+budget's margin; nothing else takes the margin (R-16). A route's
 max_tokens caps one slot's share, its items' rendered bodies with every occurrence counted, and its
 min_tokens floors that share under budget pressure (conformance/README.md, Fitting).
 """
@@ -138,7 +139,7 @@ def _over_cap(snapshot: Snapshot, item: Item) -> bool:
 
 def fit(snapshot: Snapshot, items: tuple[Item, ...], marks: Mapping[str, str] | None = None) -> Fitted:
     """marks: surfaced conflict members by id, whose marks count against the budget like any wrapper."""
-    fits = lambda selection: tokens(snapshot, selection, marks) <= snapshot.budget.input
+    fits = lambda selection: snapshot.budget.charged(tokens(snapshot, selection, marks)) <= snapshot.budget.input
     caps = _slot_caps(snapshot)
     protected = [i for i in items if tier(snapshot, i) == "protected"]
     if (any(_over_cap(snapshot, i) for i in protected) or not fits(protected)
