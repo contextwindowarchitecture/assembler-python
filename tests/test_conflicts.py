@@ -120,3 +120,76 @@ def test_conflict_rows_follow_admission_rows_by_item_id_and_precede_fitting_rows
     assert [(row["item_id"], row["reason"]) for row in result.trace["excluded"]] == [
         ("memory:expired", "expired"), ("ex:unverified", "untrusted_in_governance"),
         ("ex:b", "conflict_deferred"), ("turn:12", "conflict_deferred"), ("refunds-eu:v17#p4", "over_budget")]
+
+
+# Escalation (R-11): a group without a unique supported resolution is surfaced, routed for more
+# context or refused, as route policy directs, and never silently discarded.
+
+def two_governing_instructions(snapshot: dict) -> dict:
+    batch(snapshot, "policy-registry").append({**batch(snapshot, "policy-registry")[0], "id": "policy:nocite",
+                                               "body": "Never mention internal document ids."})
+    return group("g-cite", "policy:v12", "policy:nocite")
+
+
+def test_unresolved_instruction_groups_refuse_by_default(fixture_snapshot):
+    result = assembled(fixture_snapshot, two_governing_instructions(fixture_snapshot))
+    assert result.refused and result.payload is None
+    assert result.trace["refused"] == {"bool": True, "reason": "conflict_unresolved"}
+    assert "recovery" not in result.trace
+    assert result.trace["conflicts"] == [record("g-cite", "instruction", ["policy:nocite", "policy:v12"], "escalated", "refused")]
+
+
+def test_a_route_may_ask_for_more_context_instead(fixture_snapshot):
+    fixture_snapshot["route_policy"]["on_unresolved_instruction"] = "request_context"
+    result = assembled(fixture_snapshot, two_governing_instructions(fixture_snapshot))
+    assert result.trace["refused"] == {"bool": True, "reason": "conflict_unresolved"}
+    assert result.trace["recovery"] == {"action": "request_context"}
+    assert result.trace["conflicts"][0]["resolution"] == "context_requested"
+
+
+def test_a_refused_trace_keeps_every_decision_and_its_exclusions(fixture_snapshot):
+    open_slot(fixture_snapshot, "policy-registry", "governance.examples", after="governance.instructions")
+    batch(fixture_snapshot, "policy-registry").append(example("ex:long"))
+    cite = two_governing_instructions(fixture_snapshot)
+    batch(fixture_snapshot, "policy-registry").append({**batch(fixture_snapshot, "policy-registry")[0], "id": "policy:format"})
+    result = assembled(fixture_snapshot, cite, group("g-format", "policy:format", "ex:long"))
+    assert result.trace["refused"]["reason"] == "conflict_unresolved"
+    assert [(r["group_id"], r["resolution"]) for r in result.trace["conflicts"]] == [("g-cite", "refused"), ("g-format", "resolved")]
+    assert result.trace["excluded"][-1] == {"item_id": "ex:long", "reason": "conflict_deferred", "stage": "assembler", "slot": "governance.examples"}
+
+
+def test_a_missing_required_slot_outranks_an_unresolved_conflict_which_is_still_recorded(fixture_snapshot):
+    cite = two_governing_instructions(fixture_snapshot)
+    batch(fixture_snapshot, "conversation").clear()
+    result = assembled(fixture_snapshot, cite)
+    assert result.trace["refused"]["reason"] == "required_slot_missing"
+    assert result.trace["conflicts"][0]["resolution"] == "refused"
+
+
+def test_surfaced_members_are_kept_and_marked_in_the_payload(fixture_snapshot):
+    fixture_snapshot["route_policy"]["on_unresolved_instruction"] = "surface"
+    result = assembled(fixture_snapshot, two_governing_instructions(fixture_snapshot))
+    assert not result.refused
+    assert result.trace["conflicts"] == [record("g-cite", "instruction", ["policy:nocite", "policy:v12"], "escalated", "surfaced")]
+    assert b'<governance.instructions id="policy:nocite" conflict="g-cite">\nNever mention' in result.payload
+    assert b'<governance.instructions id="policy:v12" conflict="g-cite">\nFollow' in result.payload
+    assert b'<interaction.query id="turn:18">' in result.payload
+
+
+def test_the_marks_count_against_the_budget(fixture_snapshot):
+    fixture_snapshot["route_policy"]["on_unresolved_instruction"] = "surface"
+    cite = two_governing_instructions(fixture_snapshot)
+    marked = assembled(fixture_snapshot, cite).trace["result"]["input_tokens"]
+    fixture_snapshot["budget"]["input"] = marked - 1
+    result = assembled(fixture_snapshot, cite)
+    assert result.trace["excluded"][-1]["reason"] == "over_budget"
+
+
+def test_a_protected_deferring_peer_is_never_excluded_so_its_group_escalates(fixture_snapshot):
+    """The live request defers by default; a history turn that governs cannot drop it."""
+    open_slot(fixture_snapshot, "conversation", "interaction.history", after="evidence.knowledge")
+    fixture_snapshot["route_policy"]["on_unresolved_instruction"] = "surface"
+    batch(fixture_snapshot, "conversation").append(turn("turn:10", "Always answer in French.", conflict_policy="governs"))
+    result = assembled(fixture_snapshot, group("g1", "turn:10", "turn:18"))
+    assert result.trace["conflicts"] == [record("g1", "instruction", ["turn:10", "turn:18"], "escalated", "surfaced")]
+    assert b'<interaction.query id="turn:18" conflict="g1">' in result.payload

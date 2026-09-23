@@ -29,8 +29,8 @@ def tier(snapshot: Snapshot, item: Item) -> str:
     return item.tier or slot_tier(snapshot, item.slot)
 
 
-def tokens(snapshot: Snapshot, items: Iterable[Item]) -> int:
-    rendered = snapshot.renderer.render(place(snapshot.profile, items))
+def tokens(snapshot: Snapshot, items: Iterable[Item], marks: Mapping[str, str] | None = None) -> int:
+    rendered = snapshot.renderer.render(place(snapshot.profile, items, marks))
     return snapshot.tokenizer.count(rendered.payload.decode("utf-8"))
 
 
@@ -113,8 +113,9 @@ def _over_cap(snapshot: Snapshot, item: Item) -> bool:
     return item.token_budget is not None and body_tokens(snapshot, item) > item.token_budget
 
 
-def fit(snapshot: Snapshot, items: tuple[Item, ...]) -> Fitted:
-    fits = lambda selection: tokens(snapshot, selection) <= snapshot.budget.input
+def fit(snapshot: Snapshot, items: tuple[Item, ...], marks: Mapping[str, str] | None = None) -> Fitted:
+    """marks: surfaced conflict members by id, whose marks count against the budget like any wrapper."""
+    fits = lambda selection: tokens(snapshot, selection, marks) <= snapshot.budget.input
     protected = [i for i in items if tier(snapshot, i) == "protected"]
     if any(_over_cap(snapshot, i) for i in protected) or not fits(protected):
         # R-17: refuse before shedding anything, so the trace has no over_budget rows.

@@ -14,6 +14,7 @@ from .snapshot import Snapshot
 
 # R-6: only these may instruct; state, evidence, memory and untrusted content stay material.
 _INSTRUCTING = ("governing", "user")
+_ESCALATED = {"surface": "surfaced", "request_context": "context_requested", "refuse": "refused"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,6 +25,10 @@ class Resolution:
     """The admitted items that remain for fitting."""
     excluded: tuple[tuple[Item, str], ...]
     """(item, reason) for each item a group excluded, in item id order."""
+    marks: Mapping[str, str]
+    """The group id of each member of a surfaced group, for the renderer to mark."""
+    refusing: tuple[str, ...]
+    """The on_unresolved action of each escalated group that refuses: request_context or refuse."""
 
 
 class _Escalate(Exception):
@@ -53,7 +58,7 @@ def _instruction(snapshot: Snapshot, group: ConflictGroup, members: list[Item]) 
 def resolve(snapshot: Snapshot, items: tuple[Item, ...]) -> Resolution:
     """Decide every declared group against the admitted items."""
     admitted = {item.id: item for item in items}
-    records, excluded = [], []
+    records, excluded, marks, refusing = [], [], {}, []
     for group in snapshot.conflicts:
         members = [admitted[i] for i in group.items if i in admitted]
         if len(members) < 2:
@@ -64,9 +69,15 @@ def resolve(snapshot: Snapshot, items: tuple[Item, ...]) -> Resolution:
         try:
             record, losers = _instruction(snapshot, group, members)
         except _Escalate:
-            raise NotImplementedError("escalated conflict groups land later in M3") from None
+            action = snapshot.route_policy.document.get("on_unresolved_instruction", "refuse")
+            record, losers = _record(group, "escalated", _ESCALATED[action]), []
+            if action == "surface":
+                marks.update((m.id, group.id) for m in members)
+            else:
+                refusing.append(action)
         records.append(record)
         excluded += losers
     excluded.sort(key=lambda row: row[0].id)
     gone = {item.id for item, _ in excluded}
-    return Resolution(records=tuple(records), items=tuple(i for i in items if i.id not in gone), excluded=tuple(excluded))
+    return Resolution(records=tuple(records), items=tuple(i for i in items if i.id not in gone), excluded=tuple(excluded),
+                      marks=marks, refusing=tuple(refusing))

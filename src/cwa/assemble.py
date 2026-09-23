@@ -58,12 +58,17 @@ def _evidence_recovery(snapshot: Snapshot, fitted: Fitted) -> str | None:
     return "precompute_summary" if any(not item.variants for item in lost) else "retrieve_narrower"
 
 
-def _refusal(snapshot: Snapshot, items: tuple[Item, ...]) -> tuple[str | None, Fitted | None, str | None]:
+def _refusal(snapshot: Snapshot, resolution: Resolution) -> tuple[str | None, Fitted | None, str | None]:
     """(reason, fitted, recovery action): the first refusal that holds, checked in contract/reasons.json
     order (R-21), and the fitting that later checks needed."""
+    items = resolution.items
     if _missing_required(snapshot, items):
         return "required_slot_missing", None, None
-    fitted = fit(snapshot, items)
+    if resolution.refusing:
+        # R-11: more context helps only if every refusing group asked for it.
+        asked = all(action == "request_context" for action in resolution.refusing)
+        return "conflict_unresolved", None, "request_context" if asked else None
+    fitted = fit(snapshot, items, resolution.marks)
     if fitted.refusal:
         return fitted.refusal, None, None
     if recovery := _evidence_recovery(snapshot, fitted):
@@ -111,14 +116,13 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResu
         raise NotImplementedError(f"admitted items in unplaced slots {unplaced} need placement checks (M4)")
     # Conflicts resolve before any refusal check, so every trace records them (R-11).
     resolution = resolve(snapshot, items)
-    items = resolution.items
-    reason, fitted, recovery = _refusal(snapshot, items)
+    reason, fitted, recovery = _refusal(snapshot, resolution)
     if reason:
         # R-17: a refusal has no payload; exclusions found so far, including fitting's, stay in the trace.
         outcome = {"refused": {"bool": True, "reason": reason}, **({"recovery": {"action": recovery}} if recovery else {})}
         return AssemblyResult(payload=None, trace=_trace(snapshot, admission, resolution, trace_id, fitted.omitted if fitted else (), **outcome))
 
-    occurrences = place(snapshot.profile, fitted.items)
+    occurrences = place(snapshot.profile, fitted.items, resolution.marks)
     rendered = snapshot.renderer.render(occurrences)
     input_tokens = snapshot.tokenizer.count(rendered.payload.decode("utf-8"))
 
