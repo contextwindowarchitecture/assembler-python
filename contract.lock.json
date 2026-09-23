@@ -1,11 +1,11 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "ffcc379b2bb5ec2aae2eccfae94c9beec0b77af0",
+    "commit": "31d415808566d920a3ed79ac20cfa2ea37dd95e0",
     "dirty": false
   },
   "files": {
-    "conformance/README.md": "43d67b248361dbc8d84b7c01f54b3cf6d9fa2eeade5f144b55b96b45c6cd4505",
+    "conformance/README.md": "24987d68ecf17403e8ab7f4c6a63b564b7d8e70e586e2742a26da4406c129abf",
     "conformance/cases/admission-reasons/case.json": "8121bb04dc13512b97d87cffb8b0cbe9979410ae7263c375ec4ca270cc8f7434",
     "conformance/cases/admission-reasons/expected.payload.txt": "de1f12669e43a8e087ab79dd36fc7b5f1bf89096613f340da6279b6f9c6e4214",
     "conformance/cases/admission-reasons/expected.trace.json": "5894a9c8adcdb35aa1cd04785d1c65334446897b8eab62e7af9d78f781ab5205",
