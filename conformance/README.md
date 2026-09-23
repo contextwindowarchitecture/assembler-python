@@ -103,4 +103,15 @@ Fitting decides per item. A slot the profile places twice sheds or compresses bo
 
 Wherever this document counts the payload, in `result.input_tokens` and in every test of whether the payload fits, it means the renderer's count.
 
+## Registry
+
+A registry holds the profiles and route policies an application assembles with, each pinned in a lock that validates against `schema/registry_lock.schema.json` (R-19, R-20). It works before snapshots are built, outside assembly: a snapshot carries the profile and route policy the registry returned.
+
+- **Digests.** A profile's digest is the lowercase SHA-256 of the RFC 8785 serialization of the profile without its `evaluation` member, so a change of evaluation status alone keeps the digest, and may keep the version (R-20). A route policy's digest covers the whole policy.
+- **Loading.** Every profile and route policy a registry is given must be valid against its schema, and must match a lock entry with the same identity (`id` and `version` for a profile, `route` and `version` for a route policy) and the same digest. Loading fails when an entry has the same identity and another digest, because the content changed without a version increase. It also fails for content with no entry, and for a lock that lists an identity twice.
+- **Locking.** Locking adds an entry for each identity not yet pinned. It refuses content whose identity is already pinned with another digest, so the author must increase the version instead. It never rewrites an entry.
+- **Deployment.** An application deploying a profile asks for it in deployment mode, which returns only a profile with `evaluation.status: evaluated`. The profile schema then requires a concrete `model_family` and the evaluation's `suite`, `date`, `result` and `artifact` (R-19). Draft use, such as development and these conformance cases, may load unevaluated profiles.
+
+`registry/` holds the published example profiles, four conformance route policies and a lock that pins them, so that implementations can check they compute the same digests. `generators/registry.py` builds it.
+
 Implementations vendor these cases pinned by hash, so a case changes only through a reviewed edit here.

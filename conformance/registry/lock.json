@@ -1,0 +1,56 @@
+{
+  "profiles": [
+    {
+      "id": "policy-first-chat",
+      "version": 2,
+      "sha256": "9d2912865f8c79ebdb79c8386fa43102d254d0eeaf59654b0de9e2a3845ea5aa"
+    },
+    {
+      "id": "document-analysis",
+      "version": 3,
+      "sha256": "264393cd80c064d47c6e785ee407a9993c4edc2e1fd62c31fcd0e32ff4ff0f09"
+    },
+    {
+      "id": "long-context-reinforced",
+      "version": 3,
+      "sha256": "08d17ffcecc199503c0d6de0e47a794ac926e2a4ba57bc28f52ecfb687b27e73"
+    },
+    {
+      "id": "tool-agent",
+      "version": 2,
+      "sha256": "8b24f7ea742a4e1da1c14c20b67895bfb6d6453a35f987e37489446705d5899d"
+    },
+    {
+      "id": "extraction",
+      "version": 2,
+      "sha256": "456876f1d37b59023c460728389c4e829ba0c09c82aef36216c0c9e6df812d8d"
+    },
+    {
+      "id": "fixture-three-slot",
+      "version": 1,
+      "sha256": "fde9530a7b85f5786cc5d7f06c539aa981d649d2cbc18f759eb3a8db534b2926"
+    }
+  ],
+  "route_policies": [
+    {
+      "route": "contract-fixture",
+      "version": "fixture/v1",
+      "sha256": "1ca69ddb57501a0b5dedd648c45ad2f46c15eedfc339892ae7146bd2e6053129"
+    },
+    {
+      "route": "support-chat",
+      "version": "admission/v1",
+      "sha256": "04629c717fca9fe67b8029f914da95ba5f8554e73d049988204de65027ac9f1d"
+    },
+    {
+      "route": "support-chat",
+      "version": "budget-route-order/v1",
+      "sha256": "6540ee7b3afc7a4360ee54b780e1d240cf50251474f424e7ec19589207094f40"
+    },
+    {
+      "route": "support-chat",
+      "version": "conflict-fact/v1",
+      "sha256": "b1960f1fd5c0c54b4ffa58365a4b626dadbb6a9e5643391ae72d2e04fe1e6426"
+    }
+  ]
+}

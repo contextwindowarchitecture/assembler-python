@@ -1,11 +1,11 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "3227b9a3ff2c2886183ebd264525535d561b055d",
+    "commit": "ac55a4aa1a2ac9383e2f974e753c276a8941abd2",
     "dirty": false
   },
   "files": {
-    "conformance/README.md": "8c535f421308c4ae4d9e6c079468c1f771b4036943ee8022d9fe409a5dbd03f9",
+    "conformance/README.md": "fcca6898a60ec486d7ee591cb9298b7ac24eca4ad4b802bb45cfb662cd8c4b05",
     "conformance/cases/admission-reasons/case.json": "8121bb04dc13512b97d87cffb8b0cbe9979410ae7263c375ec4ca270cc8f7434",
     "conformance/cases/admission-reasons/expected.payload.txt": "de1f12669e43a8e087ab79dd36fc7b5f1bf89096613f340da6279b6f9c6e4214",
     "conformance/cases/admission-reasons/expected.trace.json": "7033c0886343f3cf392e958cf3d482af83d6d4b49e69f50594dacbd735e92972",
@@ -95,6 +95,10 @@
     "conformance/generators/conflicts.py": "401c264f838304bf8cef91aa0beabafe93bd224855effe283d25f5ef3f2859a7",
     "conformance/generators/fitting.py": "2345ed9c0af63901f8bc542fe11014292ae8ebdd75568a4dccf9c8620e8fccd6",
     "conformance/generators/messages.py": "3dc7add51c19d0e93479112cc1e62a3831fb02811f05fbf8454a4929a43bd7c2",
+    "conformance/generators/registry.py": "be771b2605b21ee772ede8aebc616e5eaadba716335b571affc0a7cff3a1e745",
+    "conformance/registry/lock.json": "7fbb47e27908eb5cdeb462d026cf0b1ca63c32e5d3d23a2ea83e3fbccec57b74",
+    "conformance/registry/profiles.json": "5e08ec619f0c17631ed2151b20594e1a2845a826201b3babf57c223a1ed7cd0b",
+    "conformance/registry/route-policies.json": "12b22bac5be7da3e0643a204234b3923c7495c06e83244e6e6a85aad8e8ef616",
     "src/cwa/contract/data/assembler-scope.json": "c33e75cf955610f1d869ba152f439b4130fdd940c66a82dd3ccae3f2582f00e8",
     "src/cwa/contract/data/reasons.json": "3b574fe12e7237d5556704cb6366c2dfd7ede43caba16a008029e0d27a656ffe",
     "src/cwa/contract/data/requirements.json": "a9e7e3db750bfd6bae2c6dd5698dd31b7716bee0d15b75b43e2c1aa1da0ace6c",
@@ -102,6 +106,7 @@
     "src/cwa/contract/data/schema/context_item.schema.json": "21e1832bf9ae2d15dd579dfd6ea0fd62e2a51688d5601bed45d3ec17e831d903",
     "src/cwa/contract/data/schema/producer_batch.schema.json": "59ceb90d8e374f5811a4066b1328f3cf968df0cc20c1ae200e985db9a183d946",
     "src/cwa/contract/data/schema/profile.schema.json": "74ead604f79aeaf9e1a410a84ad9a0d8b0d51c5b35afc452c3706aa9b98c21ee",
+    "src/cwa/contract/data/schema/registry_lock.schema.json": "0c21023857ac97bbaaec40d6ef9e2e442ce5b32175a6453f43884edbfa07ff37",
     "src/cwa/contract/data/schema/route_policy.schema.json": "c7af78d9128f27397893eb5771532d397a3969817eaf2025d58995421cbbf0c8",
     "src/cwa/contract/data/schema/snapshot.schema.json": "3ba23dfb07c39cd1859451ecc43168e8a0d264329b85cdb147230ec196ec35c8",
     "src/cwa/contract/data/schema/trace.schema.json": "854a906a7009efb30826647b7692af10007aacd2ec8b975f1707d2ea2c30adb2",
