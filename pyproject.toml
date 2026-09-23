@@ -24,7 +24,9 @@ Specification = "https://contextwindowarchitecture.io/spec.html"
 [dependency-groups]
 dev = [
     "hypothesis>=6.168.1",
+    "mypy>=2.3.1",
     "pytest>=8",
+    "types-jsonschema>=4.26.0.20260518",
 ]
 
 [tool.hatch.build.targets.wheel]

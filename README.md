@@ -51,7 +51,7 @@ uv run pytest
 uv run python -m cwa.conformance > conformance-report.json   # regenerate the committed report
 ```
 
-[conformance-report.json](conformance-report.json) records each published case's outcome, and each rejection case's, in the website's `conformance_report.schema.json` format; a test fails when it is stale.
+The package ships `py.typed`, and the suite runs mypy over `src/cwa`, so its annotations stay usable by your type checker. [conformance-report.json](conformance-report.json) records each published case's outcome, and each rejection case's, in the website's `conformance_report.schema.json` format; a test fails when it is stale.
 
 ## The contract is vendored
 

@@ -8,3 +8,4 @@ build/
 .hypothesis/
 .claude/
 .idea/
+.mypy_cache/
