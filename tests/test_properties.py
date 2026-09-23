@@ -1,8 +1,9 @@
 """Properties over generated snapshots (docs/DESIGN.md §6), where the conformance cases fix single
 examples: input order never matters (R-23), protected bytes never change (R-16, R-17), droppable
 items go before any compressible item is reduced under budget pressure (R-16), the payload fits its
-budget and counts its items (R-16, R-21), every capped slot fits its max_tokens (R-16), refusals
-have no payload (R-17), and a stored snapshot replays (R-23)."""
+budget and counts its items (R-16, R-21), every capped slot fits its max_tokens (R-16), a
+deduplicated slot includes each key once (R-24), refusals have no payload (R-17), and a stored
+snapshot replays (R-23)."""
 from __future__ import annotations
 
 import copy
@@ -11,6 +12,7 @@ import hashlib
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 
 from cwa import Snapshot, assemble
+from cwa.dedupe import key
 from cwa.render.fixture_xml import escape_body
 from cwa.tokenize.fixture_whitespace import FixtureWhitespace
 from conftest import CASES, read_json
@@ -30,7 +32,8 @@ count = FixtureWhitespace().count
 
 # Words that escaping, counting and ordering must all survive.
 words = st.sampled_from(["refund", "Pro", "30", "days", "<b>", "&amp;", 'say "yes"', "é", "\U0001f600", "ｚ", "a&b<c>"])
-bodies = st.lists(words, min_size=1, max_size=10).map(" ".join)
+bodies = st.lists(words, min_size=1, max_size=10).map(" ".join) | st.sampled_from(
+    ["refund Pro", " refund  Pro", "refund\tPro\u3000", "refund\u200bPro", "Refund Pro"])  # equal keys, and near misses
 suffixes = st.sampled_from(["", "a", "ｚ", "\U0001f600", "#p4"])
 
 
@@ -64,6 +67,9 @@ def snapshots(draw) -> dict:
         for slot in ("state.task",) + DROPPABLE + COMPRESSIBLE:
             if (cap := draw(st.none() | st.integers(0, 30))) is not None:
                 policy.setdefault("slots", {}).setdefault(slot, {})["max_tokens"] = cap
+    for slot in PROTECTED + DROPPABLE + COMPRESSIBLE:
+        if draw(st.booleans()):
+            policy.setdefault("slots", {}).setdefault(slot, {})["dedupe"] = "exact"
     steps = [{"slot": slot, "action": action} for slot in COMPRESSIBLE for action in ("compress", "omit")]
     policy["fitting_order"] = draw(st.lists(st.sampled_from(steps), unique_by=lambda s: (s["slot"], s["action"]), max_size=3))
     snapshot["renderer"] = draw(st.sampled_from(["fixture-xml/v1", "cwa-messages/v1"]))
@@ -99,7 +105,7 @@ PROPERTY = settings(max_examples=150, deadline=None, suppress_health_check=[Heal
 def test_generated_snapshots_admit_every_candidate(document):
     """The generator's own check: every property below starts from items admission accepts."""
     trace = assemble(Snapshot.from_json(document)).trace
-    assert {row["reason"] for row in trace["excluded"]} <= {"over_budget"}
+    assert {row["reason"] for row in trace["excluded"]} <= {"over_budget", "duplicate_content"}
 
 
 @PROPERTY
@@ -133,8 +139,8 @@ def test_droppable_items_go_before_any_compressible_item_is_reduced(document):
     trace = assemble(Snapshot.from_json(document)).trace
     compressible = {c["id"] for c in _candidates(document, COMPRESSIBLE)}
     reduced = compressible & (_rows(trace, "over_budget") | {row["item_id"] for row in trace["compressed"]})
-    if reduced:
-        assert {c["id"] for c in _candidates(document, DROPPABLE)} <= _rows(trace, "over_budget")
+    if reduced:  # a droppable item may already be gone as a duplicate (R-24)
+        assert {c["id"] for c in _candidates(document, DROPPABLE)} <= _rows(trace, "over_budget") | _rows(trace, "duplicate_content")
 
 
 @PROPERTY
@@ -152,6 +158,23 @@ def test_every_capped_slot_fits_its_max_tokens(document):
     if not result.refused:
         for slot, cap in _slot_caps(document).items():
             assert sum(row["tokens"] for row in result.trace["included"] if row["slot"] == slot) <= cap
+
+
+@PROPERTY
+@given(snapshots())
+def test_a_deduplicated_slot_includes_each_key_once_and_names_a_kept_copy(document):
+    """The generator declares no conflict groups, so only protected items are exempt."""
+    trace = assemble(Snapshot.from_json(document)).trace
+    bodies = {c["id"]: c["body"] for c in _candidates(document, PROTECTED + DROPPABLE + COMPRESSIBLE)}
+    duplicates = {row["item_id"] for row in trace["excluded"] if row["reason"] == "duplicate_content"}
+    for row in trace["excluded"]:
+        if row["reason"] == "duplicate_content":  # the kept copy may still be omitted later, for budget
+            assert row["slot"] not in PROTECTED and row["duplicate_of"] not in duplicates
+            assert key(bodies[row["item_id"]]) == key(bodies[row["duplicate_of"]])
+    for slot, rules in document["route_policy"].get("slots", {}).items():
+        if rules.get("dedupe") == "exact" and slot not in PROTECTED:
+            keys = [key(bodies[row["item_id"]]) for row in trace["included"] if row["slot"] == slot]
+            assert len(keys) == len(set(keys))
 
 
 @PROPERTY

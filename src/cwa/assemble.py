@@ -1,7 +1,7 @@
 """assemble(): a pure function from a frozen Snapshot to a payload and a trace.
 
-It admits (placement last), resolves declared conflicts, checks required slots and placement, fits the budget, checks evidence,
-places, renders, counts, hashes and traces.
+It admits (placement last), resolves declared conflicts, removes the duplicates the route asks for, checks required slots and
+placement, fits the budget, checks evidence, places, renders, counts, hashes and traces.
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from typing import Any, Callable
 
 from .admission import Admission, admit
 from .conflicts import Resolution, resolve
+from .dedupe import Deduplication, deduplicate
 from .fitting import Compression, Fitted, fit
 from .model import Item
 from .render import Occurrence, place
@@ -58,10 +59,9 @@ def _evidence_recovery(snapshot: Snapshot, fitted: Fitted) -> str | None:
     return "precompute_summary" if any(not item.variants for item in lost) else "retrieve_narrower"
 
 
-def _refusal(snapshot: Snapshot, resolution: Resolution) -> tuple[str | None, Fitted | None, str | None]:
+def _refusal(snapshot: Snapshot, resolution: Resolution, items: tuple[Item, ...]) -> tuple[str | None, Fitted | None, str | None]:
     """(reason, fitted, recovery action): the first refusal that holds, checked in contract/reasons.json
-    order (R-21), and the fitting that later checks needed."""
-    items = resolution.items
+    order (R-21), and the fitting that later checks needed. items: what deduplication left."""
     if _missing_required(snapshot, items):
         return "required_slot_missing", None, None
     # R-20: admission keeps an item in an unplaced slot only when it is protected.
@@ -79,7 +79,7 @@ def _refusal(snapshot: Snapshot, resolution: Resolution) -> tuple[str | None, Fi
     return None, fitted, None
 
 
-def _trace(snapshot: Snapshot, admission: Admission, resolution: Resolution, trace_id: str | None,
+def _trace(snapshot: Snapshot, admission: Admission, resolution: Resolution, deduplication: Deduplication, trace_id: str | None,
            omitted: tuple[Item, ...] = (), **outcome: Any) -> dict[str, Any]:
     trace = {
         "trace_id": trace_id or str(uuid.uuid4()),
@@ -94,6 +94,8 @@ def _trace(snapshot: Snapshot, admission: Admission, resolution: Resolution, tra
         ] + [{"item_id": e.item_id, "reason": e.reason, "stage": "assembler", **({"slot": e.slot} if e.slot else {})}
              for e in admission.excluded
         ] + [{"item_id": item.id, "reason": reason, "stage": "assembler", "slot": item.slot} for item, reason in resolution.excluded
+        ] + [{"item_id": item.id, "reason": "duplicate_content", "stage": "assembler", "slot": item.slot, "duplicate_of": kept}
+             for item, kept in deduplication.excluded
         ] + [{"item_id": item.id, "reason": "over_budget", "stage": "assembler", "slot": item.slot} for item in omitted],
         "conflicts": [dict(record) for record in resolution.records],
         "refused": {"bool": False, "reason": None},
@@ -145,12 +147,15 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None, clock: Callable
     # Conflicts resolve before any refusal check, so every trace records them (R-11).
     resolution = resolve(snapshot, items, admission.producers)
     watch.lap("conflicts")
-    reason, fitted, recovery = _refusal(snapshot, resolution)
+    # R-24: after conflicts, so a group never loses a member to an ungoverned copy; before any refusal check.
+    deduplication = deduplicate(snapshot, resolution.items)
+    watch.lap("dedupe")
+    reason, fitted, recovery = _refusal(snapshot, resolution, deduplication.items)
     watch.lap("fitting")  # the refusal checks, and fitting when they reach it
     if reason:
         # R-17: a refusal has no payload; exclusions found so far, including fitting's, stay in the trace.
         outcome = {"refused": {"bool": True, "reason": reason}, **({"recovery": {"action": recovery}} if recovery else {})}
-        return AssemblyResult(payload=None, trace=_trace(snapshot, admission, resolution, trace_id, fitted.omitted if fitted else (),
+        return AssemblyResult(payload=None, trace=_trace(snapshot, admission, resolution, deduplication, trace_id, fitted.omitted if fitted else (),
                                                          **outcome, **watch.recorded()))
 
     occurrences = place(snapshot.profile, fitted.items, resolution.marks)
@@ -159,7 +164,7 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None, clock: Callable
     watch.lap("render")
 
     return AssemblyResult(payload=rendered.payload, trace=_trace(
-        snapshot, admission, resolution, trace_id, fitted.omitted, **watch.recorded(),
+        snapshot, admission, resolution, deduplication, trace_id, fitted.omitted, **watch.recorded(),
         result={"input_tokens": input_tokens, "hash": hashlib.sha256(rendered.payload).hexdigest()},
         included=[
             {"slot": o.slot, "item_id": o.item.id, "tokens": snapshot.tokenizer.count(body), "source_version": o.item.source_version,

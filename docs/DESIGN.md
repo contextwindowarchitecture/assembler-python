@@ -131,7 +131,7 @@ The snapshot stores the *outcome* of authentication (producer id, kind, verified
 
 ### 2.3 Package layout
 
-This is the planned layout. As built through M4, `src/cwa/` holds `assemble.py` (pipeline, refusals and the R-12 recovery mapping), `admission.py`, `conflicts.py`, `fitting.py`, `snapshot.py`, `model.py`, `canonical.py` (RFC 8785), `instants.py`, `trace.py`, `render/` (`fixture_xml.py`, `messages.py` from M4), `tokenize/` (`fixture_whitespace.py`) and `registry.py` (M4) and `contract/` (vendored data, pinned by `contract.lock.json`). M5 added `strings.py` (the portable string rules) and `conformance.py`, the runner behind `python -m cwa.conformance`. There is no `evidence.py`, `policy.py` or `reasons.py`: the reason registry and route policy are read from the vendored JSON.
+This is the planned layout. As built through M4, `src/cwa/` holds `assemble.py` (pipeline, refusals and the R-12 recovery mapping), `admission.py`, `conflicts.py`, `fitting.py`, `snapshot.py`, `model.py`, `canonical.py` (RFC 8785), `instants.py`, `trace.py`, `render/` (`fixture_xml.py`, `messages.py` from M4), `tokenize/` (`fixture_whitespace.py`) and `registry.py` (M4), `dedupe.py` (M7) and `contract/` (vendored data, pinned by `contract.lock.json`). M5 added `strings.py` (the portable string rules) and `conformance.py`, the runner behind `python -m cwa.conformance`. There is no `evidence.py`, `policy.py` or `reasons.py`: the reason registry and route policy are read from the vendored JSON.
 
 ```
 cwa/
@@ -141,6 +141,7 @@ cwa/
   admission.py         ordered checks → Admitted | Exclusion
   conflicts.py         instruction + fact resolution
   fitting.py           tiered shedding, variant selection
+  dedupe.py            route-requested exact deduplication (R-24, M7)
   evidence.py          R-12 check + recovery mapping
   render/              Renderer protocol · fixture_xml.py · text.py · messages.py
   tokenize/            Tokenizer protocol · fixture_whitespace.py · estimate.py · tiktoken.py (extra)
@@ -280,7 +281,7 @@ R-3 says the route owns the *executable* eligibility predicate. Keep it declarat
 
 ## 4. Pipeline deep dive
 
-This is the pipeline as first designed. What is built differs: see "Refusals as built" below and §4.1–§4.5. Step 0 became a `SnapshotError` with no trace, step 2 is deferred (§4.2), step 3 runs before step 4, and step 5 became admission's `slot_unplaced` check plus the `protected_slot_unplaced` refusal (M4).
+This is the pipeline as first designed. What is built differs: see "Refusals as built" below and §4.1–§4.5. Step 0 became a `SnapshotError` with no trace, step 2 became route-requested exact deduplication and runs after step 3 (M7, §4.2), step 3 runs before step 4, and step 5 became admission's `slot_unplaced` check plus the `protected_slot_unplaced` refusal (M4).
 
 ```mermaid
 flowchart TD
@@ -289,7 +290,7 @@ flowchart TD
   V -- yes --> AD["1 · Admission<br/>schema → defaults → ordered checks<br/>first failure wins"]
   PX[("producer excluded[]<br/>stage=producer")] --> EXC[("trace.excluded[]")]
   AD -- fail --> EXC
-  AD --> DD["2 · Dedupe / supersede / diversity cap<br/>(deferred, §4.2)"]
+  AD --> DD["2 · Dedupe (built in M7, after step 3)<br/>supersede, diversity cap deferred (§4.2)"]
   DD -- dropped --> EXC
   DD --> CF["3 · Resolve declared conflict groups"]
   CF -- loser --> EXC
@@ -365,9 +366,22 @@ Each box is one check, named by the reason it records when it fails. Producer-st
 
 Snapshot normalization sorts batches by producer id and items by id, so the order producers return in cannot change the payload or the digest (DA-15). Candidates that share an id, and producer exclusions that share an item id, sort by their RFC 8785 serialization, so duplicates cannot make the digest order-dependent either. Items without a usable id keep their supplied order after the rest, which keeps their recorded ids stable on replay.
 
-### 4.2 Dedupe, supersede and diversity
+### 4.2 Dedupe (as built, M7), supersede and diversity
 
-**Exact dedupe is M7 (in progress, D-13).** R-24 specifies it. The rest is still deferred: supersede and the diversity cap need reason codes (`superseded`, `source_diversity_cap`), route-policy fields (`supersede_by`, `max_per_source`) and conformance cases in the website spec first, and until then producers own them. The notes below are the original design; D-13 moved dedupe after conflict resolution and dropped NFC.
+**Exact dedupe (M7, D-13).** R-24 specifies it, and `src/cwa/dedupe.py` follows `conformance/README.md`'s Deduplication section. It runs right after conflict resolution and before any refusal check, so every trace records its rows, and only in the slots whose route rules set `dedupe: "exact"`:
+
+```mermaid
+flowchart LR
+  I[/"items conflict resolution kept,<br/>in one deduplicated slot"/] --> K["key: whitespace runs → one space,<br/>ends trimmed; no NFC, no case folding"]
+  K --> G["group equal keys<br/>(never across slots)"]
+  G --> E{"any member protected<br/>or named by a group?"}
+  E -- yes --> KE["keep every exempt member;<br/>exclude the rest, duplicate_of =<br/>highest-ranked exempt member"]
+  E -- no --> KR["keep the highest-ranked member<br/>(order_by, then id);<br/>exclude the rest"]
+```
+
+Each excluded copy is a `duplicate_content` row with its slot and `duplicate_of`, after the conflict rows and before the fitting rows, in item id order. Whitespace is `cwa.strings.WHITESPACE`, the ECMAScript set, not Python's `\s`. A duplicate is not omitted for budget, so it leaves R-12's recovery at `request_context`. `dedupe_ms` times the stage when a clock is lent.
+
+**Still deferred.** Supersede and the diversity cap need reason codes (`superseded`, `source_diversity_cap`), route-policy fields (`supersede_by`, `max_per_source`) and conformance cases in the website spec first, and until then producers own them. The original design notes follow; D-13 moved dedupe after conflict resolution and dropped NFC.
 
 
 - **Deduplicate.** v0 uses an exact hash of NFC-normalized, whitespace-collapsed body → `duplicate_content`, keeping the item that sorts first by `order_by`. "Near-identical" needs a similarity metric. It stays deterministic only with fixed seeds (MinHash) or precomputed cluster ids from producers, and there is no schema field for those yet.
@@ -524,6 +538,7 @@ flowchart LR
     P3[drop happens before compress<br/>under budget pressure]
     P4[included tokens ≤ input_tokens ≤ budget]
     P5[each capped slot ≤ max_tokens]
+    P6[deduplicated slot: each key once]
   end
   subgraph Purity
     U1[sockets disabled]
@@ -538,7 +553,7 @@ flowchart LR
   R --> W["website: assembler.html matrix"]
 ```
 
-**Built so far (M0–M6):** the golden test, all twenty-eight conformance cases, a shuffle test over every case (payload, trace and digest), purity guards on sockets, clocks, files, the environment and randomness (files since M5: the vendored schemas are read once, at import), and schema validation of every emitted trace. `tests/test_replay.py` (M5) stores every case's snapshot as JSON and replays it in fresh processes under three `PYTHONHASHSEED`, `TZ` and locale combinations, comparing payload, trace and digest. An import lint (M5) rejects any module in `src/cwa` that imports network, model-SDK, clock, randomness or process modules, or calls `now()`, `getenv()` and the like. `conformance-report.json` (M5) records each case's outcome for the website, and a test fails when it is stale. `tests/test_properties.py` (after M5) runs P1–P5 with hypothesis over generated snapshots, plus two more: a refusal has no payload and a payload carries its hash, and a stored snapshot replays to the same outcome. The generator varies item counts per tier, bodies and ids with escapable and astral characters, variants, budgets, slot priorities, `order_by`, `fitting_order`, both renderers and, on about half the routes, `max_tokens` on any of five slots, one of them protected. It checks that admission accepts everything it builds. P3 holds only on routes without slot caps (M6): a cap sheds its own slot's items, so another slot may keep its droppable items. A targeted mutation broke each property's guarantee in turn, and each was caught by its property alone.
+**Built so far (M0–M7):** the golden test, all thirty-one conformance cases, a shuffle test over every case (payload, trace and digest), purity guards on sockets, clocks, files, the environment and randomness (files since M5: the vendored schemas are read once, at import), and schema validation of every emitted trace. `tests/test_replay.py` (M5) stores every case's snapshot as JSON and replays it in fresh processes under three `PYTHONHASHSEED`, `TZ` and locale combinations, comparing payload, trace and digest. An import lint (M5) rejects any module in `src/cwa` that imports network, model-SDK, clock, randomness or process modules, or calls `now()`, `getenv()` and the like. `conformance-report.json` (M5) records each case's outcome for the website, and a test fails when it is stale. `tests/test_properties.py` (after M5) runs P1–P6 with hypothesis over generated snapshots, plus two more: a refusal has no payload and a payload carries its hash, and a stored snapshot replays to the same outcome. The generator varies item counts per tier, bodies and ids with escapable and astral characters, variants, budgets, slot priorities, `order_by`, `fitting_order`, both renderers, on about half the routes `max_tokens` on any of five slots, one of them protected, and `dedupe` on any generated slot, with bodies sometimes drawn from a small pool of whitespace variants and near misses so that duplicates occur. It checks that admission accepts everything it builds. P3 holds only on routes without slot caps (M6): a cap sheds its own slot's items, so another slot may keep its droppable items. A droppable item removed as a duplicate (M7) counts as gone. A targeted mutation broke each property's guarantee in turn, and each was caught by its property alone.
 
 - **The golden test comes first.** Reproduce `examples/trace.json` and `examples/payload.txt` exactly. The fixture already exists and is hash-checked, so it's a free end-to-end test.
 - **Tests map to requirements.** Each conformance case declares `rules: ["R-16", "R-17"]`. A row flips to *implemented* only when every assembler-scoped clause has a passing case. That is the rule `assembler.html` already states.
@@ -572,12 +587,14 @@ flowchart LR
   M6 --> M7["M7 · Exact dedupe<br/>route dedupe: exact<br/>R-24"]
 ```
 
-**M7 status (2026-09-23): in progress. Route-requested exact deduplication** (R-24). The maintainer took the recommended option on all four questions (D-13): opt-in per slot, whitespace-only keys, after conflict resolution with exemptions, and a new requirement. Spec first: website `a664ddb` adds R-24, `slots.<slot>.dedupe: "exact"`, the `duplicate_content` reason and `excluded[].duplicate_of`; `ff333f1` adds three cases; and `d2e8bd6` fixes the conformance-report schema, whose rule pattern stopped at R-23. The cases are vendored here as pending, and `status.json` holds R-24 and every requirement they tag (R-6, R-11, R-12, R-16, R-17, R-21, R-22) at *in progress* until they pass.
+**M7 status (2026-09-23): done. Route-requested exact deduplication** (R-24). The maintainer took the recommended option on all four questions (D-13): opt-in per slot, whitespace-only keys, after conflict resolution with exemptions, and a new requirement. Spec first: website `a664ddb` adds R-24, `slots.<slot>.dedupe: "exact"`, the `duplicate_content` reason and `excluded[].duplicate_of`; `ff333f1` adds three cases; and `d2e8bd6` fixes the conformance-report schema, whose rule pattern stopped at R-23. The cases were vendored here as pending, with R-24 and every requirement they tag (R-6, R-11, R-12, R-16, R-17, R-21, R-22) held at *in progress* until they passed.
 
 ```mermaid
 flowchart LR
   S["Spec: R-24, dedupe field,<br/>duplicate_content,<br/>duplicate_of"] --> C["Cases: exact keys,<br/>exemptions,<br/>evidence refusal"] --> F["Fix: report schema<br/>accepts R-24"] --> V["Vendor; cases pending,<br/>claims in progress"] --> I["Implement dedupe<br/>after conflicts"] --> R["Claims, report,<br/>website import"]
 ```
+
+Result: all thirty-one vendored cases pass. `status.json` claims R-24 implemented and the seven held claims are back, so every checkable requirement is claimed: 15 implemented and 8 boundary-checked. `src/cwa/dedupe.py` is §4.2. Unit tests pin what the cases leave open: only ECMAScript whitespace collapses (U+2028 and U+205F do; U+200B and U+001C, which Python's `\s` matches, do not), a slot with other rules but no `dedupe` keeps equal bodies, variants are ignored, a conflict loser never counts as the kept copy, and a conflict refusal keeps the dedupe rows. A new property (P6, §6) checks every deduplicated slot on generated routes. Mutations were each caught: Python's `\s`, NFC normalization, no group or protected exemption, keeping the lowest-ranked copy, deduplicating slots that did not ask, and deduplicating before conflicts. One mutation first survived, deduplicating every slot the route configures, because no test gave a slot other rules without `dedupe`; a test now does. Two things changed outside dedupe: `ranked()` in `fitting.py` became public for reuse, and the website build and tests now derive the requirement count instead of assuming 23.
 
 **M6 status (2026-09-23): done. Per-slot route budgets** (R-3, R-16, R-17). The maintainer asked for the per-slot allocations M2 deferred to be planned and built, as a ceiling only, with a protected item that pushes its slot over the cap refusing under the existing `protected_content_over_budget` (D-12). Spec first: website `e01eb52` adds the route field `slots.<slot>.max_tokens`, the R-3 and R-16 text and a new Fitting step, and `0526686` adds three cases, vendored here as pending. `tests/test_status.py` rejects a claim while a case tagged with it fails, so while the cases were pending `status.json` held the requirements they tag (R-3, R-16, R-17, R-18, R-21 and R-22) at *in progress*.
 
@@ -603,7 +620,7 @@ flowchart LR
 - **Timestamps (D-11), done.** `format: date-time` is library-defined: ajv-formats accepts a space for `T`, offsets without a colon and second 60, and Python's `rfc3339-validator` a trailing newline. The maintainer chose a portable profile without leap seconds: every date-time also carries an explicit pattern, and digests bound their length (website `b8fd56a`). `cwa.instants` parses only that profile.
 - **Snapshot digest (D-10), done.** The spec defines the normalization and RFC 8785 serialization this assembler already used (website `52c9c5d`). Every expected trace carries the digest, the website recomputes it in JavaScript, and conformance here compares it. A snapshot string with an unpaired surrogate, which RFC 8785 cannot serialize, is a `SnapshotError`.
 - **Eligibility, done.** `included[]` rows carry the item's `eligibility` after defaults and route overrides are filled (website `ce40ef5`, R-22).
-- **Timings (D-9), done.** `assemble(snapshot, clock=...)` takes an optional monotonic clock in seconds from the caller and records `admission_ms`, `conflicts_ms`, `fitting_ms` (refusal checks and fitting) and `render_ms`. Without one, the trace has no `timings` and assembly reads no clock; the purity test runs both ways. A clock that runs backwards records 0.
+- **Timings (D-9), done.** `assemble(snapshot, clock=...)` takes an optional monotonic clock in seconds from the caller and records `admission_ms`, `conflicts_ms`, `dedupe_ms` (from M7), `fitting_ms` (refusal checks and fitting) and `render_ms`. Without one, the trace has no `timings` and assembly reads no clock; the purity test runs both ways. A clock that runs backwards records 0.
 - **Conformance report (D-8).** A schema'd, language-neutral `conformance-report.json` records each case's outcome (website `c9027ec`). `python -m cwa.conformance` writes it, this assembler commits it beside `status.json`, and a test fails when it is stale. `tests/test_status.py` rejects an *implemented* or *boundary-checked* claim while a case tagged with its rule fails in the report. The website imports it beside `status.json` (website `d70e14b`), and its matrix shows each requirement's passing cases, counting a case published after the last run as not passing.
 
 Result: all twenty-five vendored cases pass, and `status.json` claims R-21, R-22 and R-23 implemented, so every checkable requirement is claimed: 14 implemented and 8 boundary-checked. Beyond the plan, M5 found and closed three cross-language traps (blank strings, timestamps, unpaired surrogates) and a Python `$` anchor that let a trailing newline through two checks. The hypothesis property tests followed (§6).
@@ -692,7 +709,7 @@ Result: `src/cwa/conflicts.py` resolves every group kind and every escalation ac
 
 **M0 status (2026-09-22): done.** The skeleton reproduces `examples/payload.txt` byte for byte (SHA-256 `4cf0b083…`, 34 tokens) from the first conformance case. It vendors the contract with a SHA-256 lock, validates snapshots with format checking on, uses order-independent snapshot digests (RFC 8785), escapes bodies, and has purity guards. Two deviations from §2.2: `Snapshot.freeze(**fields)` takes JSON-shaped values that follow `snapshot.schema.json` rather than dataclass instances, so there is one validation path; and an unassemblable snapshot raises `SnapshotError` before assembly instead of emitting an `invalid_snapshot` refusal, which has no registered reason code yet. Anything M0 can't do faithfully (admission, fitting, conflicts) raises `NotImplementedError`. No matrix row flips at M0.
 
-`b` = boundary-checked scope. R-5 is documented as an application obligation. With M5 the assembler reaches the honest ceiling: **14 implemented + 8 boundary-checked + 1 application obligation**, not "23 of 23".
+`b` = boundary-checked scope. R-5 is documented as an application obligation. With M5 the assembler reaches the honest ceiling: **14 implemented + 8 boundary-checked + 1 application obligation**, not "23 of 23". R-24 (M7) is assembler-scoped, so the ceiling is now 15 implemented + 8 boundary-checked + 1 application obligation.
 
 ---
 
