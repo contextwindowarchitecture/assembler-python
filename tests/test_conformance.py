@@ -7,11 +7,10 @@ import random
 import pytest
 
 from cwa import Snapshot, SnapshotError, assemble
+from cwa.conformance import comparable
 from cwa.snapshot import usable_id
 from cwa.trace import TraceError
 from conftest import CASES, read_json
-
-IGNORED = ("trace_id", "timings")
 
 # Cases whose milestone is in progress. Strict: once a case passes, pytest fails until it is removed here.
 PENDING: dict[str, str] = {}
@@ -19,10 +18,6 @@ PENDING: dict[str, str] = {}
 # schema rejects, or a missing renderer or tokenizer, which conformance/README.md treats as a
 # skipped case.
 GAPS = (NotImplementedError, SnapshotError, TraceError)
-
-
-def comparable(trace: dict) -> dict:
-    return {k: v for k, v in trace.items() if k not in IGNORED}
 
 
 @pytest.mark.parametrize("case", [
