@@ -574,7 +574,7 @@ flowchart LR
 Done so far:
 
 - `Snapshot.from_json` rejects unknown, shared and duplicate group ids and undefined facts. It also sorts each group's items, so their order cannot change the digest.
-- `src/cwa/conflicts.py` resolves groups right after admission, and every trace, refused or not, carries `conflicts[]` in group-id order. Moot groups, and instruction groups decided by authority, are done. Instruction peers and fact groups still raise `NotImplementedError`.
+- `src/cwa/conflicts.py` resolves groups right after admission, and every trace, refused or not, carries `conflicts[]` in group-id order. Moot groups and instruction groups are done: decided by authority, or by peers' `conflict_policy`, which excludes the deferring peers with `conflict_deferred`. Conflict rows follow the admission rows, by item id. Escalated groups and fact groups still raise `NotImplementedError`.
 
 **M2 status (2026-09-22): done.** Budget fitting and refusal are implemented test-first, spec first. The website gained the route-policy fields (`c0f5890`), `excluded[].slot` (`574fc6d`), and nine budget and refusal conformance cases generated from intent tables (`9e40504`). All eleven vendored cases pass byte for byte. Three followed: `budget-route-tiers` (website `d84bbd8`) closed a gap in the R-16 claim, since no test showed fitting honor a tier the route raised; `budget-token-caps` and `protected-over-cap` (website `adae6e1`) cover caps. `status.json` now claims R-4, R-12, R-16 and R-17 implemented and R-18 boundary-checked. Fitting is §4.4, refusals are §4, and the recovery mapping is §4.5. It diverged from this document in six ways, each written into the spec:
 

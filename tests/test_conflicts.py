@@ -64,3 +64,59 @@ def test_conflict_records_are_ordered_by_group_id(fixture_snapshot):
     batch(fixture_snapshot, "policy-corpus").append(passage("kb:other"))
     result = assembled(fixture_snapshot, group("g2", "kb:other", "turn:18"), group("g1", "policy:v12", "refunds-eu:v17#p4"))
     assert [row["group_id"] for row in result.trace["conflicts"]] == ["g1", "g2"]
+
+
+def open_slot(snapshot: dict, producer: str, slot: str, after: str) -> None:
+    """Let the route admit `slot` from `producer` and place it after `after` in the profile."""
+    slots = snapshot["route_policy"]["producers"][producer]["slots"]
+    slots += [] if slot in slots else [slot]
+    placement = snapshot["profile"]["placement"]
+    placement.insert(next(n for n, p in enumerate(placement) if p["slot"] == after) + 1, {"slot": slot, "wrap": "xml:" + slot})
+
+
+def example(id: str, body: str = "Example: a five-paragraph answer.", **fields) -> dict:
+    item = {"id": id, "slot": "governance.examples", "source": "policy-registry", "source_version": "1", "authority": "governing",
+            "trust": "verified", "freshness": "2026-09-01T00:00:00Z", "injection_risk": "none", "body": body}
+    return {**item, **fields}
+
+
+def turn(id: str, body: str, **fields) -> dict:
+    item = {"id": id, "slot": "interaction.history", "source": "conversation", "source_version": "1", "authority": "user",
+            "trust": "unverified", "freshness": "2026-09-22T11:50:00Z", "injection_risk": "untrusted_content", "body": body}
+    return {**item, **fields}
+
+
+def test_one_governing_peer_excludes_the_peers_that_defer(fixture_snapshot):
+    open_slot(fixture_snapshot, "policy-registry", "governance.examples", after="governance.instructions")
+    batch(fixture_snapshot, "policy-registry").extend([example("ex:long"), example("ex:list", "Example: a long bulleted list.")])
+    result = assembled(fixture_snapshot, group("g1", "policy:v12", "ex:long", "ex:list"))
+    assert result.trace["conflicts"] == [record("g1", "instruction", ["ex:list", "ex:long", "policy:v12"], "policy", "resolved", "policy:v12")]
+    assert result.trace["excluded"][-2:] == [
+        {"item_id": "ex:list", "reason": "conflict_deferred", "stage": "assembler", "slot": "governance.examples"},
+        {"item_id": "ex:long", "reason": "conflict_deferred", "stage": "assembler", "slot": "governance.examples"}]
+    assert b"ex:l" not in result.payload
+    assert "governance.examples" not in {row["slot"] for row in result.trace["included"]}
+
+
+def test_user_peers_follow_conflict_policy_when_no_governing_member_is_present(fixture_snapshot):
+    open_slot(fixture_snapshot, "conversation", "interaction.history", after="evidence.knowledge")
+    batch(fixture_snapshot, "conversation").extend([turn("turn:10", "Always answer in French.", conflict_policy="governs"),
+                                                   turn("turn:12", "English is fine.")])
+    result = assembled(fixture_snapshot, group("g1", "turn:10", "turn:12"))
+    assert result.trace["conflicts"] == [record("g1", "instruction", ["turn:10", "turn:12"], "policy", "resolved", "turn:10")]
+    assert result.trace["excluded"][-1] == {"item_id": "turn:12", "reason": "conflict_deferred", "stage": "assembler", "slot": "interaction.history"}
+    assert [row["item_id"] for row in result.trace["included"]] == ["policy:v12", "refunds-eu:v17#p4", "turn:10", "turn:18"]
+
+
+def test_conflict_rows_follow_admission_rows_by_item_id_and_precede_fitting_rows(fixture_snapshot):
+    open_slot(fixture_snapshot, "policy-registry", "governance.examples", after="governance.instructions")
+    open_slot(fixture_snapshot, "conversation", "interaction.history", after="evidence.knowledge")
+    batch(fixture_snapshot, "policy-registry").extend([example("ex:b"), example("ex:unverified", trust="unverified")])
+    batch(fixture_snapshot, "conversation").extend([turn("turn:10", "Always answer in French.", conflict_policy="governs"),
+                                                   turn("turn:12", "English is fine."), turn("turn:14", "One more thing about my order.")])
+    plain = assembled(fixture_snapshot, group("g-z", "policy:v12", "ex:b"), group("g-a", "turn:10", "turn:12"))
+    fixture_snapshot["budget"]["input"] = plain.trace["result"]["input_tokens"] - 1  # sheds the passage, the first compressible slot by name
+    result = assembled(fixture_snapshot, group("g-z", "policy:v12", "ex:b"), group("g-a", "turn:10", "turn:12"))
+    assert [(row["item_id"], row["reason"]) for row in result.trace["excluded"]] == [
+        ("memory:expired", "expired"), ("ex:unverified", "untrusted_in_governance"),
+        ("ex:b", "conflict_deferred"), ("turn:12", "conflict_deferred"), ("refunds-eu:v17#p4", "over_budget")]

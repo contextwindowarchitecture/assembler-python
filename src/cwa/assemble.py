@@ -85,6 +85,7 @@ def _trace(snapshot: Snapshot, admission: Admission, resolution: Resolution, tra
             for batch in snapshot.batches for row in batch.excluded
         ] + [{"item_id": e.item_id, "reason": e.reason, "stage": "assembler", **({"slot": e.slot} if e.slot else {})}
              for e in admission.excluded
+        ] + [{"item_id": item.id, "reason": reason, "stage": "assembler", "slot": item.slot} for item, reason in resolution.excluded
         ] + [{"item_id": item.id, "reason": "over_budget", "stage": "assembler", "slot": item.slot} for item in omitted],
         "conflicts": [dict(record) for record in resolution.records],
         "refused": {"bool": False, "reason": None},
@@ -110,6 +111,7 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResu
         raise NotImplementedError(f"admitted items in unplaced slots {unplaced} need placement checks (M4)")
     # Conflicts resolve before any refusal check, so every trace records them (R-11).
     resolution = resolve(snapshot, items)
+    items = resolution.items
     reason, fitted, recovery = _refusal(snapshot, items)
     if reason:
         # R-17: a refusal has no payload; exclusions found so far, including fitting's, stay in the trace.
