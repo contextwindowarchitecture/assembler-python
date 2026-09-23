@@ -355,7 +355,7 @@ flowchart TD
 
 Each box is one check, named by the reason it records when it fails. Producer-stage exclusions reported in the batch go straight to the trace, ahead of assembler rows. A candidate without a usable id is recorded as `{producer}#invalid-{n}`.
 
-Snapshot normalization sorts batches by producer id and items by id, so the order producers return in cannot change the payload or the digest (DA-15). Items without a usable id keep their supplied order after the rest, which keeps their recorded ids stable on replay.
+Snapshot normalization sorts batches by producer id and items by id, so the order producers return in cannot change the payload or the digest (DA-15). Candidates that share an id, and producer exclusions that share an item id, sort by their RFC 8785 serialization, so duplicates cannot make the digest order-dependent either. Items without a usable id keep their supplied order after the rest, which keeps their recorded ids stable on replay.
 
 ### 4.2 Dedupe, supersede and diversity (assembler-owned stages 4 and 5)
 

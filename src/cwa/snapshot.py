@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 from . import contract
-from .canonical import digest
+from .canonical import canonical_json, digest
 from .model import (Budget, CapabilityGrant, ConflictGroup, Placement, ProducerBatch, ProducerExclusion, ProducerIdentity,
                     Profile, RoutePolicy)
 from .render import REGISTRY as RENDERERS, Renderer
@@ -31,12 +31,13 @@ def usable_id(candidate: Mapping[str, Any]) -> str | None:
 def _normalize(document: dict[str, Any]) -> dict[str, Any]:
     """Canonical order, so producers returning in any order yield the same snapshot and payload.
 
-    Items with a usable id sort by id. Items without one keep their supplied relative order after
-    them, which keeps their {producer}#invalid-{n} trace ids stable across replays.
+    Items with a usable id sort by id, and candidates sharing an id by their canonical JSON. Items
+    without one keep their supplied relative order after them, which keeps their
+    {producer}#invalid-{n} trace ids stable across replays.
     """
     for batch in document["batches"]:
-        batch["items"].sort(key=lambda item: (0, usable_id(item)) if usable_id(item) else (1, ""))
-        batch["excluded"].sort(key=lambda row: row["item_id"])
+        batch["items"].sort(key=lambda item: (0, usable_id(item), canonical_json(item)) if usable_id(item) else (1, "", b""))
+        batch["excluded"].sort(key=lambda row: (row["item_id"], canonical_json(row)))
     document["batches"].sort(key=lambda batch: batch["producer"]["id"])
     document["conflicts"].sort(key=lambda group: group["id"])
     for group in document["conflicts"]:

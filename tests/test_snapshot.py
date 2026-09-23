@@ -67,3 +67,16 @@ def test_the_order_a_group_lists_its_items_does_not_change_the_snapshot(fixture_
     fixture_snapshot["conflicts"] = [group("g1", "policy:v12", "turn:18")]
     assert listed.digest() == Snapshot.from_json(fixture_snapshot).digest()
     assert listed.conflicts[0].items == ("policy:v12", "turn:18")
+
+
+def test_candidates_sharing_an_id_do_not_make_the_digest_order_dependent(fixture_snapshot):
+    """R-23: the replay key cannot depend on the order a producer returned duplicates in."""
+    corpus = fixture_snapshot["batches"][1]
+    first, second = dict(corpus["items"][0], body="one body"), dict(corpus["items"][0], body="another body")
+    corpus["items"] = [first, second]
+    corpus["excluded"] = [{"item_id": "kb:x", "reason": "below_threshold", "stage": "producer"},
+                          {"item_id": "kb:x", "reason": "expired", "stage": "producer"}]
+    listed = Snapshot.from_json(fixture_snapshot).digest()
+    corpus["items"].reverse()
+    corpus["excluded"].reverse()
+    assert Snapshot.from_json(fixture_snapshot).digest() == listed
