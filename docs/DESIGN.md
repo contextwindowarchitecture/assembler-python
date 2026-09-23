@@ -250,7 +250,7 @@ R-3 says the route owns the *executable* eligibility predicate. Keep it declarat
   "route": "support-chat", "version": "v2",
   "parser": true,                    // R-4: output_contract required
   "requires_evidence": true,         // R-12
-  "clock_skew_seconds": 5,           // DA-16
+  "clock_skew_seconds": 5,           // DA-16  (M1: in schema)
   "producers": {                     // who may emit what (R-8, R-15)
     "policy-corpus": {"kind": "retrieval", "slots": ["evidence.knowledge"]},
     "memory-svc":    {"kind": "memory",    "slots": ["interaction.memory"]},
@@ -258,10 +258,10 @@ R-3 says the route owns the *executable* eligibility predicate. Keep it declarat
     "cap-policy":    {"kind": "capability_policy", "slots": ["governance.capabilities"]}
   },
   "slots": {
-    "evidence.knowledge": {"min_relevance": 0.82, "max_age": "P90D", "required_scope": ["tenant"],
+    "evidence.knowledge": {"min_relevance": 0.82, "max_age_seconds": 7776000, "required_scope": ["tenant"],
                            "priority": 40, "max_per_source": 3, "order_by": ["-relevance", "-freshness", "id"]},
-    "state.task":         {"max_age": "PT60S", "required_scope": ["tenant", "task"]},
-    "interaction.memory": {"source_pattern": "^turn:"},
+    "state.task":         {"max_age_seconds": 60, "required_scope": ["tenant", "task"]},
+    "interaction.memory": {"source_prefix": "turn:"},
     "evidence.tool_results": {"supersede_by": "source"}
   },
   "default_overrides": {"evidence.knowledge": {"token_budget": 420}},   // R-3: versioned, traced
@@ -515,6 +515,16 @@ flowchart LR
   M3 --> M4["M4 · Registry + profiles<br/>R-19b R-20"]
   M4 --> M5["M5 · Hardening<br/>R-21 R-22 R-23<br/>conformance-report → website"]
 ```
+
+**M1 status (2026-09-22): done.** Admission is implemented test-first as an ordered table of checks in `src/cwa/admission.py`, and the website's `admission-reasons` conformance case (42 candidates) passes byte for byte. `status.json` records the result: R-1 and R-2 are implemented, R-8, R-9, R-13, R-14 and R-15 are boundary-checked, and eight more requirements are in progress. It diverged from this document in five ways, each now written into the spec:
+
+- **Precedence comes from the registry.** The check order is the order of `contract/reasons.json` (R-21), not the table in §4.1. The producer check comes *first*: a batch from a producer the route doesn't list is refused before anyone reads its items. Several missing fields tie-break alphabetically.
+- **Snapshots carry raw items.** Validating items in the snapshot schema would have rejected a whole snapshot for one bad item, against R-2. Items without a usable id are recorded as `{producer}#invalid-{n}`.
+- **Route-policy fields are portable.** `max_age_seconds` and `source_prefix` replace the ISO durations and regex patterns in §3.1, because neither parses identically in JavaScript and Python.
+- **State producers only.** State slots admit only producers of kind `state`, whatever the route lists (R-8).
+- **Unscored items fail thresholds**, and all limits are inclusive.
+
+`parser`, `requires_evidence`, `min_included`, fitting order and fact policies are not in the route-policy schema yet; they arrive with M2 and M3.
 
 **M0 status (2026-09-22): done.** The skeleton reproduces `examples/payload.txt` byte for byte (SHA-256 `4cf0b083…`, 34 tokens) from the first conformance case. It vendors the contract with a SHA-256 lock, validates snapshots with format checking on, uses order-independent snapshot digests (RFC 8785), escapes bodies, and has purity guards. Two deviations from §2.2: `Snapshot.freeze(**fields)` takes JSON-shaped values that follow `snapshot.schema.json` rather than dataclass instances, so there is one validation path; and an unassemblable snapshot raises `SnapshotError` before assembly instead of emitting an `invalid_snapshot` refusal, which has no registered reason code yet. Anything M0 can't do faithfully (admission, fitting, conflicts) raises `NotImplementedError`. No matrix row flips at M0.
 
