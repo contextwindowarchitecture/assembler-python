@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import re
 
-# ECMAScript WhiteSpace + LineTerminator, so counts match JavaScript's /\S+/gu. Python's own \S
-# differs at U+001C..U+001F and U+FEFF (conformance/README.md).
-_TOKEN = re.compile(r"[^\t\n\v\f\r    -     　﻿]+")
+from ..strings import WHITESPACE
+
+# Runs outside the ECMAScript whitespace set, so counts match JavaScript's /\S+/gu.
+_TOKEN = re.compile(f"[^{WHITESPACE}]+")
 
 
 class FixtureWhitespace:

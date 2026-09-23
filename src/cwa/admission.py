@@ -13,7 +13,7 @@ from jsonschema import ValidationError
 
 from .contract import POLICY_FIELDS, REASONS, SLOT_DEFAULTS, validator
 from . import instants
-from .canonical import utf16
+from .strings import utf16
 from .fitting import TIER_RANK, slot_tier, tier
 from .model import Item, ProducerIdentity
 from .snapshot import Snapshot, usable_id

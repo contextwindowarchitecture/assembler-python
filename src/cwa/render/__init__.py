@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Mapping, Protocol
 
-from ..canonical import utf16
+from ..strings import utf16
 from ..model import Item, Profile
 from ..tokenize import Tokenizer
 from .fixture_xml import FixtureXml

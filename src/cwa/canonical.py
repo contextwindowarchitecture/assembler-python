@@ -7,11 +7,7 @@ import math
 from decimal import Decimal
 from typing import Any
 
-
-def utf16(value: str) -> bytes:
-    """Sort key that orders strings by UTF-16 code units, as RFC 8785 orders member names. Every
-    string ordering in the spec uses it (conformance/README.md, Ordering)."""
-    return value.encode("utf-16-be")
+from .strings import utf16
 
 
 def canonical_json(value: Any) -> bytes:

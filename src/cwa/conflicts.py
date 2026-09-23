@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 from . import instants
-from .canonical import utf16
+from .strings import utf16
 from .fitting import tier
 from .model import ConflictGroup, Item
 from .snapshot import Snapshot

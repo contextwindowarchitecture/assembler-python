@@ -10,7 +10,7 @@ from functools import cmp_to_key
 from typing import Callable, Iterable, Mapping
 
 from . import instants
-from .canonical import utf16
+from .strings import utf16
 from .contract import SLOT_DEFAULTS
 from .model import Item, Variant
 from .render import Occurrence, place

@@ -7,11 +7,11 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 from . import contract
-from .canonical import canonical_json, digest, utf16
+from .canonical import canonical_json, digest
 from .model import (Budget, CapabilityGrant, ConflictGroup, Placement, ProducerBatch, ProducerExclusion, ProducerIdentity,
                     Profile, RoutePolicy)
 from .render import REGISTRY as RENDERERS, Renderer
-from .strings import blank
+from .strings import blank, utf16
 from .tokenize import REGISTRY as TOKENIZERS, Tokenizer
 
 
