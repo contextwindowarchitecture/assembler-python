@@ -174,11 +174,19 @@ def _source_prefix(item: Item, ctx: _Context) -> str | None:
     return "source_invalid" if prefix is not None and not item.source.startswith(prefix) else None
 
 
+def _scope(item: Item, ctx: _Context) -> str | None:
+    request = ctx.snapshot.scope
+    required = _slot_rules(item, ctx).get("required_scope", [])
+    if any(key not in item.scope for key in required) or any(request.get(k) != v for k, v in item.scope.items()):
+        return "out_of_scope"
+    return None
+
+
 # Checks for schema-valid items from authenticated producers, in reasons.json order.
 _CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (
     _duplicate, _slot_permission, _authority, _capability, _governance_trust, _marking,
     _protected_downgrade, _tier_upgrade, _variant_ids, _revoked, _expired, _future_freshness,
-    _stale_state, _source_prefix,
+    _stale_state, _source_prefix, _scope,
 )
 
 

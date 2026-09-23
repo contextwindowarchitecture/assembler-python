@@ -340,3 +340,19 @@ def test_memory_sources_must_name_their_turn(fixture_snapshot, source, reason):
     place(fixture_snapshot, "interaction.memory")
     add(fixture_snapshot, "memory-svc", memory(source=source))
     assert exclusions(fixture_snapshot) == ([("m:1", reason)] if reason else [])
+
+
+# R-2: scope keeps items inside their tenant, user and session. A missing key is not a wildcard.
+
+@pytest.mark.parametrize("scope, reason", [
+    ({"tenant": "acme"}, None),
+    ({"tenant": "acme", "task": "refund_request"}, None),
+    (None, "out_of_scope"),
+    ({"task": "refund_request"}, "out_of_scope"),
+    ({"tenant": "globex"}, "out_of_scope"),
+    ({"tenant": "acme", "user": "u_12"}, "out_of_scope"),
+])
+def test_scope_must_match_and_required_keys_must_be_present(fixture_snapshot, scope, reason):
+    fixture_snapshot["route_policy"]["slots"] = {"evidence.knowledge": {"required_scope": ["tenant"]}}
+    add(fixture_snapshot, "policy-corpus", knowledge(scope=scope))
+    assert exclusions(fixture_snapshot) == ([("kb:x", reason)] if reason else [])
