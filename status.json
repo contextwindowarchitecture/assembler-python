@@ -245,7 +245,8 @@
         "tests/test_properties.py::test_the_trace_repeats_the_margin_and_never_scales_a_count_by_it",
         "tests/test_properties.py::test_a_payload_fits_its_charged_count_exactly_and_not_one_token_less",
         "tests/test_fitting.py::test_caps_compare_unscaled_counts",
-        "tests/test_tokenize.py::test_estimate_utf8_counts_utf8_bytes_divided_by_four_rounded_up"
+        "tests/test_tokenize.py::test_estimate_utf8_counts_utf8_bytes_divided_by_four_rounded_up",
+        "tests/test_admission.py::test_in_a_slot_the_route_raised_an_item_may_lower_its_own_tier"
       ]
     },
     {

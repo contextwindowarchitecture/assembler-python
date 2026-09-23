@@ -272,6 +272,13 @@ def test_the_route_can_raise_a_tier_and_items_may_then_claim_it(fixture_snapshot
     assert exclusions(fixture_snapshot) == []
 
 
+def test_in_a_slot_the_route_raised_an_item_may_lower_its_own_tier(fixture_snapshot):
+    # protected_tier_changed guards only slots protected by default (conformance/README.md).
+    fixture_snapshot["route_policy"]["tier_upgrades"] = {"evidence.knowledge": "protected"}
+    add(fixture_snapshot, "policy-corpus", knowledge(tier="droppable"))
+    assert exclusions(fixture_snapshot) == []
+
+
 def test_items_may_volunteer_a_lower_non_protected_tier(fixture_snapshot):
     add(fixture_snapshot, "policy-corpus", knowledge(tier="droppable"))
     assert exclusions(fixture_snapshot) == []
