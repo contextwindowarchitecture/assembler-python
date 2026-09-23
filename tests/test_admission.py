@@ -276,3 +276,41 @@ def test_variant_ids_must_differ_from_the_parent_and_each_other(fixture_snapshot
 def test_distinct_variant_ids_are_admitted(fixture_snapshot):
     add(fixture_snapshot, "policy-corpus", knowledge(variants=[variant("kb:x/short"), variant("kb:x/shorter")]))
     assert exclusions(fixture_snapshot) == []
+
+
+def memory(**fields) -> dict:
+    item = {"id": "m:1", "slot": "interaction.memory", "source": "turn:14", "source_version": "1", "authority": "generated",
+            "trust": "unverified", "freshness": "2026-09-20T10:00:00Z", "expires": "2026-12-01T00:00:00Z", "body": "Prefers email."}
+    item.update(fields)
+    return item
+
+
+# R-9, R-2, R-23: lifetime is judged against the snapshot's assembly_time at full precision.
+
+@pytest.mark.parametrize("fields, reason", [
+    ({"revoked_by": "turn:17"}, "revoked"),
+    ({"expires": "2026-09-22T12:00:00.000Z"}, "expired"),
+    ({"expires": "2026-09-22T14:00:00+02:00"}, "expired"),
+    ({"expires": "2026-09-22T11:59:59.999999999Z"}, "expired"),
+    ({"expires": "2026-09-22T12:00:00.0005Z"}, None),
+    ({"freshness": "2026-09-22T12:00:00.000001Z"}, "future_freshness"),
+    ({"freshness": "2026-09-22T12:00:00Z"}, None),
+])
+def test_lifetime_boundaries(fixture_snapshot, fields, reason):
+    add(fixture_snapshot, "policy-corpus", knowledge(**fields))
+    assert exclusions(fixture_snapshot) == ([("kb:x", reason)] if reason else [])
+
+
+@pytest.mark.parametrize("freshness, reason", [
+    ("2026-09-22T12:00:05Z", None),
+    ("2026-09-22T12:00:05.000001Z", "future_freshness"),
+])
+def test_route_clock_skew_tolerance(fixture_snapshot, freshness, reason):
+    fixture_snapshot["route_policy"]["clock_skew_seconds"] = 5
+    add(fixture_snapshot, "policy-corpus", knowledge(freshness=freshness))
+    assert exclusions(fixture_snapshot) == ([("kb:x", reason)] if reason else [])
+
+
+def test_expired_memory_a_producer_failed_to_suppress_is_still_excluded(fixture_snapshot):
+    add(fixture_snapshot, "memory-svc", memory(expires="2026-09-01T00:00:00Z"))
+    assert exclusions(fixture_snapshot) == [("m:1", "expired")]

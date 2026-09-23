@@ -12,6 +12,7 @@ from typing import Any, Callable, Mapping
 from jsonschema import ValidationError
 
 from .contract import POLICY_FIELDS, REASONS, SLOT_DEFAULTS, validator
+from . import instants
 from .model import Item, ProducerIdentity
 from .snapshot import Snapshot, usable_id
 
@@ -137,10 +138,28 @@ def _variant_ids(item: Item, ctx: _Context) -> str | None:
     return "duplicate_variant_id" if len(set(ids)) != len(ids) else None
 
 
+def _revoked(item: Item, ctx: _Context) -> str | None:
+    return "revoked" if item.revoked_by is not None else None
+
+
+def _expired(item: Item, ctx: _Context) -> str | None:
+    # R-9: expires is exclusive at assembly_time, so equal means expired.
+    if item.expires is not None and instants.compare(item.expires, ctx.snapshot.assembly_time) <= 0:
+        return "expired"
+    return None
+
+
+def _future_freshness(item: Item, ctx: _Context) -> str | None:
+    skew = ctx.snapshot.route_policy.document.get("clock_skew_seconds", 0)
+    if instants.compare(item.freshness, ctx.snapshot.assembly_time, b_offset_seconds=skew) > 0:
+        return "future_freshness"
+    return None
+
+
 # Checks for schema-valid items from authenticated producers, in reasons.json order.
 _CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (
     _duplicate, _slot_permission, _authority, _capability, _governance_trust, _marking,
-    _protected_downgrade, _tier_upgrade, _variant_ids,
+    _protected_downgrade, _tier_upgrade, _variant_ids, _revoked, _expired, _future_freshness,
 )
 
 
