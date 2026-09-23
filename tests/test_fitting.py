@@ -5,8 +5,6 @@ counts of the fixture-xml payload.
 """
 from __future__ import annotations
 
-import pytest
-
 from cwa import Snapshot, assemble
 from conftest import CASES, read_json
 
