@@ -260,3 +260,19 @@ def test_the_route_can_raise_a_tier_and_items_may_then_claim_it(fixture_snapshot
 def test_items_may_volunteer_a_lower_non_protected_tier(fixture_snapshot):
     add(fixture_snapshot, "policy-corpus", knowledge(tier="droppable"))
     assert exclusions(fixture_snapshot) == []
+
+
+def variant(id: str) -> dict:
+    return {"id": id, "body": "Short.", "method": "extract", "lineage": "extracted"}
+
+
+# R-18: each variant has its own id, so the trace can name the parent and the selected variant.
+
+@pytest.mark.parametrize("variants", [[variant("kb:x")], [variant("kb:x/short"), variant("kb:x/short")]])
+def test_variant_ids_must_differ_from_the_parent_and_each_other(fixture_snapshot, variants):
+    assert exclusions(add(fixture_snapshot, "policy-corpus", knowledge(variants=variants))) == [("kb:x", "duplicate_variant_id")]
+
+
+def test_distinct_variant_ids_are_admitted(fixture_snapshot):
+    add(fixture_snapshot, "policy-corpus", knowledge(variants=[variant("kb:x/short"), variant("kb:x/shorter")]))
+    assert exclusions(fixture_snapshot) == []

@@ -132,10 +132,15 @@ def _tier_upgrade(item: Item, ctx: _Context) -> str | None:
     return None
 
 
+def _variant_ids(item: Item, ctx: _Context) -> str | None:
+    ids = [item.id, *(v.id for v in item.variants)]
+    return "duplicate_variant_id" if len(set(ids)) != len(ids) else None
+
+
 # Checks for schema-valid items from authenticated producers, in reasons.json order.
 _CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (
     _duplicate, _slot_permission, _authority, _capability, _governance_trust, _marking,
-    _protected_downgrade, _tier_upgrade,
+    _protected_downgrade, _tier_upgrade, _variant_ids,
 )
 
 
