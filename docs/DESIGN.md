@@ -1,6 +1,6 @@
 # CWA reference assembler: system design
 
-**Status:** draft for review · **Date:** 2026-09-22 · **Spec target:** CWA v2 draft (R-1 to R-23)
+**Status:** draft for review; M0–M10 built (§8) · **Date:** 2026-09-22, updated 2026-09-23 · **Spec target:** CWA v2 draft (R-1 to R-26)
 **Inputs:** `website/SPEC.md`, `spec.html`, `producers.html`, `assembler.html`, `schema/*.schema.json`, `contract/slot-defaults.json`, `contract.js`, `examples/`
 
 This document designs the Python reference assembler and tests whether the v2 draft can actually be built as written. It argues against the spec wherever the text leaves an implementer guessing. Findings are labelled **DA-n**, and decisions that need an owner are labelled **D-n** (§9).
@@ -131,7 +131,7 @@ The snapshot stores the *outcome* of authentication (producer id, kind, verified
 
 ### 2.3 Package layout
 
-This is the planned layout. As built through M4, `src/cwa/` holds `assemble.py` (pipeline, refusals and the R-12 recovery mapping), `admission.py`, `conflicts.py`, `fitting.py`, `snapshot.py`, `model.py`, `canonical.py` (RFC 8785), `instants.py`, `trace.py`, `render/` (`fixture_xml.py`, `messages.py` from M4), `tokenize/` (`fixture_whitespace.py`) and `registry.py` (M4), `supersede.py` (M8), `dedupe.py` (M7), `diversity.py` (M9) and `contract/` (vendored data, pinned by `contract.lock.json`). M5 added `strings.py` (the portable string rules) and `conformance.py`, the runner behind `python -m cwa.conformance`. There is no `evidence.py`, `policy.py` or `reasons.py`: the reason registry and route policy are read from the vendored JSON.
+This is the planned layout. As built through M10, `src/cwa/` holds `assemble.py` (pipeline, refusals and the R-12 recovery mapping), `admission.py`, `conflicts.py`, `fitting.py`, `snapshot.py`, `model.py`, `canonical.py` (RFC 8785), `instants.py`, `trace.py`, `render/` (`fixture_xml.py`, `messages.py` from M4), `tokenize/` (`fixture_whitespace.py`) and `registry.py` (M4), `supersede.py` (M8), `dedupe.py` (M7), `diversity.py` (M9) and `contract/` (vendored data, pinned by `contract.lock.json`). M5 added `strings.py` (the portable string rules) and `conformance.py`, the runner behind `python -m cwa.conformance`. There is no `evidence.py`, `policy.py` or `reasons.py`: the reason registry and route policy are read from the vendored JSON.
 
 ```
 cwa/
@@ -626,6 +626,8 @@ flowchart LR
   M9 --> M10["M10 · Slot floors<br/>route min_tokens<br/>R-16 R-17"]
 ```
 
+`b` = boundary-checked scope. R-5 is documented as an application obligation. With M5 the assembler reaches the honest ceiling: **14 implemented + 8 boundary-checked + 1 application obligation**, not "23 of 23". R-24 (M7), R-25 (M8) and R-26 (M9) are assembler-scoped, so the ceiling is now 17 implemented + 8 boundary-checked + 1 application obligation.
+
 **M10 status (2026-09-23): done. Slot floors** (R-16, R-17). The maintainer took the recommended option on all four questions (D-16): a hard floor that refuses with the new `slot_floor_over_budget`, a slot that freezes at its first withheld reduction, R-16's tier-order exception for droppable items a floor holds, and amendments to R-16 and R-17 rather than a new requirement. Spec first: website `3856762` adds `slots.<slot>.min_tokens`, the refusal code and the Fitting rules; `a8530ee` adds three cases, vendored here as pending, with the requirements they tag (R-16, R-17, R-18, R-21) held at *in progress* until they passed.
 
 ```mermaid
@@ -774,8 +776,6 @@ Result: `src/cwa/conflicts.py` resolves every group kind and every escalation ac
 `parser`, `requires_evidence`, `min_included`, fitting order and fact policies are not in the route-policy schema yet; they arrive with M2 and M3.
 
 **M0 status (2026-09-22): done.** The skeleton reproduces `examples/payload.txt` byte for byte (SHA-256 `4cf0b083…`, 34 tokens) from the first conformance case. It vendors the contract with a SHA-256 lock, validates snapshots with format checking on, uses order-independent snapshot digests (RFC 8785), escapes bodies, and has purity guards. Two deviations from §2.2: `Snapshot.freeze(**fields)` takes JSON-shaped values that follow `snapshot.schema.json` rather than dataclass instances, so there is one validation path; and an unassemblable snapshot raises `SnapshotError` before assembly instead of emitting an `invalid_snapshot` refusal, which has no registered reason code yet. Anything M0 can't do faithfully (admission, fitting, conflicts) raises `NotImplementedError`. No matrix row flips at M0.
-
-`b` = boundary-checked scope. R-5 is documented as an application obligation. With M5 the assembler reaches the honest ceiling: **14 implemented + 8 boundary-checked + 1 application obligation**, not "23 of 23". R-24 (M7), R-25 (M8) and R-26 (M9) are assembler-scoped, so the ceiling is now 17 implemented + 8 boundary-checked + 1 application obligation.
 
 ---
 
