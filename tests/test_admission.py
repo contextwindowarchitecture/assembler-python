@@ -199,3 +199,43 @@ def test_without_a_capability_grant_no_tool_is_admitted(with_tools):
     del with_tools["capabilities"]
     add_batch(with_tools, "cap-policy", "capability_policy", tool("cap:issue_refund"))
     assert exclusions(with_tools) == [("cap:issue_refund", "capability_not_allowed")]
+
+
+def instruction(**fields) -> dict:
+    item = {"id": "policy:v13", "slot": "governance.instructions", "source": "policy-registry", "source_version": "v13",
+            "authority": "governing", "trust": "verified", "freshness": "2026-09-01T00:00:00Z", "injection_risk": "none",
+            "body": "Answer only from evidence."}
+    item.update(fields)
+    return item
+
+
+def observation(id: str, **fields) -> dict:
+    item = {"id": id, "slot": "evidence.tool_results", "source": "tool-call:77", "source_version": "1", "authority": "observation",
+            "trust": "unverified", "freshness": "2026-09-22T11:59:50Z", "body": "order 42: pro plan"}
+    item.update(fields)
+    return item
+
+
+# R-10, R-15: untrusted content is marked, and never governs.
+
+@pytest.mark.parametrize("fields", [{"trust": "unverified"}, {"trust": "untrusted"}, {"injection_risk": "untrusted_content"}])
+def test_governance_requires_verified_unmarked_content(fixture_snapshot, fields):
+    assert exclusions(add(fixture_snapshot, "policy-registry", instruction(**fields))) == [("policy:v13", "untrusted_in_governance")]
+
+
+def test_retrieved_and_user_content_must_stay_marked(fixture_snapshot):
+    add(fixture_snapshot, "policy-corpus", knowledge(injection_risk="none"))
+    add(fixture_snapshot, "conversation", turn("turn:19", slot="interaction.query", injection_risk="none"))
+    assert exclusions(fixture_snapshot) == [("turn:19", "untrusted_content_unmarked"), ("kb:x", "untrusted_content_unmarked")]
+
+
+def test_only_a_route_verified_mcp_server_may_leave_output_unmarked(fixture_snapshot):
+    fixture_snapshot["route_policy"]["producers"].update({
+        "crm-mcp": {"kind": "mcp", "slots": ["evidence.tool_results"]},
+        "docs-mcp": {"kind": "mcp", "slots": ["evidence.tool_results"], "verified": True},
+    })
+    place(fixture_snapshot, "evidence.tool_results")
+    add_batch(fixture_snapshot, "crm-mcp", "mcp", observation("obs:crm", injection_risk="none"))
+    add_batch(fixture_snapshot, "docs-mcp", "mcp", observation("obs:docs", injection_risk="none"))
+    assert exclusions(fixture_snapshot) == [("obs:crm", "untrusted_content_unmarked")]
+    assert "obs:docs" in included(fixture_snapshot)

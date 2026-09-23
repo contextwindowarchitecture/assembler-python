@@ -98,8 +98,25 @@ def _capability(item: Item, ctx: _Context) -> str | None:
     return None
 
 
+def _governance_trust(item: Item, ctx: _Context) -> str | None:
+    # R-10: governance holds only verified content with no injection risk.
+    if item.slot.startswith("governance.") and (item.trust != "verified" or item.injection_risk != "none"):
+        return "untrusted_in_governance"
+    return None
+
+
+def _marking(item: Item, ctx: _Context) -> str | None:
+    # R-10, R-15: content from these slots stays marked, unless the route verified this MCP server.
+    verified_mcp = ctx.producer.kind == "mcp" and ctx.granted.get("verified", False)
+    if SLOT_DEFAULTS[item.slot]["injection_risk"] == "untrusted_content" and item.injection_risk != "untrusted_content" and not verified_mcp:
+        return "untrusted_content_unmarked"
+    return None
+
+
 # Checks for schema-valid items from authenticated producers, in reasons.json order.
-_CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (_duplicate, _slot_permission, _authority, _capability)
+_CHECKS: tuple[Callable[[Item, _Context], str | None], ...] = (
+    _duplicate, _slot_permission, _authority, _capability, _governance_trust, _marking,
+)
 
 
 def _item_reason(item: Item, ctx: _Context) -> str | None:
