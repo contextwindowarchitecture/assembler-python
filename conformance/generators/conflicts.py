@@ -20,7 +20,6 @@ KINDS = {"policy-registry": "policy", "state-svc": "state", "policy-corpus": "re
 SLOTS = {"policy-registry": ["governance.examples", "governance.instructions", "governance.output_contract"],
          "state-svc": ["state.task", "state.user"], "policy-corpus": ["evidence.knowledge"], "wiki-corpus": ["evidence.knowledge"],
          "crm-mcp": ["evidence.tool_results"], "memory-svc": ["interaction.memory"], "conversation": ["interaction.history", "interaction.query"]}
-PROTECTED = {slot for slot, d in DEFAULTS.items() if d["tier"] == "protected"}
 ESCALATED = {"surfaced", "context_requested", "refused"}
 
 

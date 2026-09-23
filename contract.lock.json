@@ -1,7 +1,7 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "72cfce5da6a81e0be34c8183fa5d026e65cb5d7a",
+    "commit": "198679110b3cc087a116fedfabd54c45d0a86b57",
     "dirty": false
   },
   "files": {
@@ -74,7 +74,7 @@
     "conformance/cases/required-slot-missing/expected.trace.json": "1b65e456456e8b87c3502b29feba4866b5ba9bff9d215cc4d3f14cf2dfb6f00e",
     "conformance/cases/required-slot-missing/snapshot.json": "30466d589b33c33095c5abe302f1c73a899a089b7831118a8f10f8d2c10a1dc2",
     "conformance/generators/admission-reasons.py": "2b63bfb81c0eac53bac15de501119aec5c281ac0c8fb8249c953d4300c433448",
-    "conformance/generators/conflicts.py": "47e0d1ede875ba2305d871d463d03001c3a77d474a541bf5ab66e71c072077b3",
+    "conformance/generators/conflicts.py": "401c264f838304bf8cef91aa0beabafe93bd224855effe283d25f5ef3f2859a7",
     "conformance/generators/fitting.py": "7a7c18eadaec35448c0761256c9786290104ce161709a51a3aee2a884f952378",
     "src/cwa/contract/data/assembler-scope.json": "c33e75cf955610f1d869ba152f439b4130fdd940c66a82dd3ccae3f2582f00e8",
     "src/cwa/contract/data/reasons.json": "9c0ddb6384dcd41ce96aaec9869ce856694763c291722dfeac6d4d9943c0688a",
