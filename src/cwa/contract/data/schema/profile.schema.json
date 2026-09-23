@@ -1,0 +1,200 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "route": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "model_family": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "route_policy_version": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "placement": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "type": "string",
+            "enum": [
+              "governance.instructions",
+              "governance.capabilities",
+              "governance.examples",
+              "governance.output_contract",
+              "state.user",
+              "state.task",
+              "evidence.knowledge",
+              "evidence.tool_results",
+              "interaction.memory",
+              "interaction.history",
+              "interaction.query"
+            ]
+          },
+          "wrap": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "slot",
+          "wrap"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "unevaluated",
+            "evaluated"
+          ]
+        },
+        "suite": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "result": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "artifact": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "suite",
+        "date",
+        "result",
+        "artifact"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "id",
+    "version",
+    "route",
+    "model_family",
+    "route_policy_version",
+    "placement",
+    "evaluation"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextwindowarchitecture.io/schema/profile.schema.json",
+  "title": "CWA placement profile",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "evaluation": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "const": "evaluated"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "model_family": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "evaluation": {
+            "type": "object",
+            "properties": {
+              "suite": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "date": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "result": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "artifact": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

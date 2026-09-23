@@ -1,0 +1,117 @@
+[
+  {
+    "id": "R-1",
+    "scope": "assembler",
+    "note": "Admission checks each item's slot and authority."
+  },
+  {
+    "id": "R-2",
+    "scope": "assembler",
+    "note": "Schema validation with format checking; timestamps compared at full precision."
+  },
+  {
+    "id": "R-3",
+    "scope": "assembler",
+    "note": "Fills slot defaults and versioned route overrides, and records defaults_filled."
+  },
+  {
+    "id": "R-4",
+    "scope": "assembler",
+    "note": "Refuses with required_slot_missing."
+  },
+  {
+    "id": "R-5",
+    "scope": "application",
+    "note": "Application guards enforce invariants. Nothing observable in assembly can prove it."
+  },
+  {
+    "id": "R-6",
+    "scope": "assembler",
+    "note": "Resolves declared groups; evidence, state and memory never render as instructions."
+  },
+  {
+    "id": "R-7",
+    "scope": "assembler",
+    "note": "Only governance maps to platform roles, history renders as a transcript, and item bodies are escaped inside wrappers."
+  },
+  {
+    "id": "R-8",
+    "scope": "boundary",
+    "note": "Checks producer kind and state age. Writing state stays with the application."
+  },
+  {
+    "id": "R-9",
+    "scope": "boundary",
+    "note": "Excludes expired and revoked memory and merges producer exclusions. Reporting them is the producer's duty."
+  },
+  {
+    "id": "R-10",
+    "scope": "assembler",
+    "note": "Checks untrusted marking, refuses it in governance, and renders it as material."
+  },
+  {
+    "id": "R-11",
+    "scope": "boundary",
+    "note": "Resolves the groups it is given. It cannot detect a conflict the application did not declare."
+  },
+  {
+    "id": "R-12",
+    "scope": "assembler",
+    "note": "Refuses with evidence_required and a recovery action."
+  },
+  {
+    "id": "R-13",
+    "scope": "boundary",
+    "note": "Requires relevance and reference_only. It cannot tell whether a producer merged passages."
+  },
+  {
+    "id": "R-14",
+    "scope": "boundary",
+    "note": "Re-excludes expired or revoked memory as a backstop. Suppressing and reporting them is the producer's duty."
+  },
+  {
+    "id": "R-15",
+    "scope": "boundary",
+    "note": "Checks the authenticated emitter and capability grant. The application authenticates, and tool guards enforce calls."
+  },
+  {
+    "id": "R-16",
+    "scope": "assembler",
+    "note": "Counts rendered tokens and sheds in tier order."
+  },
+  {
+    "id": "R-17",
+    "scope": "assembler",
+    "note": "Refusal traces carry no payload, no result and no included items."
+  },
+  {
+    "id": "R-18",
+    "scope": "boundary",
+    "note": "Selects only supplied variants and never calls a model. It cannot verify a variant's fidelity."
+  },
+  {
+    "id": "R-19",
+    "scope": "boundary",
+    "note": "Can refuse unevaluated profiles in deployment mode. Evaluation itself happens outside assembly."
+  },
+  {
+    "id": "R-20",
+    "scope": "assembler",
+    "note": "Pins profile content by hash and refuses unplaced protected content."
+  },
+  {
+    "id": "R-21",
+    "scope": "assembler",
+    "note": "Every emitted trace is validated against the published schema in tests."
+  },
+  {
+    "id": "R-22",
+    "scope": "assembler",
+    "note": "Emits the recommended trace fields."
+  },
+  {
+    "id": "R-23",
+    "scope": "assembler",
+    "note": "Snapshot replay across processes, hash seeds and time zones."
+  }
+]

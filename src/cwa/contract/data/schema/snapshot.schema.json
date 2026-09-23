@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextwindowarchitecture.io/schema/snapshot.schema.json",
+  "title": "CWA assembly snapshot",
+  "description": "Everything that can affect an assembly, frozen before assembly begins (R-23). Conformance cases use this shape so implementations in any language replay the same input. route_policy is a draft: route, version and any further fields an implementation documents, until a route-policy schema is published.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "assembly_time",
+    "scope",
+    "budget",
+    "profile",
+    "route_policy",
+    "tokenizer",
+    "renderer",
+    "batches",
+    "conflicts"
+  ],
+  "properties": {
+    "assembly_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scope": {
+      "$ref": "context_item.schema.json#/properties/scope"
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input",
+        "reserved_output"
+      ],
+      "properties": {
+        "input": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reserved_output": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "profile": {
+      "$ref": "profile.schema.json"
+    },
+    "route_policy": {
+      "type": "object",
+      "required": [
+        "route",
+        "version"
+      ],
+      "properties": {
+        "route": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "tokenizer": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "renderer": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "batches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "producer",
+          "items",
+          "excluded"
+        ],
+        "properties": {
+          "producer": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind"
+            ],
+            "description": "The identity the application authenticated for this batch. Never derived from item fields.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "policy",
+                  "state",
+                  "retrieval",
+                  "memory",
+                  "mcp",
+                  "capability_policy",
+                  "interaction"
+                ]
+              },
+              "verified_server": {
+                "type": "boolean"
+              }
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "context_item.schema.json"
+            }
+          },
+          "excluded": {
+            "$ref": "producer_batch.schema.json#/properties/excluded"
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_producer",
+        "allow_list_version",
+        "allowed_ids"
+      ],
+      "properties": {
+        "policy_producer": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "allow_list_version": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "allowed_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "$ref": "conflict_group.schema.json"
+      }
+    }
+  }
+}

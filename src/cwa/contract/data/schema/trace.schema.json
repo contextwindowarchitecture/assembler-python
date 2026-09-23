@@ -1,0 +1,498 @@
+{
+  "type": "object",
+  "properties": {
+    "trace_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "profile": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reserved_output": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "input",
+        "reserved_output"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "input_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "hash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          "required": [
+            "input_tokens",
+            "hash"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "included": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "type": "string",
+            "enum": [
+              "governance.instructions",
+              "governance.capabilities",
+              "governance.examples",
+              "governance.output_contract",
+              "state.user",
+              "state.task",
+              "evidence.knowledge",
+              "evidence.tool_results",
+              "interaction.memory",
+              "interaction.history",
+              "interaction.query"
+            ]
+          },
+          "item_id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "tokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "source_version": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "eligibility": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "slot",
+          "item_id",
+          "tokens"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "compressed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "type": "string",
+            "enum": [
+              "governance.instructions",
+              "governance.capabilities",
+              "governance.examples",
+              "governance.output_contract",
+              "state.user",
+              "state.task",
+              "evidence.knowledge",
+              "evidence.tool_results",
+              "interaction.memory",
+              "interaction.history",
+              "interaction.query"
+            ]
+          },
+          "item_id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "from": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "to": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "method": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "variant_id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "slot",
+          "item_id",
+          "from",
+          "to",
+          "method",
+          "variant_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "excluded": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "producer",
+              "assembler"
+            ]
+          },
+          "slot": {
+            "type": "string",
+            "enum": [
+              "governance.instructions",
+              "governance.capabilities",
+              "governance.examples",
+              "governance.output_contract",
+              "state.user",
+              "state.task",
+              "evidence.knowledge",
+              "evidence.tool_results",
+              "interaction.memory",
+              "interaction.history",
+              "interaction.query"
+            ]
+          }
+        },
+        "required": [
+          "item_id",
+          "reason",
+          "stage"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "minItems": 2,
+            "uniqueItems": true
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "instruction",
+              "fact"
+            ]
+          },
+          "resolution": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "decided_by": {
+            "type": "string",
+            "enum": [
+              "authority",
+              "policy",
+              "freshness",
+              "escalated",
+              "moot"
+            ]
+          },
+          "group_id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "items",
+          "kind",
+          "resolution",
+          "decided_by"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "refused": {
+      "type": "object",
+      "properties": {
+        "bool": {
+          "type": "boolean"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "bool",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "assembly_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "route_policy_version": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "tokenizer": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "renderer": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "snapshot_digest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "assembly_time",
+        "route_policy_version",
+        "tokenizer",
+        "renderer"
+      ],
+      "additionalProperties": false
+    },
+    "defaults_filled": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "field": {
+            "type": "string",
+            "enum": [
+              "token_budget",
+              "variants",
+              "conflict_policy",
+              "lineage",
+              "eligibility",
+              "injection_risk"
+            ]
+          }
+        },
+        "required": [
+          "item_id",
+          "field"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "timings": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0
+      }
+    },
+    "recovery": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "enum": [
+            "retrieve_narrower",
+            "precompute_summary",
+            "request_context"
+          ]
+        },
+        "detail": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "trace_id",
+    "profile",
+    "budget",
+    "result",
+    "included",
+    "compressed",
+    "excluded",
+    "conflicts",
+    "refused",
+    "context"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextwindowarchitecture.io/schema/trace.schema.json",
+  "title": "CWA assembly trace",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "refused": {
+            "properties": {
+              "bool": {
+                "const": true
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "type": "null"
+          },
+          "refused": {
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "else": {
+        "properties": {
+          "result": {
+            "type": "object"
+          },
+          "refused": {
+            "properties": {
+              "reason": {
+                "type": "null"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "refused": {
+            "type": "object",
+            "properties": {
+              "reason": {
+                "const": "evidence_required"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "recovery": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "enum": [
+                  "retrieve_narrower",
+                  "precompute_summary",
+                  "request_context"
+                ]
+              },
+              "detail": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "recovery"
+        ]
+      }
+    }
+  ]
+}

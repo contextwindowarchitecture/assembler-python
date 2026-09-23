@@ -1,0 +1,46 @@
+{
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "https://contextwindowarchitecture.io/schema/context_item.schema.json"
+      }
+    },
+    "excluded": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "stage": {
+            "const": "producer"
+          }
+        },
+        "required": [
+          "item_id",
+          "reason",
+          "stage"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "items",
+    "excluded"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextwindowarchitecture.io/schema/producer_batch.schema.json",
+  "title": "CWA producer handoff"
+}

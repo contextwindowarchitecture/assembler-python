@@ -1,0 +1,24 @@
+{
+  "source": {
+    "repository": "contextwindowarchitecture/website",
+    "commit": "9c020aa459f8c80b5e9948b61e61fd7b6a30778d",
+    "dirty": false
+  },
+  "files": {
+    "conformance/README.md": "44f1468ec81466b44fefdd490fd59c7cb1aa99a55413fa56b79a248d92ddd0d4",
+    "conformance/cases/fixture-three-slot/case.json": "6d0dc5f70982a7ff31604a08f24aa6c1ed18082d11a878d2bfaf57c862f1a762",
+    "conformance/cases/fixture-three-slot/expected.payload.txt": "4cf0b083e167bb952c1ba0f9a93bf3ed3c64b178c063c259b49cdace1b86972f",
+    "conformance/cases/fixture-three-slot/expected.trace.json": "0ff6292e60c19a45c2121459ad8befb58c293d0b8fb221bea51e8db5e1e427c5",
+    "conformance/cases/fixture-three-slot/snapshot.json": "f4184497dcfa214f145cf8b80b199b0a5f28f6e59cc64e97f20da39041667c18",
+    "src/cwa/contract/data/assembler-scope.json": "c33e75cf955610f1d869ba152f439b4130fdd940c66a82dd3ccae3f2582f00e8",
+    "src/cwa/contract/data/reasons.json": "facc5a8307e4f33f6f55bd1c06b9abc5b9e413b604b7221d380599f5db56860f",
+    "src/cwa/contract/data/requirements.json": "cca5e35a12a5cc10d14a62d7c6558d4f70ad3d97023d9c4872ce074783211bbe",
+    "src/cwa/contract/data/schema/conflict_group.schema.json": "0d36d232a96ed428ebcbdf95b1d08eca3381a107205712205d86444c4a898730",
+    "src/cwa/contract/data/schema/context_item.schema.json": "e9373d298945925add17489dc18f22e8a88d6ae3c9bb7e899c949fec466310e6",
+    "src/cwa/contract/data/schema/producer_batch.schema.json": "59ceb90d8e374f5811a4066b1328f3cf968df0cc20c1ae200e985db9a183d946",
+    "src/cwa/contract/data/schema/profile.schema.json": "74ead604f79aeaf9e1a410a84ad9a0d8b0d51c5b35afc452c3706aa9b98c21ee",
+    "src/cwa/contract/data/schema/snapshot.schema.json": "863cf30db6d8a4331270c43d2985ff56b1acf366f4b1552f0196b18b01680afe",
+    "src/cwa/contract/data/schema/trace.schema.json": "6173de1529e6ce1c23d1fb4bdab58bbad97bf802a9aef7c34f7f557f28767273",
+    "src/cwa/contract/data/slot-defaults.json": "89e2f6636e081995615426f5f29e4f0933d851906b78c2d7955271a4109df60d"
+  }
+}

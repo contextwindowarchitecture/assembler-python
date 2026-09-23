@@ -1,0 +1,152 @@
+[
+  {
+    "code": "missing_field:<name>",
+    "kind": "exclusion",
+    "rule": "R-2",
+    "text": "A required field is absent: one of the eight minimum fields, or a slot-specific one such as expires for memory or relevance for retrieval. Fix the producer; the assembler will not guess."
+  },
+  {
+    "code": "unknown_slot",
+    "kind": "exclusion",
+    "rule": "R-1",
+    "text": "The slot name is not one of the eleven. Check spelling and plane prefix."
+  },
+  {
+    "code": "unknown_authority",
+    "kind": "exclusion",
+    "rule": "R-1",
+    "text": "The authority value is not one of the seven roles. capability and steering are not authority values; use governing with a conflict_policy."
+  },
+  {
+    "code": "invalid_structure",
+    "kind": "exclusion",
+    "rule": "R-2",
+    "text": "The item fails the published schema for another reason, such as a wrong type, an undeclared field or a malformed timestamp."
+  },
+  {
+    "code": "authority_not_allowed",
+    "kind": "exclusion",
+    "rule": "R-1",
+    "text": "The authority value is not allowed for this slot or authenticated producer. These roles are not a factual ranking."
+  },
+  {
+    "code": "producer_not_authenticated",
+    "kind": "exclusion",
+    "rule": "R-15",
+    "text": "The application did not authenticate the emitting producer. Identity comes from trusted context, never from item fields."
+  },
+  {
+    "code": "producer_slot_not_allowed",
+    "kind": "exclusion",
+    "rule": "R-15",
+    "text": "The authenticated producer is not permitted to emit into this slot."
+  },
+  {
+    "code": "capability_not_allowed",
+    "kind": "exclusion",
+    "rule": "R-15",
+    "text": "The authenticated emitter is not the route capability policy, or the tool is not on the route/user allow-list. Item source strings cannot prove permission."
+  },
+  {
+    "code": "untrusted_in_governance",
+    "kind": "exclusion",
+    "rule": "R-10",
+    "text": "A governance item is not verified or is marked untrusted_content."
+  },
+  {
+    "code": "untrusted_content_unmarked",
+    "kind": "exclusion",
+    "rule": "R-10",
+    "text": "User-controlled, retrieved or tool content is not marked injection_risk: untrusted_content, and the route has not verified its server."
+  },
+  {
+    "code": "protected_tier_changed",
+    "kind": "exclusion",
+    "rule": "R-16",
+    "text": "The item tries to downgrade a protected slot."
+  },
+  {
+    "code": "tier_upgrade_not_allowed",
+    "kind": "exclusion",
+    "rule": "R-16",
+    "text": "The item claims a tier above its slot's effective tier. Only the route's versioned policy can raise a tier; a producer cannot protect its own items."
+  },
+  {
+    "code": "duplicate_item_id",
+    "kind": "exclusion",
+    "rule": "R-2",
+    "text": "Another candidate or producer exclusion in the same assembly uses this ID."
+  },
+  {
+    "code": "duplicate_variant_id",
+    "kind": "exclusion",
+    "rule": "R-18",
+    "text": "Variant IDs repeat, or a variant reuses its parent item's ID."
+  },
+  {
+    "code": "revoked",
+    "kind": "exclusion",
+    "rule": "R-9",
+    "text": "revoked_by is set. The item was contradicted or withdrawn."
+  },
+  {
+    "code": "expired",
+    "kind": "exclusion",
+    "rule": "R-9",
+    "text": "expires is at or before assembly_time. freshness describes when content was true; a past freshness is not itself expiration."
+  },
+  {
+    "code": "future_freshness",
+    "kind": "exclusion",
+    "rule": "R-2",
+    "text": "freshness is later than assembly_time."
+  },
+  {
+    "code": "below_threshold",
+    "kind": "exclusion",
+    "rule": "R-13",
+    "text": "The rerank score is under the route's versioned threshold."
+  },
+  {
+    "code": "out_of_scope",
+    "kind": "exclusion",
+    "rule": "R-2",
+    "text": "Tenant, user or session scope does not match the request."
+  },
+  {
+    "code": "over_budget",
+    "kind": "exclusion",
+    "rule": "R-16",
+    "text": "The item was omitted to fit the rendered budget, in tier order and by the route's fitting policy."
+  },
+  {
+    "code": "assembly_time_required",
+    "kind": "refusal",
+    "rule": "R-23",
+    "text": "The snapshot has no explicit, valid assembly_time. Assembly never reads an ambient clock."
+  },
+  {
+    "code": "required_slot_missing",
+    "kind": "refusal",
+    "rule": "R-4",
+    "text": "governance.instructions or interaction.query, or governance.output_contract on a parser route, has no admitted item."
+  },
+  {
+    "code": "protected_content_over_budget",
+    "kind": "refusal",
+    "rule": "R-17",
+    "text": "Protected content alone exceeds budget.input. The assembler refuses rather than truncating."
+  },
+  {
+    "code": "evidence_required",
+    "kind": "refusal",
+    "rule": "R-12",
+    "text": "The route requires evidence and too little survived admission and fitting. The trace records recovery.action."
+  },
+  {
+    "code": "conflict_unresolved",
+    "kind": "refusal",
+    "rule": "R-11",
+    "text": "A declared conflict group has no unique supported resolution and route policy says to refuse or request context."
+  }
+]

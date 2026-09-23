@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextwindowarchitecture.io/schema/context_item.schema.json",
+  "title": "CWA context item",
+  "description": "CWA v2 draft item structure. Admission additionally requires authenticated producer identity, route policy, scope, and an explicit assembly clock.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "slot",
+    "source",
+    "source_version",
+    "authority",
+    "trust",
+    "freshness",
+    "body"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "slot": {
+      "type": "string",
+      "enum": [
+        "governance.instructions",
+        "governance.capabilities",
+        "governance.examples",
+        "governance.output_contract",
+        "state.user",
+        "state.task",
+        "evidence.knowledge",
+        "evidence.tool_results",
+        "interaction.memory",
+        "interaction.history",
+        "interaction.query"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "source_version": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "authority": {
+      "type": "string",
+      "enum": [
+        "governing",
+        "user",
+        "state",
+        "reference_only",
+        "observation",
+        "generated",
+        "untrusted"
+      ]
+    },
+    "trust": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "unverified",
+        "untrusted"
+      ]
+    },
+    "freshness": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When it was true (as_of)"
+    },
+    "expires": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When it must be revalidated; expired items are excluded, not aged silently"
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "tenant": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "user": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "session": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "task": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "locale": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "step": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "eligibility": {
+      "type": "string",
+      "description": "Human-readable admission rule description. Never evaluate this string as code; the route owns the executable predicate."
+    },
+    "token_budget": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "description": "Optional cap. Null means use the route allocation, never an unbounded request."
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "protected",
+        "compressible",
+        "droppable"
+      ]
+    },
+    "conflict_policy": {
+      "type": "string",
+      "enum": [
+        "defers",
+        "governs",
+        "escalate"
+      ]
+    },
+    "injection_risk": {
+      "type": "string",
+      "enum": [
+        "none",
+        "untrusted_content"
+      ]
+    },
+    "lineage": {
+      "type": "string",
+      "enum": [
+        "verbatim",
+        "summarised",
+        "redacted",
+        "translated",
+        "extracted",
+        "generated"
+      ]
+    },
+    "body": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "variants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "method": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "lineage": {
+            "type": "string",
+            "enum": [
+              "verbatim",
+              "summarised",
+              "redacted",
+              "translated",
+              "extracted",
+              "generated"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "body",
+          "method",
+          "lineage"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "relevance": {
+      "type": "number",
+      "description": "Finite rerank score; the scale and threshold belong to versioned route policy."
+    },
+    "revoked_by": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "slot": {
+            "const": "interaction.memory"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "expires"
+        ],
+        "properties": {
+          "expires": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it must be revalidated; expired items are excluded, not aged silently"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "slot": {
+            "const": "evidence.knowledge"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "relevance"
+        ],
+        "properties": {
+          "relevance": {
+            "type": "number",
+            "description": "Finite rerank score; the scale and threshold belong to versioned route policy."
+          }
+        }
+      }
+    }
+  ]
+}

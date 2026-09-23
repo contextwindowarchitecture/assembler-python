@@ -1,0 +1,42 @@
+from __future__ import annotations
+
+import re
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from . import Occurrence, Rendered
+    from ..model import Profile
+
+_TAG = re.compile(r"^[A-Za-z_][A-Za-z0-9_.\-]*$")
+
+
+def _escape_body(text: str) -> str:
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _escape_attribute(text: str) -> str:
+    return _escape_body(text).replace('"', "&quot;")
+
+
+class FixtureXml:
+    """The conformance fixture renderer: one XML-style element per occurrence, bodies escaped (R-7, R-10)."""
+
+    id = "fixture-xml/v1"
+
+    def profile_errors(self, profile: Profile) -> list[str]:
+        problems = []
+        for index, placement in enumerate(profile.placement):
+            tag = placement.wrap.removeprefix("xml:")
+            if not placement.wrap.startswith("xml:") or not _TAG.match(tag):
+                problems.append(f"placement[{index}] wrap {placement.wrap!r} is not an xml:<name> wrap")
+        return problems
+
+    def render(self, occurrences: tuple[Occurrence, ...]) -> Rendered:
+        from . import Rendered
+
+        bodies = tuple(_escape_body(o.item.body) for o in occurrences)
+        parts = []
+        for occurrence, body in zip(occurrences, bodies):
+            tag = occurrence.wrap.removeprefix("xml:")
+            parts.append(f'<{tag} id="{_escape_attribute(occurrence.item.id)}">\n{body}\n</{tag}>\n')
+        return Rendered(payload="".join(parts).encode("utf-8"), bodies=bodies)

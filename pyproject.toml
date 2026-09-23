@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cwa-assembler"
+version = "0.0.1"
+description = "Reference assembler for the Context Window Architecture (CWA) v2 draft"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "jsonschema>=4.23",
+  "referencing>=0.35",
+  # Without it, jsonschema silently skips format: date-time (DESIGN.md DA-17).
+  "rfc3339-validator>=0.1.4",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cwa"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
