@@ -39,6 +39,7 @@ def exclusions(snapshot: dict) -> list[tuple[str, str]]:
     ({"freshness": "2026-02-30T12:00:00Z"}, "invalid_structure"),
     ({"surprise": True}, "invalid_structure"),
     ({"body": None, "slot": "evidence.web"}, "missing_field:body"),
+    ({"slot": None}, "missing_field:slot"),
 ])
 def test_schema_invalid_items_are_excluded_with_the_earliest_reason(fixture_snapshot, fields, reason):
     assert exclusions(add(fixture_snapshot, "policy-corpus", knowledge(**fields))) == [("kb:x", reason)]
