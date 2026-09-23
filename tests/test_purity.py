@@ -7,6 +7,7 @@ import pytest
 
 from cwa import Snapshot, assemble
 from conftest import CASES, read_json
+from test_conformance import PENDING
 
 
 def _forbidden(*args, **kwargs):
@@ -25,7 +26,10 @@ def test_assemble_needs_no_network_or_clock(case, monkeypatch):
     for name in ("time", "time_ns", "monotonic", "perf_counter", "localtime", "gmtime"):
         monkeypatch.setattr(time, name, _forbidden)
     monkeypatch.setattr(datetime, "datetime", _NoClock)
+    if case not in PENDING:
+        assemble(snapshot, trace_id="t")
+        return
     try:
         assemble(snapshot, trace_id="t")
     except NotImplementedError:
-        pass  # a later milestone's gap, not a read outside the snapshot
+        pass  # a pending case's milestone gap, not a read outside the snapshot
