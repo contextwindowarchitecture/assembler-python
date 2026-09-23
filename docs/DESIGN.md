@@ -464,7 +464,7 @@ The spec names three actions but did not say when to choose each one. `conforman
 
 ### 4.7 Trace
 
-- Validate every emitted trace against `trace.schema.json` in tests, and optionally at runtime.
+- Validate every emitted trace against `trace.schema.json`, at runtime. Since M5 the same check rejects an assembler row or a refusal whose reason is not a registered code of the right kind (R-21). Producer rows keep whatever the producer reported.
 - Order traces canonically: `excluded[]` puts producer rows first (by producer id, then item id) and assembler rows after, in pipeline order. `conflicts[]` sort by group id. The trace is not hashed, but golden tests need stable ordering.
 - Assembler rows in `excluded[]` carry `slot` whenever the candidate names one of the eleven slots, even when it fails for another reason (R-22). Producer rows report no slot.
 - `trace_id` defaults to `uuid4`. Timings are measured, and excluded from all comparisons (R-23).

@@ -282,7 +282,10 @@
         "tests/test_refusal.py::test_a_missing_required_slot_is_reported_before_the_budget",
         "tests/test_refusal.py::test_a_protected_refusal_comes_before_the_evidence_check",
         "tests/test_placement.py::test_a_missing_required_slot_is_reported_before_an_unplaced_protected_item",
-        "tests/test_messages.py::test_the_payload_is_canonical_json_and_its_size_is_the_sum_of_its_texts"
+        "tests/test_messages.py::test_the_payload_is_canonical_json_and_its_size_is_the_sum_of_its_texts",
+        "tests/test_trace.py::test_assembler_rows_use_registered_exclusion_codes",
+        "tests/test_trace.py::test_refusals_use_registered_refusal_codes",
+        "tests/test_trace.py::test_producer_rows_keep_whatever_the_producer_reported"
       ]
     },
     {
