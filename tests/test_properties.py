@@ -1,7 +1,8 @@
 """Properties over generated snapshots (docs/DESIGN.md §6), where the conformance cases fix single
 examples: input order never matters (R-23), protected bytes never change (R-16, R-17), droppable
 items go before any compressible item is reduced under budget pressure (R-16), the payload fits its
-budget and counts its items (R-16, R-21), every capped slot fits its max_tokens (R-16), a
+budget and counts its items (R-16, R-21), every capped slot fits its max_tokens (R-16), budget
+pressure never leaves a floored slot below its min_tokens (R-16), a
 deduplicated slot includes each key once (R-24), a superseding slot keeps only the latest of each
 call (R-25), a capped slot keeps at most max_per_source of each source (R-26), refusals have no
 payload (R-17), and a stored snapshot replays (R-23)."""
@@ -69,6 +70,10 @@ def snapshots(draw) -> dict:
         for slot in ("state.task",) + DROPPABLE + COMPRESSIBLE:
             if (cap := draw(st.none() | st.integers(0, 30))) is not None:
                 policy.setdefault("slots", {}).setdefault(slot, {})["max_tokens"] = cap
+    if draw(st.booleans()):
+        for slot in DROPPABLE + COMPRESSIBLE:
+            if (floor := draw(st.none() | st.integers(1, 20))) is not None:
+                policy.setdefault("slots", {}).setdefault(slot, {})["min_tokens"] = floor
     for slot in PROTECTED + DROPPABLE + COMPRESSIBLE:
         if draw(st.booleans()):
             policy.setdefault("slots", {}).setdefault(slot, {})["dedupe"] = "exact"
@@ -101,6 +106,10 @@ def _candidates(document: dict, slots: tuple[str, ...]) -> list[dict]:
 
 def _slot_caps(document: dict) -> dict[str, int]:
     return {slot: rules["max_tokens"] for slot, rules in document["route_policy"].get("slots", {}).items() if "max_tokens" in rules}
+
+
+def _slot_floors(document: dict) -> dict[str, int]:
+    return {slot: rules["min_tokens"] for slot, rules in document["route_policy"].get("slots", {}).items() if "min_tokens" in rules}
 
 
 PROPERTY = settings(max_examples=150, deadline=None, suppress_health_check=[HealthCheck.too_slow])
@@ -139,9 +148,9 @@ def test_protected_bytes_never_change(document):
 @PROPERTY
 @given(snapshots())
 def test_droppable_items_go_before_any_compressible_item_is_reduced(document):
-    """Under budget pressure alone: a slot cap sheds only its own slot, so a capped route may compress
-    one slot's items while another slot keeps its droppable ones."""
-    assume(not _slot_caps(document))
+    """Under budget pressure alone: a slot cap sheds only its own slot, and a floor may hold a droppable
+    item, so a capped or floored route may compress one slot's items while another keeps droppable ones."""
+    assume(not _slot_caps(document) and not _slot_floors(document))
     trace = assemble(Snapshot.from_json(document)).trace
     compressible = {c["id"] for c in _candidates(document, COMPRESSIBLE)}
     reduced = compressible & (_rows(trace, "over_budget") | {row["item_id"] for row in trace["compressed"]})
@@ -225,12 +234,32 @@ def test_a_capped_slot_keeps_at_most_max_per_source_of_each_source(document):
 
 
 @PROPERTY
+@given(snapshots(), st.integers(1, 20))
+def test_budget_pressure_never_leaves_a_floored_slot_below_its_floor(document, floor):
+    """Without slot caps, every over_budget row and compression here is budget pressure, which a floor
+    guards: a floored slot that lost anything to it still holds at least its floor. The drawn route loses
+    its caps and, if it has no floor, gains one on history, rather than being filtered out."""
+    for rules in document["route_policy"].get("slots", {}).values():
+        rules.pop("max_tokens", None)
+    if not _slot_floors(document):
+        document["route_policy"].setdefault("slots", {}).setdefault("interaction.history", {})["min_tokens"] = floor
+    result = assemble(Snapshot.from_json(document))
+    if not result.refused:
+        trace = result.trace
+        reduced = _rows(trace, "over_budget") | {row["item_id"] for row in trace["compressed"]}
+        for slot, floor in _slot_floors(document).items():
+            if reduced & {c["id"] for c in _candidates(document, (slot,))}:
+                assert sum(row["tokens"] for row in trace["included"] if row["slot"] == slot) >= floor
+
+
+@PROPERTY
 @given(snapshots())
 def test_a_refusal_has_no_payload_and_a_payload_carries_its_hash(document):
     result = assemble(Snapshot.from_json(document))
     trace = result.trace
     if result.refused:
         assert result.payload is None and trace["result"] is None and trace["included"] == trace["compressed"] == []
+        assert trace["refused"]["reason"] != "slot_floor_over_budget" or _slot_floors(document)
     else:
         assert trace["result"]["hash"] == hashlib.sha256(result.payload).hexdigest()
 

@@ -75,7 +75,8 @@ def _refusal(snapshot: Snapshot, resolution: Resolution, items: tuple[Item, ...]
         return "conflict_unresolved", None, "request_context" if asked else None
     fitted = fit(snapshot, items, resolution.marks)
     if fitted.refusal:
-        return fitted.refusal, None, None
+        # A floor refusal keeps the omissions fitting made (R-17); a protected refusal has none.
+        return fitted.refusal, fitted, None
     if recovery := _evidence_recovery(snapshot, fitted):
         return "evidence_required", fitted, recovery
     return None, fitted, None

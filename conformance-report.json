@@ -93,8 +93,7 @@
         "R-18",
         "R-21"
       ],
-      "outcome": "failed",
-      "detail": "payload bytes differ"
+      "outcome": "passed"
     },
     {
       "id": "budget-slot-floor-refused",
@@ -103,8 +102,7 @@
         "R-17",
         "R-21"
       ],
-      "outcome": "failed",
-      "detail": "a payload, but a refusal was expected"
+      "outcome": "passed"
     },
     {
       "id": "budget-slot-floor-under-cap",
@@ -113,8 +111,7 @@
         "R-18",
         "R-21"
       ],
-      "outcome": "failed",
-      "detail": "payload bytes differ"
+      "outcome": "passed"
     },
     {
       "id": "budget-token-caps",

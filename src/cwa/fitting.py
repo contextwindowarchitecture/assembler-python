@@ -1,8 +1,8 @@
 """Fitting: reduce admitted items until the rendered payload fits budget.input (R-16, R-17).
 
 "Fits" always means the whole payload, rendered and counted with the snapshot's tokenizer. A route's
-max_tokens caps one slot's share: its items' rendered bodies, every occurrence counted
-(conformance/README.md, Fitting).
+max_tokens caps one slot's share, its items' rendered bodies with every occurrence counted, and its
+min_tokens floors that share under budget pressure (conformance/README.md, Fitting).
 """
 from __future__ import annotations
 
@@ -94,6 +94,11 @@ def _slot_caps(snapshot: Snapshot) -> dict[str, int]:
     return {slot: rules["max_tokens"] for slot in _slots_in_shedding_order(snapshot) if "max_tokens" in (rules := _rules(snapshot, slot))}
 
 
+def _slot_floors(snapshot: Snapshot) -> dict[str, int]:
+    """The route's min_tokens by slot (R-16)."""
+    return {slot: rules["min_tokens"] for slot in SLOT_DEFAULTS if "min_tokens" in (rules := _rules(snapshot, slot))}
+
+
 def _shedding_order(snapshot: Snapshot, items: Iterable[Item]) -> list[Item]:
     """Slots by ascending priority, then name; within a slot, lowest rank first."""
     items = list(items)
@@ -156,28 +161,45 @@ def fit(snapshot: Snapshot, items: tuple[Item, ...], marks: Mapping[str, str] | 
     # R-16: each slot cap holds whether or not the payload fits, and sheds only the slot's own items.
     for slot, cap in caps.items():
         _shed(snapshot, kept, omitted, compressed, lambda selection, slot=slot, cap=cap: slot_tokens(snapshot, selection, slot) <= cap, {slot})
-    _shed(snapshot, kept, omitted, compressed, fits, set(SLOT_DEFAULTS))
-    # Only protected items can remain once every step has run, and those fit their slot caps and the budget.
-    assert fits(kept.values())
+    # R-16: budget pressure, the only shedding a slot floor guards.
+    _shed(snapshot, kept, omitted, compressed, fits, set(SLOT_DEFAULTS), _slot_floors(snapshot))
+    if not fits(kept.values()):
+        # R-17: only a floor can leave items that do not fit; the omissions made so far stay in the trace.
+        return Fitted(items=(), omitted=tuple(omitted), refusal="slot_floor_over_budget")
     return Fitted(items=tuple(kept.values()), omitted=tuple(omitted), compressed=compressed)
 
 
 def _shed(snapshot: Snapshot, kept: dict[str, Item], omitted: list[Item], compressed: dict[str, Compression],
-          done: Callable[[Iterable[Item]], bool], slots: set[str]) -> None:
-    """Reduce the given slots' items in tier order until done holds (R-16)."""
-    # Every droppable item goes, one at a time, before any compressible item is reduced.
+          done: Callable[[Iterable[Item]], bool], slots: set[str], floors: Mapping[str, int] | None = None) -> None:
+    """Reduce the given slots' items in tier order until done holds (R-16). floors: min_tokens by slot; a
+    reduction that would leave a slot below its floor is withheld, and the slot is frozen."""
+    floors, frozen = floors or {}, set()
+
+    def allowed(item: Item, after: Mapping[str, Item]) -> bool:
+        if item.slot in frozen:
+            return False
+        if item.slot in floors and slot_tokens(snapshot, after.values(), item.slot) < floors[item.slot]:
+            frozen.add(item.slot)
+            return False
+        return True
+
+    # Every droppable item goes, one at a time, before any compressible item is reduced, except those a floor holds.
     for item in _shedding_order(snapshot, [i for i in kept.values() if i.slot in slots and tier(snapshot, i) == "droppable"]):
         if done(kept.values()):
             return
-        omitted.append(kept.pop(item.id))
+        if allowed(item, {k: v for k, v in kept.items() if k != item.id}):
+            omitted.append(kept.pop(item.id))
     for slot, action in (step for step in _steps(snapshot) if step[0] in slots):
         for item in reversed(ranked(snapshot, slot, (i for i in kept.values() if tier(snapshot, i) == "compressible"))):
             if done(kept.values()):
                 return
+            if slot in frozen:
+                break
             if action == "omit":
-                omitted.append(kept.pop(item.id))
-                compressed.pop(item.id, None)
-            elif variant := _compress(snapshot, item, kept, done):
+                if allowed(item, {k: v for k, v in kept.items() if k != item.id}):
+                    omitted.append(kept.pop(item.id))
+                    compressed.pop(item.id, None)
+            elif (variant := _compress(snapshot, item, kept, done)) and allowed(item, {**kept, item.id: replace(item, body=variant.body)}):
                 original = compressed[item.id].original_body if item.id in compressed else item.body
                 kept[item.id] = replace(item, body=variant.body)
                 compressed[item.id] = Compression(variant, original)

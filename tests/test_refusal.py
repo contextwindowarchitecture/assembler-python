@@ -182,3 +182,18 @@ def test_protected_items_exactly_at_their_slots_max_tokens_are_kept():
     assert trace["refused"]["bool"] is False
     assert [row["item_id"] for row in trace["included"]].count("task:8821") == 2
     assert [row["item_id"] for row in trace["excluded"]] == ["kb:a"]  # knowledge renders 8 against its cap of 4
+
+
+# budget-slot-floor-refused (R-17): after every reduction the floors allow, 53 tokens remain against 50.
+
+def test_a_payload_that_fits_only_by_breaking_a_floor_refuses_and_keeps_the_fitting_rows():
+    trace = assemble(Snapshot.from_json(read_json(CASES / "budget-slot-floor-refused" / "snapshot.json"))).trace
+    assert trace["refused"] == {"bool": True, "reason": "slot_floor_over_budget"}
+    assert "recovery" not in trace
+    assert [row["item_id"] for row in trace["excluded"] if row["reason"] == "over_budget"] == ["kb:b", "kb:a"]
+
+
+def test_protected_content_over_budget_is_reported_before_a_floor():
+    snapshot = read_json(CASES / "budget-slot-floor-refused" / "snapshot.json")
+    snapshot["budget"]["input"] = 10  # the instructions and the query alone render 22 tokens
+    assert assemble(Snapshot.from_json(snapshot)).trace["refused"]["reason"] == "protected_content_over_budget"

@@ -225,3 +225,63 @@ def test_slot_caps_run_before_budget_pressure():
     assert omitted(snapshot) == []
     assert compressed(snapshot) == [("kb:b", "kb:b~short")]
     assert "ex:1" in included(snapshot)
+
+
+# budget-slot-floor (R-16, route min_tokens): 77 tokens against 65. governance.examples holds ex:1 (7) at a
+# floor of 5; history (turn:15 12, turn:16 3, priority -1, oldest first) has a floor of 10.
+
+def test_a_floor_withholds_a_reduction_and_freezes_its_slot():
+    snapshot = case("budget-slot-floor")
+    assert omitted(snapshot) == ["kb:b"]
+    assert compressed(snapshot) == [("kb:a", "kb:a~short")]
+    assert {"ex:1", "turn:15", "turn:16"} <= set(included(snapshot))
+
+
+def test_a_frozen_slot_keeps_a_reduction_that_alone_would_have_kept_its_floor():
+    """Skipping turn:15 and omitting turn:16 (15 → 12, above 10) would be the skip-and-continue reading."""
+    snapshot = case("budget-slot-floor")
+    snapshot["budget"]["input"] = 59  # kb:b alone no longer suffices
+    assert "turn:16" not in omitted(snapshot)
+
+
+def test_a_compression_that_would_break_a_floor_is_withheld_and_freezes_the_slot():
+    snapshot = case("budget-slot-floor")
+    candidate(snapshot, "turn:15")["variants"] = [{"id": "turn:15~sum", "body": "Seats wrong.", "method": "summary", "lineage": "extracted"}]
+    # history's compress step runs first (priority -1): 15 → 5 tokens would break its floor of 10.
+    assert ("turn:15", "turn:15~sum") not in compressed(snapshot)
+    assert omitted(snapshot) == ["kb:b"]
+
+
+def test_a_floored_slot_may_keep_droppable_items_while_others_compress():
+    trace = assemble(Snapshot.from_json(case("budget-slot-floor"))).trace
+    assert "ex:1" in {row["item_id"] for row in trace["included"]} and trace["compressed"]
+
+
+def test_without_floors_the_same_route_sheds_the_example_first():
+    snapshot = case("budget-slot-floor")
+    for rules in snapshot["route_policy"]["slots"].values():
+        rules.pop("min_tokens", None)
+    assert omitted(snapshot)[0] == "ex:1"
+
+
+def test_a_reduction_that_keeps_the_slot_at_its_floor_is_made():
+    snapshot = case("budget-slot-floor")
+    del snapshot["route_policy"]["slots"]["governance.examples"]
+    snapshot["route_policy"]["slots"]["interaction.history"]["min_tokens"] = 3  # 15 - 12 = 3: exactly the floor
+    snapshot["budget"]["input"] = 50
+    assert omitted(snapshot) == ["ex:1", "turn:15"]
+
+
+def test_a_floor_counts_every_occurrence_of_a_slot_placed_twice():
+    snapshot = case("budget-slot-floor")
+    snapshot["profile"]["placement"].append({"slot": "interaction.history", "wrap": "xml:interaction.history"})
+    snapshot["route_policy"]["slots"]["interaction.history"]["min_tokens"] = 5
+    snapshot["budget"]["input"] = 70
+    # 98 tokens; after kb:a~short, omitting turn:15 leaves history 2 x 3 = 6, not below 5, and the payload 63.
+    assert omitted(snapshot) == ["turn:15"]
+
+
+def test_floors_do_not_guard_slot_caps():
+    snapshot = case("budget-slot-floor-under-cap")
+    assert omitted(snapshot) == ["turn:15", "ex:1", "kb:b"]
+    assert "turn:16" in included(snapshot)
