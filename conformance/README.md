@@ -9,11 +9,13 @@ Language-neutral test cases for assemblers. Each directory under `cases/` holds:
 | `expected.trace.json` | The trace a conformant assembler emits, valid against `schema/trace.schema.json` |
 | `expected.payload.txt` | The exact rendered payload bytes; absent when the case expects a refusal |
 
+Each directory under `rejections/` holds a `case.json` and a `snapshot.json` that breaks exactly one of the Snapshot checks or its schemas. A conformant assembler rejects it before assembly, so there is no expected trace or payload (R-17).
+
 Some cases have a generator in `generators/`. It holds a table of each candidate's intended outcome, and it derives the expected trace and payload from that table rather than from any assembler's logic. Regenerate a case with `python3 conformance/generators/<case>.py`, and review the diff.
 
 ## Running a case
 
-1. Validate `snapshot.json` against the snapshot schema and load it. Resolve `tokenizer` and `renderer` by ID; an implementation that does not provide one skips the case and reports it as skipped, not passed. A snapshot that fails the schema is rejected before assembly and has no trace; the refusal codes describe assemblies of valid snapshots. Conflict groups are part of that check: group ids must be unique, every item id a group names must be the id of a candidate or a producer exclusion in the snapshot, no item may belong to two groups, and a fact group's `fact` must be a key of the route's `facts`. A producer exclusion's `duplicate_of` must be the id of a candidate in the same batch (R-13). The profile is part of it too (R-19, R-20): its `spec` must be `cwa/draft`, which the profile schema fixes and the trace repeats as `context.spec` (R-21); its `route` and `route_policy_version` must equal the route policy's `route` and `version`, it must place `governance.instructions` and `interaction.query`, and it must place `governance.output_contract` when the route sets `parser: true`.
+1. Validate `snapshot.json` and load it. A snapshot that fails its schemas or any check in Snapshot checks is rejected before assembly and has no trace (R-17). Resolve `tokenizer` and `renderer` by ID; an implementation that does not provide one skips the case and reports it as skipped, not passed.
 2. Assemble.
 3. Compare the payload byte for byte with `expected.payload.txt`, or confirm no payload when that file is absent.
 4. Compare the trace with `expected.trace.json` after removing `trace_id` and `timings`, which may differ (R-23). `context.snapshot_digest` is compared like every other field; Snapshot digest defines it.
@@ -155,6 +157,18 @@ A slot's *size* is the sum of `included[].tokens` over the slot's rows: the toke
 
 Fitting decides per item. A slot the profile places twice sheds or compresses both occurrences together. When those placements render a body differently, as `system` and an `xml:` wrap do in `cwa-messages/v1`, the size of the item's body or of a variant, wherever this section compares one with a cap or with another, is the largest of its occurrences' renderings: a cap bounds the body however it is rendered. Each omitted item adds one `excluded[]` row with reason `over_budget`, stage `assembler` and its slot. Each included occurrence of a compressed item adds one `compressed[]` row: `from` counts the original body and `to` and `included[].tokens` the variant, each as that occurrence renders it, and `method` and `variant_id` name the variant (R-18).
 
+## Snapshot checks
+
+A snapshot is *valid* when it satisfies `snapshot.schema.json`, and the schemas it references, and passes every check below. An invalid snapshot is rejected before assembly, with no payload and no trace, because its profile, budget or context may be missing or contradictory (R-17). Rejection reports the application's error in building the snapshot. An implementation lists the problems in its own words, since no reason code names them; the codes in `contract/reasons.json` describe assemblies of valid snapshots, refusals included.
+
+- **Well-formed Unicode.** No string holds an unpaired surrogate (Snapshot digest).
+- **One batch per producer.** No producer id heads more than one batch. A batch is one authenticated producer's output for the call (R-15), and rows, ranks, supersession and source diversity all key on that producer.
+- **Conflict groups (R-11).** Group ids are unique, every item id a group names is the id of a candidate or a producer exclusion in the snapshot, no item belongs to two groups, and a fact group's `fact` is a key of the route's `facts`.
+- **Producer exclusions (R-13).** An exclusion's `duplicate_of` is the id of a candidate in the same batch.
+- **Profile (R-19, R-20).** Its `spec` is `cwa/draft`, which the profile schema fixes and the trace repeats as `context.spec` (R-21). Its `route` and `route_policy_version` equal the route policy's `route` and `version`. It places `governance.instructions` and `interaction.query`, and `governance.output_contract` when the route sets `parser: true`. The snapshot's renderer can realize it (Tokenizers and renderers).
+
+A tokenizer or renderer the implementation does not provide is not a problem with the snapshot: the case is skipped (Reporting results).
+
 ## Tokenizers and renderers
 
 - `fixture-whitespace/v1` counts maximal runs of characters outside the ECMAScript whitespace and line-terminator set: U+0009–U+000D, U+0020, U+00A0, U+1680, U+2000–U+200A, U+2028, U+2029, U+202F, U+205F, U+3000 and U+FEFF. This is what JavaScript's `/\S+/gu` matches. Other languages must use this set explicitly; Python's `\S`, for example, differs at U+001C–U+001F and U+FEFF. It is a test fixture, not a model tokenizer.
@@ -188,6 +202,12 @@ An implementation reports a run as `conformance-report.json`, valid against `sch
 - `failed`: anything else, including an exception or a trace the schema rejects. `detail` says what differed;
 - `skipped`: the implementation does not provide the case's tokenizer or renderer. `detail` names it.
 
-Only `passed` counts. A trace that validates against `schema/trace.schema.json` but differs from the expected one has failed: schema validation alone is not conformance (R-21). The Assembler page imports the reference assembler's report beside its `status.json`.
+It also holds one entry per directory under `rejections/`, ordered by id, in `rejections`, with the case's `rules` and one outcome:
+
+- `rejected`: the implementation rejected the snapshot before assembly, with no payload and no trace;
+- `accepted`: it assembled or refused instead. `detail` says what it did;
+- `skipped`: it does not provide the case's tokenizer or renderer. `detail` names it.
+
+Only `passed` and `rejected` count. A report without `rejections` has not run them. A trace that validates against `schema/trace.schema.json` but differs from the expected one has failed: schema validation alone is not conformance (R-21). The Assembler page imports the reference assembler's report beside its `status.json`.
 
 Implementations vendor these cases pinned by hash, so a case changes only through a reviewed edit here.

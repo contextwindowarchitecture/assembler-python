@@ -116,7 +116,7 @@
     "section": "fit",
     "keyword": "MUST",
     "summary": "Refused assembly has no rendered payload",
-    "text": "When required protected content cannot fit, the assembler MUST refuse rendering rather than silently truncate. When the payload cannot fit without a reduction a slot's min_tokens withholds, the assembler MUST refuse with slot_floor_over_budget. A refused result MUST have no payload; its trace MUST set refused.bool: true, a non-empty reason, result: null, and included: []. Candidate decisions and exclusions MAY remain in the trace. A successful trace MUST set refused.bool: false and refused.reason: null."
+    "text": "When required protected content cannot fit, the assembler MUST refuse rendering rather than silently truncate. When the payload cannot fit without a reduction a slot's min_tokens withholds, the assembler MUST refuse with slot_floor_over_budget. A refused result MUST have no payload; its trace MUST set refused.bool: true, a non-empty reason, result: null, and included: []. Candidate decisions and exclusions MAY remain in the trace. A successful trace MUST set refused.bool: false and refused.reason: null. A snapshot that fails its published schemas or the snapshot checks MUST be rejected before assembly, with no payload and no trace, because its profile, budget or context may be missing or contradictory. Rejection reports the application's error in building the snapshot; refusals are outcomes of valid snapshots."
   },
   {
     "id": "R-18",

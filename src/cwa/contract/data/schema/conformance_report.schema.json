@@ -109,6 +109,66 @@
           ]
         }
       }
+    },
+    "rejections": {
+      "type": "array",
+      "description": "One entry per directory under rejections/, ordered by id. A report without this list has not run the rejection cases, and none of them counts (R-17).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
+          },
+          "rules": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^R-([1-9]|1[0-9]|2[0-6])(?![\\s\\S])"
+            }
+          },
+          "outcome": {
+            "enum": [
+              "rejected",
+              "accepted",
+              "skipped"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rules",
+          "outcome"
+        ],
+        "additionalProperties": false,
+        "if": {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "accepted",
+                "skipped"
+              ]
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "detail": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "detail"
+          ]
+        }
+      }
     }
   },
   "required": [
