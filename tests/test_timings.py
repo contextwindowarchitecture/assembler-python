@@ -20,19 +20,21 @@ def test_without_a_clock_the_trace_has_no_timings(fixture_snapshot):
 
 
 def test_a_lent_clock_times_each_stage_in_milliseconds(fixture_snapshot):
-    trace = assemble(Snapshot.from_json(fixture_snapshot), clock=ticking(10.0, 10.001, 10.003, 10.006, 10.010, 10.015)).trace
-    assert trace["timings"] == pytest.approx({"admission_ms": 1.0, "conflicts_ms": 2.0, "dedupe_ms": 3.0, "fitting_ms": 4.0, "render_ms": 5.0})
+    trace = assemble(Snapshot.from_json(fixture_snapshot), clock=ticking(10.0, 10.001, 10.003, 10.006, 10.010, 10.015, 10.021)).trace
+    assert trace["timings"] == pytest.approx(
+        {"admission_ms": 1.0, "conflicts_ms": 2.0, "supersede_ms": 3.0, "dedupe_ms": 4.0, "fitting_ms": 5.0, "render_ms": 6.0})
 
 
 def test_a_refusal_times_only_the_stages_that_ran(fixture_snapshot):
     fixture_snapshot["batches"][3]["items"].clear()  # no query: required_slot_missing
-    result = assemble(Snapshot.from_json(fixture_snapshot), clock=ticking(0.0, 0.5, 1.0, 1.5, 2.0))
+    result = assemble(Snapshot.from_json(fixture_snapshot), clock=ticking(0.0, 0.5, 1.0, 1.5, 2.0, 2.5))
     assert result.refused
-    assert result.trace["timings"] == pytest.approx({"admission_ms": 500.0, "conflicts_ms": 500.0, "dedupe_ms": 500.0, "fitting_ms": 500.0})
+    assert result.trace["timings"] == pytest.approx(
+        {"admission_ms": 500.0, "conflicts_ms": 500.0, "supersede_ms": 500.0, "dedupe_ms": 500.0, "fitting_ms": 500.0})
 
 
 def test_a_clock_that_runs_backwards_records_zero(fixture_snapshot):
-    trace = assemble(Snapshot.from_json(fixture_snapshot), clock=ticking(5.0, 4.0, 4.0, 4.0, 4.0, 4.0)).trace
+    trace = assemble(Snapshot.from_json(fixture_snapshot), clock=ticking(5.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)).trace
     assert trace["timings"]["admission_ms"] == 0
 
 

@@ -332,8 +332,7 @@
         "R-21",
         "R-25"
       ],
-      "outcome": "failed",
-      "detail": "a payload, but a refusal was expected"
+      "outcome": "passed"
     },
     {
       "id": "supersede-exemptions",
@@ -345,8 +344,7 @@
         "R-24",
         "R-25"
       ],
-      "outcome": "failed",
-      "detail": "trace differs at /excluded/1/duplicate_of"
+      "outcome": "passed"
     },
     {
       "id": "supersede-observations",
@@ -357,8 +355,7 @@
         "R-22",
         "R-25"
       ],
-      "outcome": "failed",
-      "detail": "payload bytes differ"
+      "outcome": "passed"
     }
   ]
 }

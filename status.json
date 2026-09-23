@@ -14,7 +14,7 @@
     },
     {
       "id": "R-2",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason",
         "tests/test_admission.py::test_items_without_a_usable_id_are_recorded_by_producer_and_position",
@@ -64,7 +64,7 @@
     },
     {
       "id": "R-6",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_conflicts.py::test_governing_instructions_prevail_over_the_user_without_excluding_the_request",
         "tests/test_conflicts.py::test_members_that_cannot_instruct_stay_as_material",
@@ -124,7 +124,7 @@
     },
     {
       "id": "R-11",
-      "status": "in progress",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_snapshot.py::test_conflict_groups_must_agree_with_the_snapshot",
         "tests/test_conflicts.py::test_a_group_with_fewer_than_two_admitted_members_is_moot",
@@ -142,7 +142,7 @@
     },
     {
       "id": "R-12",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_refusal.py::test_no_admitted_evidence_asks_for_context",
         "tests/test_refusal.py::test_routes_that_do_not_require_evidence_answer_without_it",
@@ -176,7 +176,7 @@
     },
     {
       "id": "R-15",
-      "status": "in progress",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_admission.py::test_the_capability_policy_admits_allowed_tools",
         "tests/test_admission.py::test_tools_off_the_allow_list_are_refused",
@@ -190,7 +190,7 @@
     },
     {
       "id": "R-16",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_admission.py::test_items_cannot_downgrade_a_protected_slot",
         "tests/test_admission.py::test_items_cannot_protect_themselves",
@@ -231,7 +231,7 @@
     },
     {
       "id": "R-17",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_refusal.py::test_an_excluded_instruction_does_not_count_and_its_exclusion_stays_in_the_trace",
         "tests/test_conformance.py::test_conformance_case",
@@ -293,7 +293,7 @@
     },
     {
       "id": "R-21",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason",
@@ -318,7 +318,7 @@
     },
     {
       "id": "R-22",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_golden.py::test_defaults_filled_are_traced_as_records",
         "tests/test_conformance.py::test_conformance_case",
@@ -352,7 +352,7 @@
     },
     {
       "id": "R-24",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_dedupe.py::test_equal_keys_in_a_deduplicated_slot_keep_the_highest_ranked_copy",
         "tests/test_dedupe.py::test_duplicate_rows_carry_the_slot_and_the_kept_item",
@@ -373,8 +373,24 @@
     },
     {
       "id": "R-25",
-      "status": "in progress",
-      "evidence": []
+      "status": "implemented",
+      "evidence": [
+        "tests/test_supersede.py::test_only_the_latest_observation_of_a_call_stays",
+        "tests/test_supersede.py::test_superseded_rows_carry_the_slot_and_the_latest_item",
+        "tests/test_supersede.py::test_items_tied_for_the_latest_instant_all_stay",
+        "tests/test_supersede.py::test_instants_compare_at_full_precision",
+        "tests/test_supersede.py::test_the_same_source_from_another_producer_is_another_call",
+        "tests/test_supersede.py::test_a_slot_without_supersede_keeps_every_observation",
+        "tests/test_supersede.py::test_bodies_and_source_versions_do_not_decide",
+        "tests/test_supersede.py::test_a_conflict_group_member_and_a_protected_item_stay_although_stale",
+        "tests/test_supersede.py::test_without_the_upgrade_a_stale_state_item_is_superseded",
+        "tests/test_supersede.py::test_supersession_runs_before_deduplication",
+        "tests/test_supersede.py::test_a_conflict_loser_never_supersedes",
+        "tests/test_supersede.py::test_a_route_that_needs_evidence_refuses_when_supersession_leaves_too_little",
+        "tests/test_supersede.py::test_superseded_by_names_the_highest_ranked_latest_item_however_its_instant_is_written",
+        "tests/test_properties.py::test_a_superseding_slot_keeps_only_the_latest_of_each_call",
+        "tests/test_conformance.py::test_conformance_case"
+      ]
     }
   ]
 }

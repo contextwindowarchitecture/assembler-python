@@ -2,8 +2,8 @@
 examples: input order never matters (R-23), protected bytes never change (R-16, R-17), droppable
 items go before any compressible item is reduced under budget pressure (R-16), the payload fits its
 budget and counts its items (R-16, R-21), every capped slot fits its max_tokens (R-16), a
-deduplicated slot includes each key once (R-24), refusals have no payload (R-17), and a stored
-snapshot replays (R-23)."""
+deduplicated slot includes each key once (R-24), a superseding slot keeps only the latest of each
+call (R-25), refusals have no payload (R-17), and a stored snapshot replays (R-23)."""
 from __future__ import annotations
 
 import copy
@@ -12,6 +12,7 @@ import hashlib
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 
 from cwa import Snapshot, assemble
+from cwa import instants
 from cwa.dedupe import key
 from cwa.render.fixture_xml import escape_body
 from cwa.tokenize.fixture_whitespace import FixtureWhitespace
@@ -40,7 +41,7 @@ suffixes = st.sampled_from(["", "a", "ｚ", "\U0001f600", "#p4"])
 @st.composite
 def items(draw, slot: str, index: int) -> dict:
     item_id = f"{slot.split('.')[1]}:{index}{draw(suffixes)}"
-    item = {"id": item_id, "slot": slot, "source": "src:" + item_id, "source_version": "1", "authority": AUTHORITY[slot],
+    item = {"id": item_id, "slot": slot, "source": draw(st.sampled_from(["src:" + item_id, "crm:order/42", "crm:order/43"])), "source_version": "1", "authority": AUTHORITY[slot],
             "trust": "verified" if slot.startswith("governance.") else "unverified", "freshness": draw(st.sampled_from(FRESHNESS)),
             "body": draw(bodies)}
     if slot == "evidence.knowledge":
@@ -70,6 +71,8 @@ def snapshots(draw) -> dict:
     for slot in PROTECTED + DROPPABLE + COMPRESSIBLE:
         if draw(st.booleans()):
             policy.setdefault("slots", {}).setdefault(slot, {})["dedupe"] = "exact"
+        if draw(st.booleans()):
+            policy.setdefault("slots", {}).setdefault(slot, {})["supersede"] = "source"
     steps = [{"slot": slot, "action": action} for slot in COMPRESSIBLE for action in ("compress", "omit")]
     policy["fitting_order"] = draw(st.lists(st.sampled_from(steps), unique_by=lambda s: (s["slot"], s["action"]), max_size=3))
     snapshot["renderer"] = draw(st.sampled_from(["fixture-xml/v1", "cwa-messages/v1"]))
@@ -105,7 +108,7 @@ PROPERTY = settings(max_examples=150, deadline=None, suppress_health_check=[Heal
 def test_generated_snapshots_admit_every_candidate(document):
     """The generator's own check: every property below starts from items admission accepts."""
     trace = assemble(Snapshot.from_json(document)).trace
-    assert {row["reason"] for row in trace["excluded"]} <= {"over_budget", "duplicate_content"}
+    assert {row["reason"] for row in trace["excluded"]} <= {"over_budget", "superseded", "duplicate_content"}
 
 
 @PROPERTY
@@ -140,7 +143,8 @@ def test_droppable_items_go_before_any_compressible_item_is_reduced(document):
     compressible = {c["id"] for c in _candidates(document, COMPRESSIBLE)}
     reduced = compressible & (_rows(trace, "over_budget") | {row["item_id"] for row in trace["compressed"]})
     if reduced:  # a droppable item may already be gone as a duplicate (R-24)
-        assert {c["id"] for c in _candidates(document, DROPPABLE)} <= _rows(trace, "over_budget") | _rows(trace, "duplicate_content")
+        gone = _rows(trace, "over_budget") | _rows(trace, "superseded") | _rows(trace, "duplicate_content")
+        assert {c["id"] for c in _candidates(document, DROPPABLE)} <= gone
 
 
 @PROPERTY
@@ -166,6 +170,7 @@ def test_a_deduplicated_slot_includes_each_key_once_and_names_a_kept_copy(docume
     """The generator declares no conflict groups, so only protected items are exempt."""
     trace = assemble(Snapshot.from_json(document)).trace
     bodies = {c["id"]: c["body"] for c in _candidates(document, PROTECTED + DROPPABLE + COMPRESSIBLE)}
+    superseded = _rows(trace, "superseded")
     duplicates = {row["item_id"] for row in trace["excluded"] if row["reason"] == "duplicate_content"}
     for row in trace["excluded"]:
         if row["reason"] == "duplicate_content":  # the kept copy may still be omitted later, for budget
@@ -175,6 +180,26 @@ def test_a_deduplicated_slot_includes_each_key_once_and_names_a_kept_copy(docume
         if rules.get("dedupe") == "exact" and slot not in PROTECTED:
             keys = [key(bodies[row["item_id"]]) for row in trace["included"] if row["slot"] == slot]
             assert len(keys) == len(set(keys))
+            assert not superseded & {row["duplicate_of"] for row in trace["excluded"] if row["reason"] == "duplicate_content"}
+
+
+@PROPERTY
+@given(snapshots())
+def test_a_superseding_slot_keeps_only_the_latest_of_each_call(document):
+    """Each producer emits its own slots here, so a call is a slot and a source. Only protected items are exempt."""
+    trace = assemble(Snapshot.from_json(document)).trace
+    expected = {}
+    for slot, rules in document["route_policy"].get("slots", {}).items():
+        if rules.get("supersede") != "source" or slot in PROTECTED:
+            continue
+        for item in (c for c in _candidates(document, (slot,))):
+            call = [c for c in _candidates(document, (slot,)) if c["source"] == item["source"]]
+            if any(instants.compare(item["freshness"], c["freshness"]) < 0 for c in call):
+                expected[item["id"]] = item["source"]
+    rows = {row["item_id"]: row["superseded_by"] for row in trace["excluded"] if row["reason"] == "superseded"}
+    assert rows.keys() == expected.keys()
+    sources = {c["id"]: c["source"] for b in document["batches"] for c in b["items"]}
+    assert all(sources[kept] == expected[item_id] and kept not in rows for item_id, kept in rows.items())
 
 
 @PROPERTY
