@@ -59,7 +59,8 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResu
         "excluded": [
             {"item_id": row.item_id, "reason": row.reason, "stage": row.stage}
             for batch in snapshot.batches for row in batch.excluded
-        ] + [{"item_id": e.item_id, "reason": e.reason, "stage": "assembler"} for e in admission.excluded],
+        ] + [{"item_id": e.item_id, "reason": e.reason, "stage": "assembler", **({"slot": e.slot} if e.slot else {})}
+               for e in admission.excluded],
         "conflicts": [],
         "refused": {"bool": False, "reason": None},
         "context": {

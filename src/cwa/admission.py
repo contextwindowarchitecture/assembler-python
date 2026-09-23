@@ -29,6 +29,8 @@ class Exclusion:
     producer: str
     item_id: str
     reason: str
+    slot: str | None
+    """The candidate's slot when it names one of the eleven, whatever else is wrong with it (R-22)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -219,17 +221,19 @@ def admit(snapshot: Snapshot) -> Admission:
             item_id = usable_id(candidate)
             if item_id is None:
                 item_id, unnamed = f"{batch.producer.id}#invalid-{unnamed}", unnamed + 1
+            slot = candidate.get("slot")
+            slot = slot if isinstance(slot, str) and slot in SLOT_DEFAULTS else None
             if not authenticated:
-                excluded.append(Exclusion(batch.producer.id, item_id, "producer_not_authenticated"))
+                excluded.append(Exclusion(batch.producer.id, item_id, "producer_not_authenticated", slot))
                 continue
             if reason := _structure(candidate):
-                excluded.append(Exclusion(batch.producer.id, item_id, reason))
+                excluded.append(Exclusion(batch.producer.id, item_id, reason, slot))
                 continue
             overrides = snapshot.route_policy.document.get("default_overrides", {}).get(candidate["slot"])
             item = Item.from_json(candidate, overrides)
             filled += [(item.id, field) for field in item.defaults_filled]
             if reason := _item_reason(item, _Context(snapshot, batch.producer, granted, id_uses)):
-                excluded.append(Exclusion(batch.producer.id, item_id, reason))
+                excluded.append(Exclusion(batch.producer.id, item_id, reason, slot))
                 continue
             items.append(item)
     return Admission(

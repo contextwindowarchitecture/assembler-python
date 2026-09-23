@@ -171,7 +171,8 @@
       "status": "in progress",
       "evidence": [
         "tests/test_golden.py::test_defaults_filled_are_traced_as_records",
-        "tests/test_conformance.py::test_conformance_case"
+        "tests/test_conformance.py::test_conformance_case",
+        "tests/test_admission.py::test_assembler_exclusion_rows_carry_the_slot_the_candidate_names"
       ]
     },
     {

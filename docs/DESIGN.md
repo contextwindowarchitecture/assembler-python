@@ -432,6 +432,7 @@ The spec names three actions but not when to choose each one:
 
 - Validate every emitted trace against `trace.schema.json` in tests, and optionally at runtime.
 - Order traces canonically: `excluded[]` puts producer rows first (by producer id, then item id) and assembler rows after, in pipeline order. `conflicts[]` sort by group id. The trace is not hashed, but golden tests need stable ordering.
+- Assembler rows in `excluded[]` carry `slot` whenever the candidate names one of the eleven slots, even when it fails for another reason (R-22). Producer rows report no slot.
 - `trace_id` defaults to `uuid4`. Timings are measured, and excluded from all comparisons (R-23).
 
 ---
@@ -529,12 +530,12 @@ flowchart LR
   M4 --> M5["M5 · Hardening<br/>R-21 R-22 R-23<br/>conformance-report → website"]
 ```
 
-**M2 kickoff (next): budget fitting and refusal.** Start test-first from the spec side:
+**M2 status (in progress, 2026-09-22): budget fitting and refusal.** Spec-first, as planned:
 
-1. **Route-policy schema (website):** add `parser` (R-4), `requires_evidence` and `slots.<slot>.min_included` (R-12), per-slot `priority`/`order_by` and a compressible fitting order (R-16, Appendix A option B, defaulting to variants before omission).
-2. **Reasons registry (website):** decide whether an invalid snapshot becomes a refusal code (`invalid_snapshot`) or stays a pre-assembly `SnapshotError` (§8 M0 note).
-3. **Conformance cases (website):** budget pressure (drop droppable, then variants, then omit; protected never touched), `protected_content_over_budget`, `required_slot_missing`, and `evidence_required` with each `recovery.action` from §4.5. Each case gets a generator with an intent table, like `admission-reasons`.
-4. **Assembler:** replace the M2 `NotImplementedError` in `assemble.py`. Add `excluded[].slot` and refusal traces (`result: null`, `included: []`), which moves R-4, R-12, R-16, R-17 and parts of R-21/R-22. Diagram the shedding sequence and the refusal paths in §4.4.
+1. **Route-policy schema (website `c0f5890`): done.** `parser` (R-4); `requires_evidence`, and `slots.<evidence slot>.min_included`, which the schema accepts only when the route requires evidence (R-12); per-slot `priority` and `order_by`; and a route-level `fitting_order` of `compress`/`omit` steps (R-16). With no steps, variants come before omission.
+2. **Invalid snapshots (website `c0f5890`): decided.** They stay a pre-assembly `SnapshotError` with no trace; no `invalid_snapshot` code. Refusal precedence is `contract/reasons.json` order (R-21), and `conflict_unresolved` moved ahead of the budget refusals to match the pipeline.
+3. **Conformance cases (website `9e40504`): done.** Nine cases from `conformance/generators/fitting.py`: four budget cases, `required-slot-missing`, `protected-over-budget`, and one `evidence_required` case per recovery action. `conformance/README.md` now fixes the fitting procedure and the recovery mapping (§4.4, §4.5 as specified).
+4. **Assembler: in progress.** Done so far: `excluded[].slot` on assembler rows (website `574fc6d`). Next: refusal traces, fitting and the evidence check, test-first.
 
 **Follow-up for M5:** trace and placement ordering compare ids by code point; JavaScript's default sort uses UTF-16 code units. They differ only for ids with characters outside the Basic Multilingual Plane. Pick one in the spec (JCS already uses UTF-16) and apply it everywhere ids are sorted.
 

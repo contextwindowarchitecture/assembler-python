@@ -61,6 +61,20 @@ def test_excluded_items_never_reach_the_payload(fixture_snapshot):
     assert assemble(Snapshot.from_json(fixture_snapshot)).payload == before
 
 
+# R-22: an assembler exclusion row names the candidate's slot whenever the candidate names a real one.
+
+def test_assembler_exclusion_rows_carry_the_slot_the_candidate_names(fixture_snapshot):
+    add(fixture_snapshot, "policy-corpus", knowledge(id="kb:no-body", body=None), knowledge(id="kb:web", slot="evidence.web"),
+        knowledge(id="kb:odd", slot=["evidence.knowledge"]))
+    add_batch(fixture_snapshot, "rogue", "retrieval", knowledge(id="rogue:1"))
+    rows = assemble(Snapshot.from_json(fixture_snapshot)).trace["excluded"]
+    assert [(row["item_id"], row.get("slot")) for row in rows] == [
+        ("memory:expired", None),
+        ("kb:no-body", "evidence.knowledge"), ("kb:odd", None), ("kb:web", None),
+        ("rogue:1", "evidence.knowledge"),
+    ]
+
+
 def add_batch(snapshot: dict, producer: str, kind: str, *items: dict) -> dict:
     snapshot["batches"].append({"producer": {"id": producer, "kind": kind}, "items": copy.deepcopy(list(items)), "excluded": []})
     return snapshot
