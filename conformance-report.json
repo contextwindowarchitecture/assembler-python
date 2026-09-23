@@ -197,8 +197,7 @@
         "R-24",
         "R-26"
       ],
-      "outcome": "failed",
-      "detail": "payload bytes differ"
+      "outcome": "passed"
     },
     {
       "id": "diversity-evidence-required",
@@ -208,8 +207,7 @@
         "R-21",
         "R-26"
       ],
-      "outcome": "failed",
-      "detail": "a payload, but a refusal was expected"
+      "outcome": "passed"
     },
     {
       "id": "diversity-exemptions",
@@ -222,8 +220,7 @@
         "R-25",
         "R-26"
       ],
-      "outcome": "failed",
-      "detail": "payload bytes differ"
+      "outcome": "passed"
     },
     {
       "id": "evidence-precompute-summary",

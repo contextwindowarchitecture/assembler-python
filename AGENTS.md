@@ -38,7 +38,7 @@ Rules:
 - **Never push.** The remote is `origin` (https://github.com/contextwindowarchitecture/assembler), but agents don't push, open pull requests, or fetch-and-rebase. The maintainer publishes commits.
 - **Use [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/):** `type(scope): summary` in the imperative mood, lower case, no trailing period, at most 72 characters.
   - Types: `feat`, `fix`, `test`, `refactor`, `perf`, `docs`, `build`, `chore`, `ci`.
-  - Scopes: `admission`, `defaults`, `conflicts`, `supersede`, `dedupe`, `fitting`, `render`, `tokenize`, `snapshot`, `trace`, `canonical`, `contract`, `conformance`, `design`.
+  - Scopes: `admission`, `defaults`, `conflicts`, `supersede`, `dedupe`, `diversity`, `fitting`, `render`, `tokenize`, `snapshot`, `trace`, `canonical`, `contract`, `conformance`, `design`.
   - The body says *why*, and lists the requirement IDs affected.
   - Breaking changes use `!` after the scope and a `BREAKING CHANGE:` footer.
   - A `test:` commit is only for tests that add coverage to existing, already-passing behavior.

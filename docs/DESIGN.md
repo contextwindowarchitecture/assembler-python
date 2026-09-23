@@ -131,7 +131,7 @@ The snapshot stores the *outcome* of authentication (producer id, kind, verified
 
 ### 2.3 Package layout
 
-This is the planned layout. As built through M4, `src/cwa/` holds `assemble.py` (pipeline, refusals and the R-12 recovery mapping), `admission.py`, `conflicts.py`, `fitting.py`, `snapshot.py`, `model.py`, `canonical.py` (RFC 8785), `instants.py`, `trace.py`, `render/` (`fixture_xml.py`, `messages.py` from M4), `tokenize/` (`fixture_whitespace.py`) and `registry.py` (M4), `supersede.py` (M8), `dedupe.py` (M7) and `contract/` (vendored data, pinned by `contract.lock.json`). M5 added `strings.py` (the portable string rules) and `conformance.py`, the runner behind `python -m cwa.conformance`. There is no `evidence.py`, `policy.py` or `reasons.py`: the reason registry and route policy are read from the vendored JSON.
+This is the planned layout. As built through M4, `src/cwa/` holds `assemble.py` (pipeline, refusals and the R-12 recovery mapping), `admission.py`, `conflicts.py`, `fitting.py`, `snapshot.py`, `model.py`, `canonical.py` (RFC 8785), `instants.py`, `trace.py`, `render/` (`fixture_xml.py`, `messages.py` from M4), `tokenize/` (`fixture_whitespace.py`) and `registry.py` (M4), `supersede.py` (M8), `dedupe.py` (M7), `diversity.py` (M9) and `contract/` (vendored data, pinned by `contract.lock.json`). M5 added `strings.py` (the portable string rules) and `conformance.py`, the runner behind `python -m cwa.conformance`. There is no `evidence.py`, `policy.py` or `reasons.py`: the reason registry and route policy are read from the vendored JSON.
 
 ```
 cwa/
@@ -143,6 +143,7 @@ cwa/
   fitting.py           tiered shedding, variant selection
   supersede.py         route-requested supersession of stale observations (R-25, M8)
   dedupe.py            route-requested exact deduplication (R-24, M7)
+  diversity.py         route-requested source diversity cap (R-26, M9)
   evidence.py          R-12 check + recovery mapping
   render/              Renderer protocol · fixture_xml.py · text.py · messages.py
   tokenize/            Tokenizer protocol · fixture_whitespace.py · estimate.py · tiktoken.py (extra)
@@ -282,7 +283,7 @@ R-3 says the route owns the *executable* eligibility predicate. Keep it declarat
 
 ## 4. Pipeline deep dive
 
-This is the pipeline as first designed. What is built differs: see "Refusals as built" below and §4.1–§4.5. Step 0 became a `SnapshotError` with no trace, step 2 became route-requested supersession (M8) and exact deduplication (M7), which run after step 3 (§4.2), step 3 runs before step 4, and step 5 became admission's `slot_unplaced` check plus the `protected_slot_unplaced` refusal (M4).
+This is the pipeline as first designed. What is built differs: see "Refusals as built" below and §4.1–§4.5. Step 0 became a `SnapshotError` with no trace, step 2 became route-requested supersession (M8), exact deduplication (M7) and the source diversity cap (M9), which run after step 3 (§4.2), step 3 runs before step 4, and step 5 became admission's `slot_unplaced` check plus the `protected_slot_unplaced` refusal (M4).
 
 ```mermaid
 flowchart TD
@@ -291,7 +292,7 @@ flowchart TD
   V -- yes --> AD["1 · Admission<br/>schema → defaults → ordered checks<br/>first failure wins"]
   PX[("producer excluded[]<br/>stage=producer")] --> EXC[("trace.excluded[]")]
   AD -- fail --> EXC
-  AD --> DD["2 · Supersede (M8), dedupe (M7)<br/>built after step 3; diversity cap deferred (§4.2)"]
+  AD --> DD["2 · Supersede (M8), dedupe (M7),<br/>diversity cap (M9): built after step 3 (§4.2)"]
   DD -- dropped --> EXC
   DD --> CF["3 · Resolve declared conflict groups"]
   CF -- loser --> EXC
@@ -367,7 +368,7 @@ Each box is one check, named by the reason it records when it fails. Producer-st
 
 Snapshot normalization sorts batches by producer id and items by id, so the order producers return in cannot change the payload or the digest (DA-15). Candidates that share an id, and producer exclusions that share an item id, sort by their RFC 8785 serialization, so duplicates cannot make the digest order-dependent either. Items without a usable id keep their supplied order after the rest, which keeps their recorded ids stable on replay.
 
-### 4.2 Supersede (as built, M8), dedupe (as built, M7) and diversity
+### 4.2 Supersede (M8), dedupe (M7) and source diversity (M9), as built
 
 **Exact dedupe (M7, D-13).** R-24 specifies it, and `src/cwa/dedupe.py` follows `conformance/README.md`'s Deduplication section. It runs right after conflict resolution and before any refusal check, so every trace records its rows, and only in the slots whose route rules set `dedupe: "exact"`:
 
@@ -396,8 +397,20 @@ flowchart LR
 
 Rows follow the conflict rows and precede the dedupe rows, in item id order. The producer comes from `Admission.producers`, the identity the application authenticated, never from the item. `supersede_ms` times the stage when a clock is lent.
 
-**Source diversity (M9, in progress, D-15).** R-26 specifies it. The original design notes follow; D-13 moved dedupe after conflict resolution and dropped NFC.
+**Source diversity (M9, D-15).** R-26 specifies it, and `src/cwa/diversity.py` follows `conformance/README.md`'s Source diversity section. It runs right after dedupe, so a copy never takes a place, and before any refusal check, only in the slots whose route rules set `max_per_source`:
 
+```mermaid
+flowchart LR
+  I[/"items dedupe kept,<br/>in one capped slot"/] --> G["sources: same authenticated producer<br/>and exact source"]
+  G --> E["exempt items (protected or grouped)<br/>all stay and take places first"]
+  E --> P["places left = max(0, cap − exempt)"]
+  P --> K["the highest-ranked other items<br/>fill them"]
+  K --> X["the rest: source_diversity_cap"]
+```
+
+Rows follow the dedupe rows and precede the fitting rows, in item id order, and name nothing kept. `diversity_ms` times the stage when a clock is lent.
+
+The original design notes follow; D-13 to D-15 changed them: stages run after conflicts, dedupe dropped NFC, and every stage is keyed or exempted as above. 
 
 - **Deduplicate.** v0 uses an exact hash of NFC-normalized, whitespace-collapsed body → `duplicate_content`, keeping the item that sorts first by `order_by`. "Near-identical" needs a similarity metric. It stays deterministic only with fixed seeds (MinHash) or precomputed cluster ids from producers, and there is no schema field for those yet.
 - **Supersede.** `evidence.tool_results` with `supersede_by: source` keeps the newest `freshness` per source → `superseded`. This implements "fresh observations replace stale ones for the same call", which has no call-identity field (DA-19).
@@ -555,6 +568,7 @@ flowchart LR
     P5[each capped slot ≤ max_tokens]
     P6[deduplicated slot: each key once]
     P7[superseding slot: latest of each call]
+    P8[capped slot: ≤ max_per_source each]
   end
   subgraph Purity
     U1[sockets disabled]
@@ -569,7 +583,7 @@ flowchart LR
   R --> W["website: assembler.html matrix"]
 ```
 
-**Built so far (M0–M8):** the golden test, all thirty-four conformance cases, a shuffle test over every case (payload, trace and digest), purity guards on sockets, clocks, files, the environment and randomness (files since M5: the vendored schemas are read once, at import), and schema validation of every emitted trace. `tests/test_replay.py` (M5) stores every case's snapshot as JSON and replays it in fresh processes under three `PYTHONHASHSEED`, `TZ` and locale combinations, comparing payload, trace and digest. An import lint (M5) rejects any module in `src/cwa` that imports network, model-SDK, clock, randomness or process modules, or calls `now()`, `getenv()` and the like. `conformance-report.json` (M5) records each case's outcome for the website, and a test fails when it is stale. `tests/test_properties.py` (after M5) runs P1–P7 with hypothesis over generated snapshots, plus two more: a refusal has no payload and a payload carries its hash, and a stored snapshot replays to the same outcome. The generator varies item counts per tier, bodies and ids with escapable and astral characters, variants, budgets, slot priorities, `order_by`, `fitting_order`, both renderers, on about half the routes `max_tokens` on any of five slots, one of them protected, and `dedupe` and `supersede` on any generated slot, with bodies sometimes drawn from a small pool of whitespace variants and near misses so that duplicates occur, and sources from a small pool so that calls repeat. P7 checks supersession against an oracle written from the README's rules. It checks that admission accepts everything it builds. P3 holds only on routes without slot caps (M6): a cap sheds its own slot's items, so another slot may keep its droppable items. A droppable item removed as superseded (M8) or as a duplicate (M7) counts as gone. A targeted mutation broke each property's guarantee in turn, and each was caught by its property alone.
+**Built so far (M0–M9):** the golden test, all thirty-seven conformance cases, a shuffle test over every case (payload, trace and digest), purity guards on sockets, clocks, files, the environment and randomness (files since M5: the vendored schemas are read once, at import), and schema validation of every emitted trace. `tests/test_replay.py` (M5) stores every case's snapshot as JSON and replays it in fresh processes under three `PYTHONHASHSEED`, `TZ` and locale combinations, comparing payload, trace and digest. An import lint (M5) rejects any module in `src/cwa` that imports network, model-SDK, clock, randomness or process modules, or calls `now()`, `getenv()` and the like. `conformance-report.json` (M5) records each case's outcome for the website, and a test fails when it is stale. `tests/test_properties.py` (after M5) runs P1–P8 with hypothesis over generated snapshots, plus two more: a refusal has no payload and a payload carries its hash, and a stored snapshot replays to the same outcome. The generator varies item counts per tier, bodies and ids with escapable and astral characters, variants, budgets, slot priorities, `order_by`, `fitting_order`, both renderers, on about half the routes `max_tokens` on any of five slots, one of them protected, and `dedupe`, `supersede` and `max_per_source` on any generated slot, with bodies sometimes drawn from a small pool of whitespace variants and near misses so that duplicates occur, and sources from a small pool so that calls repeat. P7 and P8 check supersession and the cap against oracles written from the README's rules. It checks that admission accepts everything it builds. P3 holds only on routes without slot caps (M6): a cap sheds its own slot's items, so another slot may keep its droppable items. A droppable item removed as superseded (M8), as a duplicate (M7) or by the cap (M9) counts as gone. A targeted mutation broke each property's guarantee in turn, and each was caught by its property alone.
 
 - **The golden test comes first.** Reproduce `examples/trace.json` and `examples/payload.txt` exactly. The fixture already exists and is hash-checked, so it's a free end-to-end test.
 - **Tests map to requirements.** Each conformance case declares `rules: ["R-16", "R-17"]`. A row flips to *implemented* only when every assembler-scoped clause has a passing case. That is the rule `assembler.html` already states.
@@ -605,12 +619,14 @@ flowchart LR
   M8 --> M9["M9 · Source diversity<br/>route max_per_source<br/>R-26"]
 ```
 
-**M9 status (2026-09-23): in progress. Route-requested source diversity** (R-26). The maintainer took the recommended option on all four questions (D-15): a source is one authenticated producer and one `source`, a hard cap as its own stage after dedupe, exempt items fill places first, and a new requirement. Spec first: website `ab46b9b` adds R-26, `slots.<slot>.max_per_source` and the `source_diversity_cap` reason, tells retrievers to set `source` to the document, and widens the report schema to R-26; `6ba14c0` adds three cases, vendored here as pending. `status.json` holds R-26 and every requirement the cases tag (R-6, R-11, R-12, R-13, R-15, R-16, R-17, R-21, R-22, R-24, R-25) at *in progress* until they pass.
+**M9 status (2026-09-23): done. Route-requested source diversity** (R-26). The maintainer took the recommended option on all four questions (D-15): a source is one authenticated producer and one `source`, a hard cap as its own stage after dedupe, exempt items fill places first, and a new requirement. Spec first: website `ab46b9b` adds R-26, `slots.<slot>.max_per_source` and the `source_diversity_cap` reason, tells retrievers to set `source` to the document, and widens the report schema to R-26; `6ba14c0` adds three cases, vendored here as pending, with R-26 and every requirement they tag (R-6, R-11, R-12, R-13, R-15, R-16, R-17, R-21, R-22, R-24, R-25) held at *in progress* until they passed.
 
 ```mermaid
 flowchart LR
   S["Spec: R-26,<br/>max_per_source,<br/>source_diversity_cap"] --> C["Cases: cap,<br/>exemptions,<br/>evidence refusal"] --> V["Vendor; cases pending,<br/>claims in progress"] --> I["Implement the cap<br/>after dedupe"] --> R["Claims, report,<br/>website import"]
 ```
+
+Result: all thirty-seven vendored cases pass. `status.json` claims R-26 implemented and the eleven held claims are back, so every checkable requirement is claimed: 17 implemented and 8 boundary-checked. `src/cwa/diversity.py` is §4.2. Unit tests pin what the cases leave open: the cap holds with a huge budget, a source at or under the cap is untouched, a slot with other rules but no cap is not capped, and a source with more exempt items than the cap keeps no other item. A new property (P8, §6) checks every capped slot against an oracle. Mutations were each caught: a source keyed by `source` alone, exempt items taking no places, no floor at zero on the places left, no group or protected exemption, the lowest-ranked items kept, and the cap before dedupe. The zero-floor mutation was caught only by the exempt-over-cap test, written for it before the mutation run.
 
 **M8 status (2026-09-23): done. Route-requested supersession of stale observations** (R-25). The maintainer took the recommended option on all four questions (D-14): a call is one authenticated producer and one `source`, opt-in on any slot, ties for the latest instant all stay, and a new requirement. Spec first: website `a752d91` adds R-25, `slots.<slot>.supersede: "source"`, the `superseded` reason and `excluded[].superseded_by`, and widens the report schema to R-25; `13d4ff9` adds three cases, vendored here as pending, with R-25 and every requirement they tag (R-2, R-6, R-11, R-12, R-15, R-16, R-17, R-21, R-22, R-24) held at *in progress* until they passed.
 
@@ -654,7 +670,7 @@ flowchart LR
 - **Timestamps (D-11), done.** `format: date-time` is library-defined: ajv-formats accepts a space for `T`, offsets without a colon and second 60, and Python's `rfc3339-validator` a trailing newline. The maintainer chose a portable profile without leap seconds: every date-time also carries an explicit pattern, and digests bound their length (website `b8fd56a`). `cwa.instants` parses only that profile.
 - **Snapshot digest (D-10), done.** The spec defines the normalization and RFC 8785 serialization this assembler already used (website `52c9c5d`). Every expected trace carries the digest, the website recomputes it in JavaScript, and conformance here compares it. A snapshot string with an unpaired surrogate, which RFC 8785 cannot serialize, is a `SnapshotError`.
 - **Eligibility, done.** `included[]` rows carry the item's `eligibility` after defaults and route overrides are filled (website `ce40ef5`, R-22).
-- **Timings (D-9), done.** `assemble(snapshot, clock=...)` takes an optional monotonic clock in seconds from the caller and records `admission_ms`, `conflicts_ms`, `supersede_ms` (from M8), `dedupe_ms` (from M7), `fitting_ms` (refusal checks and fitting) and `render_ms`. Without one, the trace has no `timings` and assembly reads no clock; the purity test runs both ways. A clock that runs backwards records 0.
+- **Timings (D-9), done.** `assemble(snapshot, clock=...)` takes an optional monotonic clock in seconds from the caller and records `admission_ms`, `conflicts_ms`, `supersede_ms` (from M8), `dedupe_ms` (from M7), `diversity_ms` (from M9), `fitting_ms` (refusal checks and fitting) and `render_ms`. Without one, the trace has no `timings` and assembly reads no clock; the purity test runs both ways. A clock that runs backwards records 0.
 - **Conformance report (D-8).** A schema'd, language-neutral `conformance-report.json` records each case's outcome (website `c9027ec`). `python -m cwa.conformance` writes it, this assembler commits it beside `status.json`, and a test fails when it is stale. `tests/test_status.py` rejects an *implemented* or *boundary-checked* claim while a case tagged with its rule fails in the report. The website imports it beside `status.json` (website `d70e14b`), and its matrix shows each requirement's passing cases, counting a case published after the last run as not passing.
 
 Result: all twenty-five vendored cases pass, and `status.json` claims R-21, R-22 and R-23 implemented, so every checkable requirement is claimed: 14 implemented and 8 boundary-checked. Beyond the plan, M5 found and closed three cross-language traps (blank strings, timestamps, unpaired surrogates) and a Python `$` anchor that let a trailing newline through two checks. The hypothesis property tests followed (§6).
@@ -743,7 +759,7 @@ Result: `src/cwa/conflicts.py` resolves every group kind and every escalation ac
 
 **M0 status (2026-09-22): done.** The skeleton reproduces `examples/payload.txt` byte for byte (SHA-256 `4cf0b083…`, 34 tokens) from the first conformance case. It vendors the contract with a SHA-256 lock, validates snapshots with format checking on, uses order-independent snapshot digests (RFC 8785), escapes bodies, and has purity guards. Two deviations from §2.2: `Snapshot.freeze(**fields)` takes JSON-shaped values that follow `snapshot.schema.json` rather than dataclass instances, so there is one validation path; and an unassemblable snapshot raises `SnapshotError` before assembly instead of emitting an `invalid_snapshot` refusal, which has no registered reason code yet. Anything M0 can't do faithfully (admission, fitting, conflicts) raises `NotImplementedError`. No matrix row flips at M0.
 
-`b` = boundary-checked scope. R-5 is documented as an application obligation. With M5 the assembler reaches the honest ceiling: **14 implemented + 8 boundary-checked + 1 application obligation**, not "23 of 23". R-24 (M7) and R-25 (M8) are assembler-scoped, so the ceiling is now 16 implemented + 8 boundary-checked + 1 application obligation.
+`b` = boundary-checked scope. R-5 is documented as an application obligation. With M5 the assembler reaches the honest ceiling: **14 implemented + 8 boundary-checked + 1 application obligation**, not "23 of 23". R-24 (M7), R-25 (M8) and R-26 (M9) are assembler-scoped, so the ceiling is now 17 implemented + 8 boundary-checked + 1 application obligation.
 
 ---
 

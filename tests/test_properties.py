@@ -3,7 +3,8 @@ examples: input order never matters (R-23), protected bytes never change (R-16, 
 items go before any compressible item is reduced under budget pressure (R-16), the payload fits its
 budget and counts its items (R-16, R-21), every capped slot fits its max_tokens (R-16), a
 deduplicated slot includes each key once (R-24), a superseding slot keeps only the latest of each
-call (R-25), refusals have no payload (R-17), and a stored snapshot replays (R-23)."""
+call (R-25), a capped slot keeps at most max_per_source of each source (R-26), refusals have no
+payload (R-17), and a stored snapshot replays (R-23)."""
 from __future__ import annotations
 
 import copy
@@ -73,6 +74,8 @@ def snapshots(draw) -> dict:
             policy.setdefault("slots", {}).setdefault(slot, {})["dedupe"] = "exact"
         if draw(st.booleans()):
             policy.setdefault("slots", {}).setdefault(slot, {})["supersede"] = "source"
+        if draw(st.booleans()):
+            policy.setdefault("slots", {}).setdefault(slot, {})["max_per_source"] = draw(st.integers(1, 2))
     steps = [{"slot": slot, "action": action} for slot in COMPRESSIBLE for action in ("compress", "omit")]
     policy["fitting_order"] = draw(st.lists(st.sampled_from(steps), unique_by=lambda s: (s["slot"], s["action"]), max_size=3))
     snapshot["renderer"] = draw(st.sampled_from(["fixture-xml/v1", "cwa-messages/v1"]))
@@ -108,7 +111,7 @@ PROPERTY = settings(max_examples=150, deadline=None, suppress_health_check=[Heal
 def test_generated_snapshots_admit_every_candidate(document):
     """The generator's own check: every property below starts from items admission accepts."""
     trace = assemble(Snapshot.from_json(document)).trace
-    assert {row["reason"] for row in trace["excluded"]} <= {"over_budget", "superseded", "duplicate_content"}
+    assert {row["reason"] for row in trace["excluded"]} <= {"over_budget", "superseded", "duplicate_content", "source_diversity_cap"}
 
 
 @PROPERTY
@@ -143,7 +146,7 @@ def test_droppable_items_go_before_any_compressible_item_is_reduced(document):
     compressible = {c["id"] for c in _candidates(document, COMPRESSIBLE)}
     reduced = compressible & (_rows(trace, "over_budget") | {row["item_id"] for row in trace["compressed"]})
     if reduced:  # a droppable item may already be gone as a duplicate (R-24)
-        gone = _rows(trace, "over_budget") | _rows(trace, "superseded") | _rows(trace, "duplicate_content")
+        gone = _rows(trace, "over_budget") | _rows(trace, "superseded") | _rows(trace, "duplicate_content") | _rows(trace, "source_diversity_cap")
         assert {c["id"] for c in _candidates(document, DROPPABLE)} <= gone
 
 
@@ -200,6 +203,25 @@ def test_a_superseding_slot_keeps_only_the_latest_of_each_call(document):
     assert rows.keys() == expected.keys()
     sources = {c["id"]: c["source"] for b in document["batches"] for c in b["items"]}
     assert all(sources[kept] == expected[item_id] and kept not in rows for item_id, kept in rows.items())
+
+
+@PROPERTY
+@given(snapshots())
+def test_a_capped_slot_keeps_at_most_max_per_source_of_each_source(document):
+    """Each producer emits its own slots here, so a source is a slot and a source string. Only protected
+    items are exempt, and a capped item is never one an earlier stage already removed."""
+    trace = assemble(Snapshot.from_json(document)).trace
+    sources = {c["id"]: c["source"] for b in document["batches"] for c in b["items"]}
+    earlier = _rows(trace, "superseded") | _rows(trace, "duplicate_content")
+    capped = _rows(trace, "source_diversity_cap")
+    assert not capped & earlier
+    for slot, rules in document["route_policy"].get("slots", {}).items():
+        if "max_per_source" not in rules or slot in PROTECTED:
+            continue
+        survivors = [c["id"] for c in _candidates(document, (slot,)) if c["id"] not in earlier]
+        for source in {sources[i] for i in survivors}:
+            members = [i for i in survivors if sources[i] == source]
+            assert len([i for i in members if i not in capped]) == min(len(members), rules["max_per_source"])
 
 
 @PROPERTY

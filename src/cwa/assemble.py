@@ -1,7 +1,7 @@
 """assemble(): a pure function from a frozen Snapshot to a payload and a trace.
 
-It admits (placement last), resolves declared conflicts, removes the stale observations and duplicates the route asks for, checks
-required slots and placement, fits the budget, checks evidence, places, renders, counts, hashes and traces.
+It admits (placement last), resolves declared conflicts, removes the stale observations and duplicates and caps the sources the
+route asks for, checks required slots and placement, fits the budget, checks evidence, places, renders, counts, hashes and traces.
 """
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from typing import Any, Callable
 from .admission import Admission, admit
 from .conflicts import Resolution, resolve
 from .dedupe import Deduplication, deduplicate
+from .diversity import Diversity, cap_sources
 from .supersede import Supersession, supersede
 from .fitting import Compression, Fitted, fit
 from .model import Item
@@ -81,7 +82,7 @@ def _refusal(snapshot: Snapshot, resolution: Resolution, items: tuple[Item, ...]
 
 
 def _trace(snapshot: Snapshot, admission: Admission, resolution: Resolution, supersession: Supersession, deduplication: Deduplication,
-           trace_id: str | None,
+           diversity: Diversity, trace_id: str | None,
            omitted: tuple[Item, ...] = (), **outcome: Any) -> dict[str, Any]:
     trace = {
         "trace_id": trace_id or str(uuid.uuid4()),
@@ -100,6 +101,7 @@ def _trace(snapshot: Snapshot, admission: Admission, resolution: Resolution, sup
              for item, kept in supersession.excluded
         ] + [{"item_id": item.id, "reason": "duplicate_content", "stage": "assembler", "slot": item.slot, "duplicate_of": kept}
              for item, kept in deduplication.excluded
+        ] + [{"item_id": item.id, "reason": "source_diversity_cap", "stage": "assembler", "slot": item.slot} for item in diversity.excluded
         ] + [{"item_id": item.id, "reason": "over_budget", "stage": "assembler", "slot": item.slot} for item in omitted],
         "conflicts": [dict(record) for record in resolution.records],
         "refused": {"bool": False, "reason": None},
@@ -156,12 +158,14 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None, clock: Callable
     watch.lap("supersede")
     deduplication = deduplicate(snapshot, supersession.items)
     watch.lap("dedupe")
-    reason, fitted, recovery = _refusal(snapshot, resolution, deduplication.items)
+    diversity = cap_sources(snapshot, deduplication.items, admission.producers)  # R-26: after dedupe, so a copy takes no place
+    watch.lap("diversity")
+    reason, fitted, recovery = _refusal(snapshot, resolution, diversity.items)
     watch.lap("fitting")  # the refusal checks, and fitting when they reach it
     if reason:
         # R-17: a refusal has no payload; exclusions found so far, including fitting's, stay in the trace.
         outcome = {"refused": {"bool": True, "reason": reason}, **({"recovery": {"action": recovery}} if recovery else {})}
-        return AssemblyResult(payload=None, trace=_trace(snapshot, admission, resolution, supersession, deduplication, trace_id, fitted.omitted if fitted else (),
+        return AssemblyResult(payload=None, trace=_trace(snapshot, admission, resolution, supersession, deduplication, diversity, trace_id, fitted.omitted if fitted else (),
                                                          **outcome, **watch.recorded()))
 
     occurrences = place(snapshot.profile, fitted.items, resolution.marks)
@@ -170,7 +174,7 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None, clock: Callable
     watch.lap("render")
 
     return AssemblyResult(payload=rendered.payload, trace=_trace(
-        snapshot, admission, resolution, supersession, deduplication, trace_id, fitted.omitted, **watch.recorded(),
+        snapshot, admission, resolution, supersession, deduplication, diversity, trace_id, fitted.omitted, **watch.recorded(),
         result={"input_tokens": input_tokens, "hash": hashlib.sha256(rendered.payload).hexdigest()},
         included=[
             {"slot": o.slot, "item_id": o.item.id, "tokens": snapshot.tokenizer.count(body), "source_version": o.item.source_version,
