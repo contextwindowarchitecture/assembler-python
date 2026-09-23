@@ -74,3 +74,13 @@ def test_an_unplaced_protected_item_is_reported_before_an_unresolved_conflict(fi
     result = assemble(Snapshot.from_json(fixture_snapshot))
     assert [c["resolution"] for c in result.trace["conflicts"]] == ["refused"]
     assert result.trace["refused"]["reason"] == "protected_slot_unplaced"
+
+
+def test_every_trace_records_the_profile_id_and_version(fixture_snapshot):
+    """R-20: payload or refusal, the trace names the profile that placed it."""
+    fixture_snapshot["profile"].update(id="support-chat-profile", version=7)
+    assembled = assemble(Snapshot.from_json(fixture_snapshot))
+    next(b for b in fixture_snapshot["batches"] if b["producer"]["id"] == "conversation")["items"].clear()
+    refused = assemble(Snapshot.from_json(fixture_snapshot))
+    assert refused.refused and not assembled.refused
+    assert assembled.trace["profile"] == refused.trace["profile"] == {"id": "support-chat-profile", "version": 7}
