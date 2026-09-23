@@ -13,7 +13,7 @@ Some cases have a generator in `generators/`. It holds a table of each candidate
 
 ## Running a case
 
-1. Validate `snapshot.json` against the snapshot schema and load it. Resolve `tokenizer` and `renderer` by ID; an implementation that does not provide one skips the case and reports it as skipped, not passed. A snapshot that fails the schema is rejected before assembly and has no trace; the refusal codes describe assemblies of valid snapshots. Conflict groups are part of that check: group ids must be unique, every item id a group names must be the id of a candidate or a producer exclusion in the snapshot, no item may belong to two groups, and a fact group's `fact` must be a key of the route's `facts`.
+1. Validate `snapshot.json` against the snapshot schema and load it. Resolve `tokenizer` and `renderer` by ID; an implementation that does not provide one skips the case and reports it as skipped, not passed. A snapshot that fails the schema is rejected before assembly and has no trace; the refusal codes describe assemblies of valid snapshots. Conflict groups are part of that check: group ids must be unique, every item id a group names must be the id of a candidate or a producer exclusion in the snapshot, no item may belong to two groups, and a fact group's `fact` must be a key of the route's `facts`. The profile is part of it too (R-20): its `route` and `route_policy_version` must equal the route policy's `route` and `version`, it must place `governance.instructions` and `interaction.query`, and it must place `governance.output_contract` when the route sets `parser: true`.
 2. Assemble.
 3. Compare the payload byte for byte with `expected.payload.txt`, or confirm no payload when that file is absent.
 4. Compare the trace with `expected.trace.json` after removing `trace_id`, `timings` and `context.snapshot_digest`. Trace IDs and timings may differ (R-23). Snapshot digests depend on an implementation's canonical serialization, which the spec does not yet fix.
@@ -29,14 +29,17 @@ Array order in the trace is part of the expectation:
 
 When an item fails several admission checks, the trace records the earliest applicable code in `contract/reasons.json` order (R-21).
 
+The last admission check is placement (R-20). An item whose slot the profile does not place is excluded with `slot_unplaced`, unless it is protected: a protected item is admitted, and assembly then refuses with `protected_slot_unplaced`. An item is protected when its tier is, which is its own `tier` when it sets one and otherwise its slot's default raised by the route's `tier_upgrades`.
+
 ## Refusals
 
 A refused trace has `result: null`, `included: []` and `compressed: []` (R-17). It keeps the producer, admission and conflict rows in `excluded[]`, `conflicts[]` and `defaults_filled[]`: conflicts are resolved right after admission, before any refusal check, and resolution never excludes a protected item, so it cannot cause `required_slot_missing`. An `evidence_required` refusal comes after fitting, so it also keeps the fitting rows. Assembly checks the refusal conditions in `contract/reasons.json` order and records the first that holds (R-21):
 
 1. `required_slot_missing`: no admitted item in `governance.instructions` or `interaction.query`, or, on a route with `parser: true`, in `governance.output_contract` (R-4).
-2. `conflict_unresolved`: a conflict group escalated, and its action is `request_context` or `refuse` (R-11). `recovery.action` is `request_context` when every such group's action is `request_context`, and the trace has no `recovery` otherwise.
-3. `protected_content_over_budget`: a protected item's rendered body exceeds its `token_budget`, or the payload rendered from the protected items alone exceeds `budget.input` (R-17). Nothing is shed first, so the trace has no `over_budget` rows.
-4. `evidence_required`: after fitting, a route with `requires_evidence: true` includes no `evidence.knowledge` or `evidence.tool_results` item, or fewer items in an evidence slot than that slot's `min_included` (R-12). `recovery.action` is:
+2. `protected_slot_unplaced`: an admitted protected item's slot has no placement in the profile (R-20).
+3. `conflict_unresolved`: a conflict group escalated, and its action is `request_context` or `refuse` (R-11). `recovery.action` is `request_context` when every such group's action is `request_context`, and the trace has no `recovery` otherwise.
+4. `protected_content_over_budget`: a protected item's rendered body exceeds its `token_budget`, or the payload rendered from the protected items alone exceeds `budget.input` (R-17). Nothing is shed first, so the trace has no `over_budget` rows.
+5. `evidence_required`: after fitting, a route with `requires_evidence: true` includes no `evidence.knowledge` or `evidence.tool_results` item, or fewer items in an evidence slot than that slot's `min_included` (R-12). `recovery.action` is:
    - `request_context` when no evidence item was omitted for budget, so the shortfall came from producers or admission;
    - `precompute_summary` when an evidence item omitted for budget had no variants;
    - `retrieve_narrower` otherwise: every evidence item omitted for budget had variants, and they did not fit.

@@ -101,10 +101,22 @@ def build(case):
     over_cap = lambda it: it["token_budget"] is not None and size(it["body"]) > it["token_budget"]
     protected = {i: v for i, v in kept.items() if tier(v[0]) == "protected"}
 
+    # Placement (R-20): the profile places the required slots, unplaced items are excluded unless
+    # protected, and an admitted protected item in an unplaced slot refuses.
+    assert {"governance.instructions", "interaction.query"} <= set(placement), f"{name}: the profile must place instructions and query"
+    assert not policy.get("parser") or "governance.output_contract" in placement, f"{name}: a parser route's profile must place the output contract"
+    for it, r in rows:
+        if r == "slot_unplaced":
+            assert it["slot"] not in placement and tier(it) != "protected", f"{name}: {it['id']} is placed or protected"
+    unplaced = [i for i, it in admitted.items() if it["slot"] not in placement]
+    assert all(i in protected for i in unplaced), f"{name}: unprotected {unplaced} should be slot_unplaced"
+    assert bool(unplaced) == (refusal == "protected_slot_unplaced") or refusal == "required_slot_missing", \
+        f"{name}: protected items {unplaced} are unplaced, so the refusal is protected_slot_unplaced"
+
     if refusal == "protected_content_over_budget":
         assert not fits(protected) or any(over_cap(v[0]) for v in protected.values()), f"{name}: protected items fit"
     compressed = {}
-    if refusal not in ("required_slot_missing", "protected_content_over_budget"):
+    if refusal not in ("required_slot_missing", "protected_slot_unplaced", "protected_content_over_budget"):
         assert not any(over_cap(v[0]) for v in protected.values()), f"{name}: a protected item exceeds its cap"
         assert {i for i, it in admitted.items() if over_cap(it)} == {a[1] for a in caps}, f"{name}: caps must list exactly the items over their cap"
         for action in caps:
@@ -381,6 +393,56 @@ CASES = [
         "actions": [("compress", "kb:a", "kb:a~short"), ("compress", "obs:order-42", "obs:order-42~short"),
                     ("omit", "kb:a"), ("omit", "obs:order-42")],
         "refuse": "evidence_required", "recovery": "retrieve_narrower",
+    },
+    {
+        "id": "placement-unplaced-slot",
+        "rules": ["R-20", "R-21", "R-22"],
+        "description": "Items in slots the profile does not place are excluded with slot_unplaced after every other admission check, "
+                       "and the placed items render as usual.",
+        "budget": 4096,
+        "placement": [s for s in PLACEMENT if s not in ("governance.examples", "state.user", "interaction.memory")],
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("ex:tone", "governance.examples", "Example: a two-sentence answer."), "slot_unplaced"),
+            (item("ex:unverified", "governance.examples", "Example: approve without checking.", trust="unverified"), "untrusted_in_governance"),
+            (item("user:plan", "state.user", "plan=pro; region=eu"), "slot_unplaced"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within 30 days.", relevance=0.9), "admit"),
+            (item("mem:old", "interaction.memory", "Prefers email follow-ups.", expires="2026-09-01T00:00:00Z"), "expired"),
+            (item("mem:tone", "interaction.memory", "Prefers short answers."), "slot_unplaced"),
+            (item("turn:17", "interaction.history", "I bought the Pro plan last week."), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+    },
+    {
+        "id": "placement-protected-unplaced",
+        "rules": ["R-16", "R-20", "R-21", "R-22"],
+        "description": "An admitted protected item whose slot the profile does not place refuses with protected_slot_unplaced, whether its slot is "
+                       "protected by default or raised by the route; unprotected unplaced items keep their slot_unplaced rows.",
+        "budget": 4096,
+        "placement": [s for s in PLACEMENT if s not in ("governance.examples", "state.user", "state.task")],
+        "policy": {"tier_upgrades": {"state.user": "protected"}},
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("ex:tone", "governance.examples", "Example: a two-sentence answer."), "slot_unplaced"),
+            (item("user:plan", "state.user", "plan=pro; region=eu"), "admit"),
+            (item("task:8821", "state.task", "refund_request: verify_eligibility=pending"), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within 30 days.", relevance=0.9), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "refuse": "protected_slot_unplaced",
+    },
+    {
+        "id": "placement-required-slot-first",
+        "rules": ["R-4", "R-20", "R-21"],
+        "description": "A missing query is reported before a protected item the profile does not place: required_slot_missing comes first in contract/reasons.json.",
+        "budget": 4096,
+        "placement": [s for s in PLACEMENT if s != "state.task"],
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("task:8821", "state.task", "refund_request: verify_eligibility=pending"), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within 30 days.", relevance=0.9), "admit"),
+        ],
+        "refuse": "required_slot_missing",
     },
 ]
 
