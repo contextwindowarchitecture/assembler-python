@@ -15,6 +15,10 @@ dependencies = [
   "rfc3339-validator>=0.1.4",
 ]
 
+[project.urls]
+Repository = "https://github.com/contextwindowarchitecture/assembler"
+Specification = "https://contextwindowarchitecture.io/spec.html"
+
 [dependency-groups]
 dev = ["pytest>=8"]
 
