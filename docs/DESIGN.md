@@ -382,32 +382,38 @@ flowchart TD
 
 `authority` never decides a `fact` group (R-6, R-11). The schema renamed `tier` to `authority` and added `moot` (DA-10, done). This is also asserted in `trace.py` before emitting.
 
-### 4.4 Fitting
+### 4.4 Fitting (as built, M2)
 
-The unit of accounting is the **occurrence**, not the item. A slot placed twice (`long-context-reinforced`, `extraction`) costs twice and appears twice in `included[]` (R-16).
+The unit of accounting is the **occurrence**, not the item. A slot placed twice (`long-context-reinforced`, `extraction`) costs twice and appears twice in `included[]` (R-16). Fitting decisions are made per item, so both occurrences shed or compress together, and each included occurrence of a compressed item gets its own `compressed[]` row. `src/cwa/fitting.py` follows `conformance/README.md`'s Fitting section:
 
 ```mermaid
 flowchart TD
-  A["Place admitted items → occurrences"] --> B["Apply per-item token_budget caps:<br/>compressible → largest variant under cap, else exclude<br/>droppable → exclude item_over_token_budget<br/>protected over cap → REFUSE"]
-  B --> C{"cost(protected only) ≤ budget.input?"}
-  C -- no --> R1["REFUSE protected_content_over_budget"]
-  C -- yes --> D{"cost(all) ≤ budget.input?"}
-  D -- yes --> OK([fitted])
-  D -- no --> P1["Phase 1 · drop droppable<br/>ascending priority, reason over_budget"]
-  P1 --> D1{fits?}
-  D1 -- yes --> OK
-  D1 -- no --> P2["Phase 2 · compress compressible<br/>ascending priority; pick the LARGEST variant<br/>that closes the gap, else the smallest"]
-  P2 --> D2{fits?}
-  D2 -- yes --> OK
-  D2 -- no --> P3["Phase 3 · drop compressible<br/>ascending priority, reason over_budget<br/>R-16 as amended; route may reorder 2–3"]
-  P3 --> D3{fits?}
-  D3 -- yes --> OK
-  D3 -- no --> R1
+  A[/"admitted items the profile places"/] --> P{"protected items alone<br/>fit budget.input?"}
+  P -- no --> R1["REFUSE protected_content_over_budget<br/>nothing shed, no over_budget rows"]
+  P -- yes --> D["1 · Droppable<br/>omit one at a time in shedding order<br/>until it fits"]
+  D --> F1{fits?}
+  F1 -- yes --> OK([fitted])
+  F1 -- no --> S["2 · Route steps<br/>fitting_order, in the route's order"]
+  S --> C["3 · Default steps<br/>compress each slot, then omit each slot,<br/>in shedding order; listed steps skipped"]
+  C --> OK
+  S -. "fits" .-> OK
 ```
 
-Priority is route-declared: `slots.X.priority`, then the slot's `order_by`, then `id` as the final stable tie-break. The algorithm is greedy and deterministic. It is **not** optimal, since the knapsack version is NP-hard, and the spec does not ask for optimal.
+Every "fits?" renders and counts the **whole** payload with the snapshot's tokenizer, and every step stops as soon as the payload fits. A step visits one slot's compressible items, lowest rank first:
 
-**Cost function.** During shedding, cost = Σ standalone occurrence counts + measured wrapper overhead. That estimate is cheap. After fitting, render the whole payload and count it once (step 9). If the real count exceeds the budget, go back to shedding with the measured overshoot. The loop terminates because every iteration removes or shrinks something.
+- **compress** selects a supplied variant whose rendered body is shorter than the item's body: the longest that makes the payload fit, else the shortest, with the earlier variant winning ties (R-18). An item without a shorter variant is skipped.
+- **omit** removes the item, compressed or not, and traces it `over_budget` with its slot.
+
+Protected items appear in no step. An item's tier is its own `tier`, else its slot's default raised by `tier_upgrades`, so an item that volunteers `droppable` sheds in phase 1.
+
+```mermaid
+flowchart LR
+  S1["slots by route priority<br/>(default 0, lower first)"] --> S2["then by slot name"] --> S3["within a slot, lowest rank first:<br/>order_by keys (default -relevance, -freshness;<br/>unscored last) then id"]
+```
+
+The algorithm is greedy and deterministic. It is **not** optimal, since the knapsack version is NP-hard, and the spec does not ask for optimal. **Cost:** each decision re-renders and recounts the payload, so fitting is quadratic in the number of items shed. That is fine for a reference; a faster implementation may estimate, as long as it reaches the same decisions.
+
+**Not built yet:** per-item `token_budget` caps. The earlier design capped each item before shedding; the spec doesn't define that step yet, and no conformance case sets a cap that its item exceeds.
 
 ### 4.5 R-12 recovery mapping
 
@@ -535,7 +541,7 @@ flowchart LR
 1. **Route-policy schema (website `c0f5890`): done.** `parser` (R-4); `requires_evidence`, and `slots.<evidence slot>.min_included`, which the schema accepts only when the route requires evidence (R-12); per-slot `priority` and `order_by`; and a route-level `fitting_order` of `compress`/`omit` steps (R-16). With no steps, variants come before omission.
 2. **Invalid snapshots (website `c0f5890`): decided.** They stay a pre-assembly `SnapshotError` with no trace; no `invalid_snapshot` code. Refusal precedence is `contract/reasons.json` order (R-21), and `conflict_unresolved` moved ahead of the budget refusals to match the pipeline.
 3. **Conformance cases (website `9e40504`): done.** Nine cases from `conformance/generators/fitting.py`: four budget cases, `required-slot-missing`, `protected-over-budget`, and one `evidence_required` case per recovery action. `conformance/README.md` now fixes the fitting procedure and the recovery mapping (§4.4, §4.5 as specified).
-4. **Assembler: in progress.** Done so far: `excluded[].slot` on assembler rows (website `574fc6d`); refused traces (`result: null`, `included: []`, admission rows kept) and `required_slot_missing`, with `parser: true` adding `governance.output_contract` to the required slots; `protected_content_over_budget` when the protected items alone render over budget, checked before anything is shed (`src/cwa/fitting.py`); droppable items shed one at a time in shedding order (slot `priority`, then slot name, then lowest rank by `order_by` and `id`), each traced `over_budget` with its slot; then compressible items are reduced by default steps, compressing every slot before omitting from any, taking the longest variant that fits or else the shortest, with one `compressed[]` row per included occurrence. Next: the route's `fitting_order` and the evidence check, test-first.
+4. **Assembler: in progress.** Done so far: `excluded[].slot` on assembler rows (website `574fc6d`); refused traces (`result: null`, `included: []`, admission rows kept) and `required_slot_missing`, with `parser: true` adding `governance.output_contract` to the required slots; `protected_content_over_budget` when the protected items alone render over budget, checked before anything is shed (`src/cwa/fitting.py`); droppable items shed one at a time in shedding order (slot `priority`, then slot name, then lowest rank by `order_by` and `id`), each traced `over_budget` with its slot; then compressible items are reduced by default steps, compressing every slot before omitting from any, taking the longest variant that fits or else the shortest, with one `compressed[]` row per included occurrence. The route's `fitting_order` runs before the default steps (§4.4). Next: the evidence check, test-first.
 
 **Follow-up for M5:** trace and placement ordering compare ids by code point; JavaScript's default sort uses UTF-16 code units. They differ only for ids with characters outside the Basic Multilingual Plane. Pick one in the spec (JCS already uses UTF-16) and apply it everywhere ids are sorted.
 

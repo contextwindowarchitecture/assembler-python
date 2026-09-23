@@ -121,3 +121,18 @@ def test_a_slot_placed_twice_is_compressed_in_both_occurrences():
     rows = [(row["item_id"], row["variant_id"], row["to"]) for row in trace["compressed"]]
     assert rows == [("kb:a", "kb:a~mid", 10), ("kb:b", "kb:b~short", 3)] * 2
     assert [row["tokens"] for row in trace["included"] if row["slot"] == "evidence.knowledge"] == [10, 3, 10, 3]
+
+
+# budget-route-order: the route omits knowledge before any variant is selected, oldest first.
+
+def test_the_routes_fitting_order_runs_before_the_default_steps():
+    snapshot = case("budget-route-order")
+    assert omitted(snapshot) == ["kb:old"]
+    assert compressed(snapshot) == []
+
+
+def test_without_a_route_order_the_same_items_are_compressed_instead():
+    snapshot = case("budget-route-order")
+    del snapshot["route_policy"]["fitting_order"]
+    assert omitted(snapshot) == []
+    assert compressed(snapshot) == [("kb:old", "kb:old~short")]

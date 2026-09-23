@@ -84,9 +84,12 @@ def _shedding_order(snapshot: Snapshot, items: Iterable[Item]) -> list[Item]:
 
 
 def _steps(snapshot: Snapshot) -> list[tuple[str, str]]:
-    """Compress each slot, then omit each slot, both in shedding order (R-16)."""
+    """The route's fitting_order, then compress each slot and omit each slot in shedding order,
+    skipping steps the route listed (R-16). Without a route order, variants come before omission."""
+    listed = [(step["slot"], step["action"]) for step in snapshot.route_policy.document.get("fitting_order", [])]
     order = _slots_in_shedding_order(snapshot)
-    return [(slot, "compress") for slot in order] + [(slot, "omit") for slot in order]
+    default = [(slot, "compress") for slot in order] + [(slot, "omit") for slot in order]
+    return listed + [step for step in default if step not in listed]
 
 
 @dataclass(frozen=True, slots=True)
