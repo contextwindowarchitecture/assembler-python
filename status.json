@@ -241,6 +241,7 @@
         "tests/test_fitting.py::test_a_margin_sheds_until_the_charged_count_fits",
         "tests/test_fitting.py::test_the_charged_count_rounds_up",
         "tests/test_fitting.py::test_traced_counts_stay_unscaled_and_the_budget_repeats_the_margin",
+        "tests/test_properties.py::test_the_trace_repeats_the_margin_and_never_scales_a_count_by_it",
         "tests/test_fitting.py::test_caps_compare_unscaled_counts",
         "tests/test_tokenize.py::test_estimate_utf8_counts_utf8_bytes_divided_by_four_rounded_up"
       ]

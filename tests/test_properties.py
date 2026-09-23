@@ -4,12 +4,14 @@ items go before any compressible item is reduced under budget pressure (R-16), t
 budget and counts its items (R-16, R-21), every capped slot fits its max_tokens (R-16), budget
 pressure never leaves a floored slot below its min_tokens (R-16), a
 deduplicated slot includes each key once (R-24), a superseding slot keeps only the latest of each
-call (R-25), a capped slot keeps at most max_per_source of each source (R-26), refusals have no
-payload (R-17), and a stored snapshot replays (R-23)."""
+call (R-25), a capped slot keeps at most max_per_source of each source (R-26), the trace repeats the
+budget's margin and counts every token unscaled (R-16, R-21), refusals have no payload (R-17), and a
+stored snapshot replays (R-23)."""
 from __future__ import annotations
 
 import copy
 import hashlib
+import json
 
 from hypothesis import HealthCheck, assume, given, settings, strategies as st
 
@@ -17,7 +19,7 @@ from cwa import Snapshot, assemble
 from cwa import instants
 from cwa.dedupe import key
 from cwa.render.fixture_xml import escape_body
-from cwa.tokenize.fixture_whitespace import FixtureWhitespace
+from cwa.tokenize import REGISTRY as TOKENIZERS
 from conftest import CASES, read_json
 
 TEMPLATE = read_json(CASES / "budget-variant-choice" / "snapshot.json")
@@ -31,7 +33,9 @@ DROPPABLE = ("governance.examples",)
 COMPRESSIBLE = ("evidence.knowledge", "interaction.history")
 # All before assembly_time (2026-09-22T12:00:00Z) and within the route's age limit for state.
 FRESHNESS = ["2026-09-22T11:59:00Z", "2026-09-22T11:59:30Z", "2026-09-22T11:59:30.000001Z", "2026-09-22T11:59:59Z"]
-count = FixtureWhitespace().count
+# budget.input before the margin, by tokenizer. estimate-utf8/v1 counts each rendered wrapper three to six
+# times higher than fixture-whitespace/v1, so each range puts about the same share of routes under pressure.
+INPUT = {"fixture-whitespace/v1": (20, 110), "estimate-utf8/v1": (80, 330)}
 
 # Words that escaping, counting and ordering must all survive.
 words = st.sampled_from(["refund", "Pro", "30", "days", "<b>", "&amp;", 'say "yes"', "é", "\U0001f600", "ｚ", "a&b<c>"])
@@ -84,7 +88,12 @@ def snapshots(draw) -> dict:
     steps = [{"slot": slot, "action": action} for slot in COMPRESSIBLE for action in ("compress", "omit")]
     policy["fitting_order"] = draw(st.lists(st.sampled_from(steps), unique_by=lambda s: (s["slot"], s["action"]), max_size=3))
     snapshot["renderer"] = draw(st.sampled_from(["fixture-xml/v1", "cwa-messages/v1"]))
-    snapshot["budget"]["input"] = draw(st.integers(20, 110))
+    snapshot["tokenizer"] = draw(st.sampled_from(sorted(INPUT)))
+    margin = draw(st.none() | st.sampled_from([0, 100]) | st.integers(0, 100))
+    # Scaled by the margin, so a charged route meets about as much pressure as an uncharged one.
+    snapshot["budget"]["input"] = draw(st.integers(*INPUT[snapshot["tokenizer"]])) * (100 + (margin or 0)) // 100
+    if margin is not None:
+        snapshot["budget"]["margin_percent"] = margin
     snapshot["batches"] = [{"producer": {"id": p, "kind": KIND[p]}, "items": [c for c in candidates if PRODUCER[c["slot"]] == p], "excluded": []}
                            for p in sorted(KIND)]
     return snapshot
@@ -110,6 +119,23 @@ def _slot_caps(document: dict) -> dict[str, int]:
 
 def _slot_floors(document: dict) -> dict[str, int]:
     return {slot: rules["min_tokens"] for slot, rules in document["route_policy"].get("slots", {}).items() if "min_tokens" in rules}
+
+
+def _count(document: dict, text: str) -> int:
+    return TOKENIZERS[document["tokenizer"]].count(text)
+
+
+def _charged(document: dict, tokens: int) -> int:
+    """What the fit test compares with budget.input: the count with the margin added, rounded up (R-16)."""
+    return (tokens * (100 + document["budget"].get("margin_percent", 0)) + 99) // 100
+
+
+def _payload_texts(document: dict, payload: bytes) -> list[str]:
+    """The texts a payload's size counts: the XML document, or each channel entry and the message content."""
+    if document["renderer"] == "fixture-xml/v1":
+        return [payload.decode("utf-8")]
+    request = json.loads(payload)
+    return [entry["text"] for name in ("system", "tools") for entry in request.get(name, [])] + [m["content"] for m in request["messages"]]
 
 
 PROPERTY = settings(max_examples=150, deadline=None, suppress_health_check=[HealthCheck.too_slow])
@@ -142,7 +168,7 @@ def test_protected_bytes_never_change(document):
     if not result.refused:
         included = {row["item_id"]: row["tokens"] for row in result.trace["included"]}
         for item_id, item in protected.items():
-            assert included[item_id] == count(escape_body(item["body"]))
+            assert included[item_id] == _count(document, escape_body(item["body"]))
 
 
 @PROPERTY
@@ -162,9 +188,12 @@ def test_droppable_items_go_before_any_compressible_item_is_reduced(document):
 @PROPERTY
 @given(snapshots())
 def test_included_tokens_fit_within_the_payload_and_the_payload_within_the_budget(document):
+    """The budget bounds the charged count, which the margin raises to or above input_tokens (R-16)."""
     result = assemble(Snapshot.from_json(document))
     if not result.refused:
-        assert sum(row["tokens"] for row in result.trace["included"]) <= result.trace["result"]["input_tokens"] <= document["budget"]["input"]
+        input_tokens = result.trace["result"]["input_tokens"]
+        assert sum(row["tokens"] for row in result.trace["included"]) <= input_tokens
+        assert _charged(document, input_tokens) <= document["budget"]["input"]
 
 
 @PROPERTY
@@ -250,6 +279,24 @@ def test_budget_pressure_never_leaves_a_floored_slot_below_its_floor(document, f
         for slot, floor in _slot_floors(document).items():
             if reduced & {c["id"] for c in _candidates(document, (slot,))}:
                 assert sum(row["tokens"] for row in trace["included"] if row["slot"] == slot) >= floor
+
+
+@PROPERTY
+@given(snapshots())
+def test_the_trace_repeats_the_margin_and_never_scales_a_count_by_it(document):
+    """The margin charges only the fit test: included[].tokens and result.input_tokens are the tokenizer's
+    own counts of what was rendered (R-16, R-21)."""
+    result = assemble(Snapshot.from_json(document))
+    trace = result.trace
+    assert trace["budget"].get("margin_percent") == document["budget"].get("margin_percent")
+    assert ("margin_percent" in trace["budget"]) == ("margin_percent" in document["budget"])
+    if not result.refused:
+        variants = {v["id"]: v["body"] for c in _candidates(document, COMPRESSIBLE) for v in c["variants"]}
+        chosen = {row["item_id"]: variants[row["variant_id"]] for row in trace["compressed"]}
+        bodies = {c["id"]: chosen.get(c["id"], c["body"]) for b in document["batches"] for c in b["items"]}
+        for row in trace["included"]:
+            assert row["tokens"] == _count(document, escape_body(bodies[row["item_id"]]))
+        assert trace["result"]["input_tokens"] == sum(_count(document, text) for text in _payload_texts(document, result.payload))
 
 
 @PROPERTY
