@@ -466,6 +466,46 @@
           }
         },
         {
+          "id": "﻿",
+          "slot": "evidence.knowledge",
+          "source": "src:﻿",
+          "source_version": "1",
+          "authority": "reference_only",
+          "trust": "unverified",
+          "freshness": "2026-09-12T15:30:00Z",
+          "body": "An id that is only a byte order mark.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content",
+          "relevance": 0.91,
+          "scope": {
+            "tenant": "acme"
+          }
+        },
+        {
+          "id": "\u001c",
+          "slot": "evidence.knowledge",
+          "source": "src:\u001c",
+          "source_version": "1",
+          "authority": "reference_only",
+          "trust": "unverified",
+          "freshness": "2026-09-12T15:30:00Z",
+          "body": "An id that is a control character.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content",
+          "relevance": 0.79,
+          "scope": {
+            "tenant": "acme"
+          }
+        },
+        {
           "id": "kb:bad-slot",
           "slot": "evidence.web",
           "source": "src:kb:bad-slot",

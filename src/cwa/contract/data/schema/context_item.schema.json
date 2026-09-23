@@ -19,7 +19,7 @@
     "id": {
       "type": "string",
       "minLength": 1,
-      "pattern": "\\S"
+      "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
     },
     "slot": {
       "type": "string",
@@ -40,12 +40,12 @@
     "source": {
       "type": "string",
       "minLength": 1,
-      "pattern": "\\S"
+      "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
     },
     "source_version": {
       "type": "string",
       "minLength": 1,
-      "pattern": "\\S"
+      "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
     },
     "authority": {
       "type": "string",
@@ -83,32 +83,32 @@
         "tenant": {
           "type": "string",
           "minLength": 1,
-          "pattern": "\\S"
+          "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
         },
         "user": {
           "type": "string",
           "minLength": 1,
-          "pattern": "\\S"
+          "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
         },
         "session": {
           "type": "string",
           "minLength": 1,
-          "pattern": "\\S"
+          "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
         },
         "task": {
           "type": "string",
           "minLength": 1,
-          "pattern": "\\S"
+          "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
         },
         "locale": {
           "type": "string",
           "minLength": 1,
-          "pattern": "\\S"
+          "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
         },
         "step": {
           "type": "string",
           "minLength": 1,
-          "pattern": "\\S"
+          "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
         }
       },
       "required": [],
@@ -163,7 +163,7 @@
     "body": {
       "type": "string",
       "minLength": 1,
-      "pattern": "\\S"
+      "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
     },
     "variants": {
       "type": "array",
@@ -173,17 +173,17 @@
           "id": {
             "type": "string",
             "minLength": 1,
-            "pattern": "\\S"
+            "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
           },
           "body": {
             "type": "string",
             "minLength": 1,
-            "pattern": "\\S"
+            "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
           },
           "method": {
             "type": "string",
             "minLength": 1,
-            "pattern": "\\S"
+            "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
           },
           "lineage": {
             "type": "string",
@@ -213,7 +213,7 @@
     "revoked_by": {
       "type": "string",
       "minLength": 1,
-      "pattern": "\\S"
+      "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
     }
   },
   "allOf": [

@@ -14,7 +14,7 @@
     "id": {
       "type": "string",
       "minLength": 1,
-      "pattern": "\\S"
+      "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
     },
     "kind": {
       "type": "string",
@@ -26,7 +26,7 @@
     "fact": {
       "type": "string",
       "minLength": 1,
-      "pattern": "\\S",
+      "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]",
       "description": "Route-policy key identifying the fact in dispute; required for fact groups."
     },
     "items": {
@@ -34,7 +34,7 @@
       "items": {
         "type": "string",
         "minLength": 1,
-        "pattern": "\\S"
+        "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
       },
       "minItems": 2,
       "uniqueItems": true
@@ -57,7 +57,7 @@
           "fact": {
             "type": "string",
             "minLength": 1,
-            "pattern": "\\S"
+            "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
           }
         }
       }

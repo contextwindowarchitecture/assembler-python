@@ -130,6 +130,12 @@
       "slot": "interaction.memory"
     },
     {
+      "item_id": "\u001c",
+      "reason": "below_threshold",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
       "item_id": "kb:authority",
       "reason": "authority_not_allowed",
       "stage": "assembler",
@@ -239,6 +245,12 @@
     {
       "item_id": "policy-corpus#invalid-0",
       "reason": "missing_field:id",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
+      "item_id": "policy-corpus#invalid-1",
+      "reason": "invalid_structure",
       "stage": "assembler",
       "slot": "evidence.knowledge"
     },

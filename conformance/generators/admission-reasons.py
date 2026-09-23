@@ -4,6 +4,7 @@ Expected results come from the INTENT column, not from admission logic, so the c
 fail an implementation. Rendering and counting follow conformance/README.md's fixture rules.
 """
 import copy, hashlib, json, os, re, sys
+NONBLANK = re.compile(r"[^\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]")  # conformance/README.md, Blank strings
 U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 WEB = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -46,6 +47,9 @@ ROWS = [
     ("policy-corpus", item("kb:sub-ms", "evidence.knowledge", "Refunds return to the original card.", expires="2026-09-22T12:00:00.0005Z"), "admit"),
     ("policy-corpus", item("kb:missing-body", "evidence.knowledge", "x", omit=("body",)), "missing_field:body"),
     ("policy-corpus", item(None, "evidence.knowledge", "An item without an id.", omit=("id",)), "missing_field:id"),
+    # Blank means ECMAScript whitespace only (conformance/README.md, Blank strings): U+FEFF is blank, U+001C is not.
+    ("policy-corpus", item("\ufeff", "evidence.knowledge", "An id that is only a byte order mark."), "invalid_structure"),
+    ("policy-corpus", item("\u001c", "evidence.knowledge", "An id that is a control character.", relevance=0.79), "below_threshold"),
     ("policy-corpus", item("kb:bad-slot", "evidence.web", "Web result."), "unknown_slot"),
     ("policy-corpus", item("kb:bad-authority", "evidence.knowledge", "Old vocabulary.", authority="reference"), "unknown_authority"),
     ("policy-corpus", item("kb:bad-date", "evidence.knowledge", "Impossible date.", freshness="2026-02-30T12:00:00Z"), "invalid_structure"),
@@ -121,7 +125,7 @@ snapshot = {
 }
 
 def recorded_id(producer, it, invalid_seen):
-    if isinstance(it.get("id"), str) and it["id"].strip():
+    if isinstance(it.get("id"), str) and NONBLANK.search(it["id"]):
         return it["id"]
     n = invalid_seen.setdefault(producer, 0); invalid_seen[producer] += 1
     return f"{producer}#invalid-{n}"

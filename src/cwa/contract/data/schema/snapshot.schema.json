@@ -51,12 +51,12 @@
     "tokenizer": {
       "type": "string",
       "minLength": 1,
-      "pattern": "\\S"
+      "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
     },
     "renderer": {
       "type": "string",
       "minLength": 1,
-      "pattern": "\\S"
+      "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
     },
     "batches": {
       "type": "array",
@@ -81,7 +81,7 @@
               "id": {
                 "type": "string",
                 "minLength": 1,
-                "pattern": "\\S"
+                "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
               },
               "kind": {
                 "type": "string",
@@ -122,19 +122,19 @@
         "policy_producer": {
           "type": "string",
           "minLength": 1,
-          "pattern": "\\S"
+          "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
         },
         "allow_list_version": {
           "type": "string",
           "minLength": 1,
-          "pattern": "\\S"
+          "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
         },
         "allowed_ids": {
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1,
-            "pattern": "\\S"
+            "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
           },
           "uniqueItems": true
         }

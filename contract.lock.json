@@ -1,15 +1,15 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "78a9d101daca42a95aed220f4b29ecf2d2602e0d",
+    "commit": "4f465caa521cbdd3d19f2f00323b0b3f72a1eb6d",
     "dirty": false
   },
   "files": {
-    "conformance/README.md": "fa6500d151fb7c828378918466e04cdde05162c2557aa02fdd5545b76f43975d",
+    "conformance/README.md": "71bcf10badb73c8c436c5b85fdc36514d8dae0c09c9130d9b7ebd5e7bda69d55",
     "conformance/cases/admission-reasons/case.json": "8121bb04dc13512b97d87cffb8b0cbe9979410ae7263c375ec4ca270cc8f7434",
     "conformance/cases/admission-reasons/expected.payload.txt": "de1f12669e43a8e087ab79dd36fc7b5f1bf89096613f340da6279b6f9c6e4214",
-    "conformance/cases/admission-reasons/expected.trace.json": "7033c0886343f3cf392e958cf3d482af83d6d4b49e69f50594dacbd735e92972",
-    "conformance/cases/admission-reasons/snapshot.json": "6d6ea0439d3fc98c226b1604717e802f5a4e327a788dd0f48459707e131635e5",
+    "conformance/cases/admission-reasons/expected.trace.json": "a01e01cf751e7d0703fe5ee48406bae101c3a1916f13a9ad27ed14bf3106bdd2",
+    "conformance/cases/admission-reasons/snapshot.json": "95628ff230196e1884d351cbb1faa2b0cb8750ed33fc0bb8d7207a7fbac1cf58",
     "conformance/cases/budget-droppable-order/case.json": "064131071f16877f69cd84a321a269f07bf34b10edb91af5984c4ec37269a082",
     "conformance/cases/budget-droppable-order/expected.payload.txt": "2fec7dfa0acd843bfbd343f371fe526717adf03b418452b3410738b493926674",
     "conformance/cases/budget-droppable-order/expected.trace.json": "72b0a70e8a10ad3ca152a0849c7862cf7a1848d7b097df26aa1028bda46ad34a",
@@ -95,7 +95,7 @@
     "conformance/cases/required-slot-missing/case.json": "15318bdcbda3d9ee24e82b4f547755d1f377382524734d69ecfa4070112b159b",
     "conformance/cases/required-slot-missing/expected.trace.json": "1b65e456456e8b87c3502b29feba4866b5ba9bff9d215cc4d3f14cf2dfb6f00e",
     "conformance/cases/required-slot-missing/snapshot.json": "30466d589b33c33095c5abe302f1c73a899a089b7831118a8f10f8d2c10a1dc2",
-    "conformance/generators/admission-reasons.py": "4d640829ef4b10554fedd2959b7c2e49300f3c7b2b7a23cef65e343da75099fe",
+    "conformance/generators/admission-reasons.py": "c7138ca05aa322eacb5ff7d5cab71cedd7e17c0e3e285e2ffa9771f5ab3a67f0",
     "conformance/generators/conflicts.py": "562951e1430e9beec505cc806374dbecfc31879c509a3045d24b9ecdac345791",
     "conformance/generators/fitting.py": "c3c645d05be486adddd003844a56f1799c3bf7a35d9e9a7ac3db190e238d9e71",
     "conformance/generators/messages.py": "87f54f36bb20c9c63c349a86ff5815490efdc2c0832ceaa6de0b3247afde8d9a",
@@ -106,14 +106,14 @@
     "src/cwa/contract/data/assembler-scope.json": "c33e75cf955610f1d869ba152f439b4130fdd940c66a82dd3ccae3f2582f00e8",
     "src/cwa/contract/data/reasons.json": "3b574fe12e7237d5556704cb6366c2dfd7ede43caba16a008029e0d27a656ffe",
     "src/cwa/contract/data/requirements.json": "a9e7e3db750bfd6bae2c6dd5698dd31b7716bee0d15b75b43e2c1aa1da0ace6c",
-    "src/cwa/contract/data/schema/conflict_group.schema.json": "5d71f6c64d35f7c41971e52da732db8ad3098f32e885537e03b9395bf48d8556",
-    "src/cwa/contract/data/schema/context_item.schema.json": "21e1832bf9ae2d15dd579dfd6ea0fd62e2a51688d5601bed45d3ec17e831d903",
-    "src/cwa/contract/data/schema/producer_batch.schema.json": "59ceb90d8e374f5811a4066b1328f3cf968df0cc20c1ae200e985db9a183d946",
-    "src/cwa/contract/data/schema/profile.schema.json": "74ead604f79aeaf9e1a410a84ad9a0d8b0d51c5b35afc452c3706aa9b98c21ee",
+    "src/cwa/contract/data/schema/conflict_group.schema.json": "06b6df97c84474371194b7f8758c3264d61c96b4a50ca1e865bff3e811365b89",
+    "src/cwa/contract/data/schema/context_item.schema.json": "f2b6fb5c94a8e5abf9ffeca14e4073f0c96bdaf6bb203b432e04168f48a83efc",
+    "src/cwa/contract/data/schema/producer_batch.schema.json": "1f52f9c09ad85e59bfabb32cfa7989916265151779154e2e03c31d4464fbc74b",
+    "src/cwa/contract/data/schema/profile.schema.json": "d26e1ff8205ff8ec5f1a8369136b5053a7553adece9c6cf84d8a1ec2e07f4b30",
     "src/cwa/contract/data/schema/registry_lock.schema.json": "0c21023857ac97bbaaec40d6ef9e2e442ce5b32175a6453f43884edbfa07ff37",
-    "src/cwa/contract/data/schema/route_policy.schema.json": "c7af78d9128f27397893eb5771532d397a3969817eaf2025d58995421cbbf0c8",
-    "src/cwa/contract/data/schema/snapshot.schema.json": "3ba23dfb07c39cd1859451ecc43168e8a0d264329b85cdb147230ec196ec35c8",
-    "src/cwa/contract/data/schema/trace.schema.json": "854a906a7009efb30826647b7692af10007aacd2ec8b975f1707d2ea2c30adb2",
+    "src/cwa/contract/data/schema/route_policy.schema.json": "0767d2d099a40edb2f8c1b39aa9d4bc0dbbb35e226eb7d4d93236f3abc202c63",
+    "src/cwa/contract/data/schema/snapshot.schema.json": "68026d48f95afef5e3f85050c15b6daa85828af6a526c8a3de23ace9f9bac9b4",
+    "src/cwa/contract/data/schema/trace.schema.json": "177bb9f5c56bc6b550d709d575ac1211500380b900e86ef85948edad4fd22cd6",
     "src/cwa/contract/data/slot-defaults.json": "89e2f6636e081995615426f5f29e4f0933d851906b78c2d7955271a4109df60d"
   }
 }

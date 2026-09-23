@@ -11,6 +11,7 @@ import pytest
 
 from cwa import Snapshot, assemble
 from conftest import CASES, read_json
+from test_conformance import PENDING
 
 REPLAY = """
 import json, locale, sys
@@ -35,8 +36,10 @@ ENVIRONMENTS = [
 
 
 def _stored() -> dict[str, dict]:
-    """Every case's snapshot as an application would store it: normalized, then written as JSON."""
-    return {case.name: Snapshot.from_json(read_json(case / "snapshot.json")).to_json() for case in sorted(CASES.iterdir())}
+    """Every case's snapshot as an application would store it: normalized, then written as JSON.
+    Pending cases have no settled outcome to replay."""
+    return {case.name: Snapshot.from_json(read_json(case / "snapshot.json")).to_json()
+            for case in sorted(CASES.iterdir()) if case.name not in PENDING}
 
 
 def _here(stored: dict[str, dict]) -> dict[str, dict]:

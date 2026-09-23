@@ -14,12 +14,12 @@
     "route": {
       "type": "string",
       "minLength": 1,
-      "pattern": "\\S"
+      "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
     },
     "version": {
       "type": "string",
       "minLength": 1,
-      "pattern": "\\S"
+      "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
     },
     "clock_skew_seconds": {
       "type": "integer",
@@ -183,7 +183,7 @@
       "propertyNames": {
         "type": "string",
         "minLength": 1,
-        "pattern": "\\S"
+        "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
       },
       "additionalProperties": {
         "type": "object",
@@ -200,7 +200,7 @@
             "items": {
               "type": "string",
               "minLength": 1,
-              "pattern": "\\S"
+              "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
             },
             "description": "Producers whose claims about this fact are eligible, by the identity the application authenticated, most authoritative first. A member from any other producer is ineligible: it cannot win and is excluded when another member does. item.source never counts (R-15)."
           },
@@ -324,7 +324,7 @@
         "source_prefix": {
           "type": "string",
           "minLength": 1,
-          "pattern": "\\S",
+          "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]",
           "description": "Prefix every item source must start with, e.g. turn: for memory's source turn (R-9)."
         },
         "priority": {

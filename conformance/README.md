@@ -31,6 +31,10 @@ When an item fails several admission checks, the trace records the earliest appl
 
 The last admission check is placement (R-20). An item whose slot the profile does not place is excluded with `slot_unplaced`, unless it is protected: a protected item is admitted, and assembly then refuses with `protected_slot_unplaced`. An item is protected when its tier is, which is its own `tier` when it sets one and otherwise its slot's default raised by the route's `tier_upgrades`.
 
+## Blank strings
+
+A string is *blank* when every character in it is ECMAScript whitespace or a line terminator: the set `fixture-whitespace/v1` lists under Tokenizers and renderers. R-2's "non-blank string id" is a string with at least one other character, and the schemas' `pattern` for non-blank strings lists that set explicitly rather than writing `\S`, because Python's `re`, which Python JSON Schema validators use, reads `\S` differently at U+001C–U+001F and U+FEFF. So an id of U+FEFF alone is blank and is recorded as `{producer}#invalid-{n}`, and an id of U+001C alone is an ordinary id. The `admission-reasons` case holds both.
+
 ## Ordering
 
 Wherever this document orders strings (item, producer and group ids, slot names, field names), it compares them by UTF-16 code units, the order RFC 8785 uses for member names. Shorter strings come first when one is a prefix of the other. JavaScript's default sort already compares this way. Other languages must do so explicitly; in Python, for example, sort by `s.encode("utf-16-be")`. Code-point order, the default in Python, Go and Rust, differs only when a string holds a character outside the Basic Multilingual Plane: U+1F600 sorts before U+FF5A in UTF-16 code units, and after it in code points. The `ordering-astral-ids` case checks this.
