@@ -7,15 +7,15 @@ if TYPE_CHECKING:
     from . import Occurrence, Rendered
     from ..model import Profile
 
-_TAG = re.compile(r"^[A-Za-z_][A-Za-z0-9_.\-]*$")
+TAG = re.compile(r"^[A-Za-z_][A-Za-z0-9_.\-]*$")
 
 
-def _escape_body(text: str) -> str:
+def escape_body(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def _escape_attribute(text: str) -> str:
-    return _escape_body(text).replace('"', "&quot;")
+def escape_attribute(text: str) -> str:
+    return escape_body(text).replace('"', "&quot;")
 
 
 class FixtureXml:
@@ -27,18 +27,18 @@ class FixtureXml:
         problems = []
         for index, placement in enumerate(profile.placement):
             tag = placement.wrap.removeprefix("xml:")
-            if not placement.wrap.startswith("xml:") or not _TAG.match(tag):
+            if not placement.wrap.startswith("xml:") or not TAG.match(tag):
                 problems.append(f"placement[{index}] wrap {placement.wrap!r} is not an xml:<name> wrap")
         return problems
 
     def render(self, occurrences: tuple[Occurrence, ...]) -> Rendered:
         from . import Rendered
 
-        bodies = tuple(_escape_body(o.item.body) for o in occurrences)
+        bodies = tuple(escape_body(o.item.body) for o in occurrences)
         parts = []
         for occurrence, body in zip(occurrences, bodies):
             tag = occurrence.wrap.removeprefix("xml:")
-            conflict = f' conflict="{_escape_attribute(occurrence.conflict)}"' if occurrence.conflict else ""
-            parts.append(f'<{tag} id="{_escape_attribute(occurrence.item.id)}"{conflict}>\n{body}\n</{tag}>\n')
+            conflict = f' conflict="{escape_attribute(occurrence.conflict)}"' if occurrence.conflict else ""
+            parts.append(f'<{tag} id="{escape_attribute(occurrence.item.id)}"{conflict}>\n{body}\n</{tag}>\n')
         text = "".join(parts)
         return Rendered(payload=text.encode("utf-8"), bodies=bodies, texts=(text,))

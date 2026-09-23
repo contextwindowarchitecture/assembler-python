@@ -74,11 +74,17 @@
     },
     {
       "id": "R-7",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_render.py::test_untrusted_bodies_cannot_break_out_of_their_wrapper",
         "tests/test_conflicts.py::test_members_that_cannot_instruct_stay_as_material",
-        "tests/test_render.py::test_conflict_marks_escape_the_group_id"
+        "tests/test_render.py::test_conflict_marks_escape_the_group_id",
+        "tests/test_messages.py::test_profiles_a_message_request_cannot_realize_are_rejected",
+        "tests/test_messages.py::test_governance_takes_system_and_everything_else_one_user_message",
+        "tests/test_messages.py::test_prior_turns_render_as_a_transcript_never_as_messages",
+        "tests/test_messages.py::test_system_text_is_the_raw_governing_body_while_message_bodies_stay_escaped",
+        "tests/test_messages.py::test_the_granted_tools_take_the_tools_channel",
+        "tests/test_conformance.py::test_conformance_case"
       ]
     },
     {
@@ -101,11 +107,15 @@
     },
     {
       "id": "R-10",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_admission.py::test_governance_requires_verified_unmarked_content",
         "tests/test_admission.py::test_retrieved_and_user_content_must_stay_marked",
-        "tests/test_admission.py::test_only_a_route_verified_mcp_server_may_leave_output_unmarked"
+        "tests/test_admission.py::test_only_a_route_verified_mcp_server_may_leave_output_unmarked",
+        "tests/test_render.py::test_untrusted_bodies_cannot_break_out_of_their_wrapper",
+        "tests/test_messages.py::test_system_text_is_the_raw_governing_body_while_message_bodies_stay_escaped",
+        "tests/test_messages.py::test_governance_takes_system_and_everything_else_one_user_message",
+        "tests/test_conformance.py::test_conformance_case"
       ]
     },
     {
@@ -200,7 +210,8 @@
         "tests/test_fitting.py::test_without_the_upgrades_the_same_items_shed_at_their_default_tiers",
         "tests/test_fitting.py::test_items_over_their_cap_are_reduced_in_shedding_order_before_budget_pressure",
         "tests/test_fitting.py::test_caps_apply_even_when_the_payload_fits",
-        "tests/test_fitting.py::test_an_item_exactly_at_its_cap_is_untouched"
+        "tests/test_fitting.py::test_an_item_exactly_at_its_cap_is_untouched",
+        "tests/test_messages.py::test_the_payload_is_canonical_json_and_its_size_is_the_sum_of_its_texts"
       ]
     },
     {
@@ -255,7 +266,8 @@
         "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason",
         "tests/test_refusal.py::test_a_missing_required_slot_is_reported_before_the_budget",
         "tests/test_refusal.py::test_a_protected_refusal_comes_before_the_evidence_check",
-        "tests/test_placement.py::test_a_missing_required_slot_is_reported_before_an_unplaced_protected_item"
+        "tests/test_placement.py::test_a_missing_required_slot_is_reported_before_an_unplaced_protected_item",
+        "tests/test_messages.py::test_the_payload_is_canonical_json_and_its_size_is_the_sum_of_its_texts"
       ]
     },
     {

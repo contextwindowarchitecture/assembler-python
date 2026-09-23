@@ -7,6 +7,7 @@ from typing import Iterable, Mapping, Protocol
 from ..model import Item, Profile
 from ..tokenize import Tokenizer
 from .fixture_xml import FixtureXml
+from .messages import Messages
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,4 +54,4 @@ class Renderer(Protocol):
     def render(self, occurrences: tuple[Occurrence, ...]) -> Rendered: ...
 
 
-REGISTRY: dict[str, Renderer] = {r.id: r for r in (FixtureXml(),)}
+REGISTRY: dict[str, Renderer] = {r.id: r for r in (FixtureXml(), Messages())}
