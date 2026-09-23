@@ -12,7 +12,9 @@ from conftest import CASES, read_json
 IGNORED = ("trace_id", "timings")
 
 # Cases whose milestone is in progress. Strict: once a case passes, pytest fails until it is removed here.
-PENDING: dict[str, str] = {}
+PENDING: dict[str, str] = {
+    "ordering-astral-ids": "M5: ids still sort by code point, not UTF-16 code units",
+}
 # What a pending case may raise in place of an outcome: its milestone's gap, or a missing renderer
 # or tokenizer, which conformance/README.md treats as a skipped case.
 GAPS = (NotImplementedError, SnapshotError)

@@ -31,6 +31,10 @@ When an item fails several admission checks, the trace records the earliest appl
 
 The last admission check is placement (R-20). An item whose slot the profile does not place is excluded with `slot_unplaced`, unless it is protected: a protected item is admitted, and assembly then refuses with `protected_slot_unplaced`. An item is protected when its tier is, which is its own `tier` when it sets one and otherwise its slot's default raised by the route's `tier_upgrades`.
 
+## Ordering
+
+Wherever this document orders strings (item, producer and group ids, slot names, field names), it compares them by UTF-16 code units, the order RFC 8785 uses for member names. Shorter strings come first when one is a prefix of the other. JavaScript's default sort already compares this way. Other languages must do so explicitly; in Python, for example, sort by `s.encode("utf-16-be")`. Code-point order, the default in Python, Go and Rust, differs only when a string holds a character outside the Basic Multilingual Plane: U+1F600 sorts before U+FF5A in UTF-16 code units, and after it in code points. The `ordering-astral-ids` case checks this.
+
 ## Refusals
 
 A refused trace has `result: null`, `included: []` and `compressed: []` (R-17). It keeps the producer, admission and conflict rows in `excluded[]`, `conflicts[]` and `defaults_filled[]`: conflicts are resolved right after admission, before any refusal check, and resolution never excludes a protected item, so it cannot cause `required_slot_missing`. An `evidence_required` refusal comes after fitting, so it also keeps the fitting rows. Assembly checks the refusal conditions in `contract/reasons.json` order and records the first that holds (R-21):

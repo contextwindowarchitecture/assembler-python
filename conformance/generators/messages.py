@@ -7,6 +7,7 @@ those tables. The generator only checks that each table is self-consistent: the 
 realizable, and the payload fits after the last omission and not before it.
 """
 import copy, hashlib, json, os, sys
+U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 sys.dont_write_bytecode = True  # importing fitting must not leave a __pycache__ for implementations to vendor
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -54,7 +55,7 @@ def render(placement, kept, marks):
     """kept: {id: item}. Returns payload bytes, the renderer's token count and included rows."""
     system, tools, parts, included = [], [], [], []
     for slot, wrap in placement:
-        for it in sorted((v for v in kept.values() if v["slot"] == slot), key=lambda v: v["id"]):
+        for it in sorted((v for v in kept.values() if v["slot"] == slot), key=lambda v: U16(v["id"])):
             conflict = {"conflict": marks[it["id"]]} if it["id"] in marks else {}
             if wrap in ("system", "tools"):
                 body = it["body"]
@@ -101,12 +102,12 @@ def build(case):
     groups = case.get("groups", [])
     snapshot = {"assembly_time": T, "scope": SCOPE, "budget": {"input": budget, "reserved_output": 1024}, "profile": profile,
                 "route_policy": policy, "tokenizer": "fixture-whitespace/v1", "renderer": RENDERER,
-                "batches": [{"producer": {"id": p, "kind": PRODUCERS[p][0]}, "items": batches[p], "excluded": []} for p in sorted(batches)],
+                "batches": [{"producer": {"id": p, "kind": PRODUCERS[p][0]}, "items": batches[p], "excluded": []} for p in sorted(batches, key=U16)],
                 "conflicts": [{"id": g["id"], "kind": "instruction", "items": g["items"]} for g in groups]}
     if any(it["slot"] == "governance.capabilities" for it, _ in rows):
         snapshot["capabilities"] = GRANT
 
-    admission = sorted(((PRODUCER[it["slot"]], it["id"], r, it["slot"]) for it, r in rows if r != "admit"), key=lambda r: (r[0], r[1]))
+    admission = sorted(((PRODUCER[it["slot"]], it["id"], r, it["slot"]) for it, r in rows if r != "admit"), key=lambda r: (U16(r[0]), U16(r[1])))
     excluded = [{"item_id": i, "reason": r, "stage": "assembler", "slot": s} for _, i, r, s in admission]
     kept = {it["id"]: it for it, r in rows if r == "admit"}
     marks = {i: g["id"] for g in groups for i in g["items"]}
@@ -124,8 +125,8 @@ def build(case):
         "trace_id": name, "profile": {"id": profile["id"], "version": 1}, "budget": snapshot["budget"],
         "result": {"input_tokens": input_tokens, "hash": hashlib.sha256(payload).hexdigest()},
         "included": included, "compressed": [], "excluded": excluded,
-        "conflicts": [{"group_id": g["id"], "kind": "instruction", "items": sorted(g["items"]), "decided_by": "escalated", "resolution": "surfaced"}
-                      for g in sorted(groups, key=lambda g: g["id"])],
+        "conflicts": [{"group_id": g["id"], "kind": "instruction", "items": sorted(g["items"], key=U16), "decided_by": "escalated", "resolution": "surfaced"}
+                      for g in sorted(groups, key=lambda g: U16(g["id"]))],
         "refused": {"bool": False, "reason": None},
         "context": {"assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": RENDERER},
         "defaults_filled": [],

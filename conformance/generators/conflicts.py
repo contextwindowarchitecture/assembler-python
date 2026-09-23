@@ -9,6 +9,7 @@ no protected item is excluded, moot means fewer than two members, and the refusa
 follow from the groups' resolutions. Budgets are generous, so fitting never acts.
 """
 import copy, hashlib, json, os, sys
+U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 sys.dont_write_bytecode = True  # importing fitting must not leave a __pycache__ for implementations to vendor
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -27,7 +28,7 @@ def render(kept, marks):
     """kept: {id: item}; marks: {id: group id} for members of surfaced groups."""
     parts, included = [], []
     for slot in PLACEMENT:
-        for it in sorted((v for v in kept.values() if v["slot"] == slot), key=lambda v: v["id"]):
+        for it in sorted((v for v in kept.values() if v["slot"] == slot), key=lambda v: U16(v["id"])):
             b = esc(it["body"])
             attrs = f' id="{esc(it["id"]).replace(chr(34), "&quot;")}"'
             if it["id"] in marks:
@@ -54,13 +55,13 @@ def build(case):
     groups = case["groups"]
     snapshot = {"assembly_time": T, "scope": SCOPE, "budget": {"input": 4000, "reserved_output": 1024}, "profile": profile,
                 "route_policy": policy, "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1",
-                "batches": [{"producer": {"id": p, "kind": KINDS[p]}, "items": batches[p], "excluded": []} for p in sorted(batches)],
+                "batches": [{"producer": {"id": p, "kind": KINDS[p]}, "items": batches[p], "excluded": []} for p in sorted(batches, key=U16)],
                 "conflicts": [{k: g[k] for k in ("id", "kind", "fact", "items") if k in g} for g in groups]}
 
     producer_of = {it["id"]: p for it, p, _ in rows}
     admitted = {it["id"]: it for it, _, r in rows if r == "admit"}
     excluded = [{"item_id": i, "reason": r, "stage": "assembler", "slot": s}
-                for _, i, r, s in sorted((p, it["id"], r, it["slot"]) for it, p, r in rows if r != "admit")]
+                for _, i, r, s in sorted(((p, it["id"], r, it["slot"]) for it, p, r in rows if r != "admit"), key=lambda r: (U16(r[0]), U16(r[1])))]
 
     # Self-consistency of the intent table.
     ids = [g["id"] for g in groups]
@@ -91,7 +92,7 @@ def build(case):
             marks.update({i: g["id"] for i in members})
         if g["resolution"] in ("context_requested", "refused"):
             refusing.append(g["resolution"])
-    excluded += [conflict_rows[i] for i in sorted(conflict_rows)]
+    excluded += [conflict_rows[i] for i in sorted(conflict_rows, key=U16)]
 
     required = any(it["slot"] == "governance.instructions" for it in kept.values()) and any(it["slot"] == "interaction.query" for it in kept.values())
     refusal = "required_slot_missing" if not required else "conflict_unresolved" if refusing else None
@@ -104,9 +105,9 @@ def build(case):
         "trace_id": name, "profile": {"id": profile["id"], "version": 1}, "budget": snapshot["budget"],
         "result": None if refusal else {"input_tokens": count(payload.decode()), "hash": hashlib.sha256(payload).hexdigest()},
         "included": [] if refusal else included, "compressed": [], "excluded": excluded,
-        "conflicts": [{"group_id": g["id"], "kind": g["kind"], "items": sorted(g["items"]), "decided_by": g["decided_by"],
+        "conflicts": [{"group_id": g["id"], "kind": g["kind"], "items": sorted(g["items"], key=U16), "decided_by": g["decided_by"],
                        "resolution": g["resolution"], **({"winner": g["winner"]} if "winner" in g else {})}
-                      for g in sorted(groups, key=lambda g: g["id"])],
+                      for g in sorted(groups, key=lambda g: U16(g["id"]))],
         "refused": {"bool": bool(refusal), "reason": refusal},
         "context": {"assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1"},
         "defaults_filled": [],

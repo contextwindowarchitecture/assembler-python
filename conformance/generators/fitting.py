@@ -9,6 +9,7 @@ fits after the last action and not before it, and each chosen variant is the one
 conformance/README.md's Fitting section selects.
 """
 import copy, hashlib, json, os, re, sys
+U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 WEB = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 DEFAULTS = json.load(open(os.path.join(WEB, "contract/slot-defaults.json")))
@@ -37,7 +38,10 @@ def item(id, slot, body, **fields):
         d.update(scope={"tenant": "acme"}, freshness="2026-09-12T15:30:00Z")
     if slot == "interaction.memory":
         d.update(source="turn:3", expires="2026-12-01T00:00:00Z")
+    unset = fields.pop("unset", ())  # policy fields the producer leaves for the assembler to fill (R-3)
     d.update(fields)
+    for f in unset:
+        del d[f]
     return d
 
 
@@ -54,7 +58,7 @@ def render(placement, kept):
     """kept: {id: (item, body)}. Returns payload bytes and included rows, per the fixture renderer."""
     parts, included = [], []
     for slot in placement:
-        for it, body in sorted((v for v in kept.values() if v[0]["slot"] == slot), key=lambda v: v[0]["id"]):
+        for it, body in sorted((v for v in kept.values() if v[0]["slot"] == slot), key=lambda v: U16(v[0]["id"])):
             b = esc(body)
             parts.append(f'<{slot} id="{esc(it["id"]).replace(chr(34), "&quot;")}">\n{b}\n</{slot}>\n')
             included.append({"slot": slot, "item_id": it["id"], "tokens": count(b), "source_version": it["source_version"]})
@@ -85,10 +89,10 @@ def build(case):
         batches.setdefault(PRODUCER[it["slot"]], []).append(it)
     snapshot = {"assembly_time": T, "scope": SCOPE, "budget": {"input": budget, "reserved_output": 1024}, "profile": profile,
                 "route_policy": policy, "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1",
-                "batches": [{"producer": {"id": p, "kind": KINDS[p]}, "items": batches[p], "excluded": []} for p in sorted(batches)],
+                "batches": [{"producer": {"id": p, "kind": KINDS[p]}, "items": batches[p], "excluded": []} for p in sorted(batches, key=U16)],
                 "conflicts": []}
 
-    admission = sorted(((PRODUCER[it["slot"]], it["id"], r, it["slot"]) for it, r in rows if r != "admit"), key=lambda r: (r[0], r[1]))
+    admission = sorted(((PRODUCER[it["slot"]], it["id"], r, it["slot"]) for it, r in rows if r != "admit"), key=lambda r: (U16(r[0]), U16(r[1])))
     excluded = [{"item_id": i, "reason": r, "stage": "assembler", "slot": s} for _, i, r, s in admission]
     admitted = {it["id"]: it for it, r in rows if r == "admit"}
     kept = {i: (it, it["body"]) for i, it in admitted.items()}
@@ -166,7 +170,8 @@ def build(case):
             for row in included if row["item_id"] in compressed],
         "excluded": excluded, "conflicts": [], "refused": {"bool": bool(refusal), "reason": refusal},
         "context": {"assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1"},
-        "defaults_filled": [],
+        "defaults_filled": [{"item_id": i, "field": f} for i, f in
+                            sorted(((it["id"], f) for it, _ in rows for f in POLICY if f not in it), key=lambda x: (U16(x[0]), POLICY.index(x[1])))],
     }
     if recovery:
         trace["recovery"] = {"action": recovery}
@@ -315,6 +320,24 @@ CASES = [
             (item("turn:18", "interaction.query", QUERY), "admit"),
         ],
         "refuse": "protected_content_over_budget",
+    },
+    {
+        "id": "ordering-astral-ids",
+        "rules": ["R-3", "R-16", "R-21", "R-22", "R-23"],
+        "description": "Ids holding characters outside the Basic Multilingual Plane order by UTF-16 code units, not code points: in the payload, in admission and fitting rows, in defaults_filled, and in the id tie-break that decides which of two equally ranked items is shed.",
+        "budget": 53,
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("kb:\uff5a", "evidence.knowledge", "Pro plans refund in full within 30 days.", relevance=0.9, unset=("lineage",)), "admit"),
+            (item("kb:\U0001f600", "evidence.knowledge", "Refunds go to the original payment method.", relevance=0.9, unset=("lineage",)), "admit"),
+            (item("kb:\uff58", "evidence.knowledge", "Refund requests need the order number.", relevance=0.6), "admit"),
+            (item("kb:\U0001f642", "evidence.knowledge", "Refunds take up to five business days.", relevance=0.6), "admit"),
+            (item("kb:\uff57", "evidence.knowledge", "Gift cards are not refundable.", relevance=0.2), "below_threshold"),
+            (item("kb:\U0001f643", "evidence.knowledge", "Store credit never expires.", relevance=0.2), "below_threshold"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        # Equal relevance and freshness, so id decides rank: U+1F642 is D83D DE42 and ranks above U+FF58.
+        "actions": [("omit", "kb:\uff58")],
     },
     {
         "id": "required-slot-missing",

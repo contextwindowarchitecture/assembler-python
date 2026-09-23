@@ -4,6 +4,7 @@ Expected results come from the INTENT column, not from admission logic, so the c
 fail an implementation. Rendering and counting follow conformance/README.md's fixture rules.
 """
 import copy, hashlib, json, os, re, sys
+U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 WEB = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 OUT = os.path.join(WEB, "conformance/cases/admission-reasons")
@@ -134,14 +135,14 @@ for producer, it, intent in ROWS:
         admitted.append(it)
     else:
         excluded.append((producer, rid, intent, it.get("slot")))
-excluded.sort(key=lambda r: (r[0], r[1]))
+excluded.sort(key=lambda r: (U16(r[0]), U16(r[1])))
 row = lambda rid, r, slot: {"item_id": rid, "reason": r, "stage": "assembler", **({"slot": slot} if slot in DEFAULTS else {})}
 
 WS = re.compile(r"[^\t\n\v\f\r    -     　﻿]+")
 esc = lambda s: s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 parts, included = [], []
 for slot in placement:
-    for it in sorted((i for i in admitted if i["slot"] == slot), key=lambda i: i["id"]):
+    for it in sorted((i for i in admitted if i["slot"] == slot), key=lambda i: U16(i["id"])):
         body = esc(it["body"])
         parts.append(f'<{slot} id="{esc(it["id"]).replace(chr(34), "&quot;")}">\n{body}\n</{slot}>\n')
         included.append({"slot": slot, "item_id": it["id"], "tokens": len(WS.findall(body)), "source_version": it["source_version"]})
@@ -155,7 +156,7 @@ trace = {
     "excluded": [{"item_id": "m:expired", "reason": "expired", "stage": "producer"}] + [row(rid, r, slot) for _, rid, r, slot in excluded],
     "conflicts": [], "refused": {"bool": False, "reason": None},
     "context": {"assembly_time": T, "route_policy_version": "admission/v1", "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1"},
-    "defaults_filled": [{"item_id": i, "field": f} for i, f in sorted(filled, key=lambda x: (x[0], POLICY.index(x[1])))],
+    "defaults_filled": [{"item_id": i, "field": f} for i, f in sorted(filled, key=lambda x: (U16(x[0]), POLICY.index(x[1])))],
 }
 case = {"id": "admission-reasons", "rules": ["R-1", "R-2", "R-3", "R-8", "R-9", "R-10", "R-13", "R-14", "R-15", "R-16", "R-18", "R-21", "R-22"],
         "description": "One candidate per admission reason, each failing exactly its intended check first, plus admitted items at the boundaries: clock skew, sub-millisecond expiry, route tier upgrade, verified MCP server, and escaped history."}
