@@ -131,7 +131,7 @@ The snapshot stores the *outcome* of authentication (producer id, kind, verified
 
 ### 2.3 Package layout
 
-This is the planned layout. As built through M10, `src/cwa/` holds `assemble.py` (pipeline, refusals and the R-12 recovery mapping), `admission.py`, `conflicts.py`, `fitting.py`, `snapshot.py`, `model.py`, `canonical.py` (RFC 8785), `instants.py`, `trace.py`, `render/` (`fixture_xml.py`, `messages.py` from M4), `tokenize/` (`fixture_whitespace.py`) and `registry.py` (M4), `supersede.py` (M8), `dedupe.py` (M7), `diversity.py` (M9) and `contract/` (vendored data, pinned by `contract.lock.json`). M5 added `strings.py` (the portable string rules) and `conformance.py`, the runner behind `python -m cwa.conformance`. There is no `evidence.py`, `policy.py` or `reasons.py`: the reason registry and route policy are read from the vendored JSON.
+This is the planned layout. As built through M11, `src/cwa/` holds `assemble.py` (pipeline, refusals and the R-12 recovery mapping), `admission.py`, `conflicts.py`, `fitting.py`, `snapshot.py`, `model.py`, `canonical.py` (RFC 8785), `instants.py`, `trace.py`, `render/` (`fixture_xml.py`, `messages.py` from M4), `tokenize/` (`fixture_whitespace.py`, and `estimate_utf8.py` from M11) and `registry.py` (M4), `supersede.py` (M8), `dedupe.py` (M7), `diversity.py` (M9) and `contract/` (vendored data, pinned by `contract.lock.json`). M5 added `strings.py` (the portable string rules) and `conformance.py`, the runner behind `python -m cwa.conformance`. There is no `evidence.py`, `policy.py` or `reasons.py`: the reason registry and route policy are read from the vendored JSON.
 
 ```
 cwa/
@@ -146,7 +146,7 @@ cwa/
   diversity.py         route-requested source diversity cap (R-26, M9)
   evidence.py          R-12 check + recovery mapping
   render/              Renderer protocol · fixture_xml.py · text.py · messages.py
-  tokenize/            Tokenizer protocol · fixture_whitespace.py · estimate.py · tiktoken.py (extra)
+  tokenize/            Tokenizer protocol · fixture_whitespace.py · estimate_utf8.py (a tiktoken adapter is an example, outside the core)
   policy.py            RoutePolicy (declarative), predicates
   registry.py          lockfile, sha256 pins for profiles and policies (R-20)
   trace.py             TraceBuilder, schema validation, canonical ordering
@@ -641,7 +641,7 @@ flowchart LR
 - **M13 · Second implementation.** A minimal JavaScript assembler passes every conformance case, which shows the suite is language-neutral (§10).
 - **M14 · Release hygiene.** A LICENSE in both repos (the maintainer chooses which), CI running both suites, a CHANGELOG, `py.typed`, and a benchmark for §7's expectations.
 
-**M11 status (2026-09-23): in progress. Pluggable tokenizer** (R-16, R-17, R-21). The maintainer took the recommended option on all four questions (D-19). Spec first: website `77ba261` adds the optional `budget.margin_percent`, `4b13043` defines `estimate-utf8/v1`, and `a3ad837` adds three cases. The margin is built: `Budget.charged` applies it in fitting's one fit test, which the protected-content and slot-floor refusals share, and the trace's budget repeats it. `tokenizer-estimate-utf8` is pending, with R-16 and R-21 held at *in progress* until it passes. Unit tests pin what the cases leave open: rounding up (57.2 charges 58), counts in the trace that stay unscaled, a budget without a margin that traces none, and item and slot caps that ignore even a 100% margin. A mutation that rounded down was caught.
+**M11 status (2026-09-23): in progress. Pluggable tokenizer** (R-16, R-17, R-21). The maintainer took the recommended option on all four questions (D-19). Spec first: website `77ba261` adds the optional `budget.margin_percent`, `4b13043` defines `estimate-utf8/v1`, and `a3ad837` adds three cases. The margin is built: `Budget.charged` applies it in fitting's one fit test, which the protected-content and slot-floor refusals share, and the trace's budget repeats it. `estimate-utf8/v1` is built as `cwa.tokenize.EstimateUtf8`, so all 44 cases pass and R-16 and R-21 are claimed again; a mutation counting code points instead of bytes was caught. Unit tests pin what the cases leave open: rounding up (57.2 charges 58), counts in the trace that stay unscaled, a budget without a margin that traces none, and item and slot caps that ignore even a 100% margin. A mutation that rounded down was caught.
 
 **M10 status (2026-09-23): done. Slot floors** (R-16, R-17). The maintainer took the recommended option on all four questions (D-16): a hard floor that refuses with the new `slot_floor_over_budget`, a slot that freezes at its first withheld reduction, R-16's tier-order exception for droppable items a floor holds, and amendments to R-16 and R-17 rather than a new requirement. Spec first: website `3856762` adds `slots.<slot>.min_tokens`, the refusal code and the Fitting rules; `a8530ee` adds three cases, vendored here as pending, with the requirements they tag (R-16, R-17, R-18, R-21) held at *in progress* until they passed.
 

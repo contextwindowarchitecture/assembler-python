@@ -452,8 +452,7 @@
         "R-16",
         "R-21"
       ],
-      "outcome": "skipped",
-      "detail": "no tokenizer estimate-utf8/v1"
+      "outcome": "passed"
     }
   ]
 }

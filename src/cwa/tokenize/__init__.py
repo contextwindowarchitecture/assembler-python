@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from .estimate_utf8 import EstimateUtf8
 from .fixture_whitespace import FixtureWhitespace
 
 
@@ -15,4 +16,4 @@ class Tokenizer(Protocol):
     def count(self, text: str) -> int: ...
 
 
-REGISTRY: dict[str, Tokenizer] = {t.id: t for t in (FixtureWhitespace(),)}
+REGISTRY: dict[str, Tokenizer] = {t.id: t for t in (FixtureWhitespace(), EstimateUtf8())}

@@ -13,9 +13,7 @@ from cwa.trace import TraceError
 from conftest import CASES, read_json
 
 # Cases whose milestone is in progress. Strict: once a case passes, pytest fails until it is removed here.
-PENDING: dict[str, str] = {
-    "tokenizer-estimate-utf8": "M11: estimate-utf8/v1 is not provided yet",
-}
+PENDING: dict[str, str] = {}
 # What a pending case may raise in place of an outcome: its milestone's gap, a trace the newer
 # schema rejects, or a missing renderer or tokenizer, which conformance/README.md treats as a
 # skipped case.
