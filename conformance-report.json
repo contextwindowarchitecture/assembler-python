@@ -5,7 +5,7 @@
     "language": "python"
   },
   "contract": {
-    "website_commit": "a8530eef9789c9bd046ee93f1ce331561bb02c52",
+    "website_commit": "d141663de6e2063c76146726f7321e8e0d90dd5b",
     "dirty": false
   },
   "cases": [
@@ -210,6 +210,16 @@
         "R-11",
         "R-16",
         "R-21",
+        "R-24"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "dedupe-producer-reported",
+      "rules": [
+        "R-13",
+        "R-21",
+        "R-22",
         "R-24"
       ],
       "outcome": "passed"

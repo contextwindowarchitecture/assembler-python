@@ -81,6 +81,17 @@ def _conflict_errors(document: Mapping[str, Any]) -> list[str]:
     return problems
 
 
+def _report_errors(document: Mapping[str, Any]) -> list[str]:
+    """R-13: a near-duplicate a producer reports names a candidate it kept, from its own batch."""
+    problems = []
+    for batch in document["batches"]:
+        candidates = {usable_id(item) for item in batch["items"]}
+        for row in batch["excluded"]:
+            if "duplicate_of" in row and row["duplicate_of"] not in candidates:
+                problems.append(f"{row['item_id']} names {row['duplicate_of']!r} as kept, which is not a candidate in {batch['producer']['id']}'s batch")
+    return problems
+
+
 def _profile_errors(profile: Profile, policy: Mapping[str, Any]) -> list[str]:
     """R-20: the profile names the route policy it was built for and places the slots every
     assembly on that route needs."""
@@ -137,7 +148,7 @@ class Snapshot:
         producer_ids = [b["producer"]["id"] for b in document["batches"]]
         if duplicates := sorted({i for i in producer_ids if producer_ids.count(i) > 1}):
             problems.append(f"producer ids appear in more than one batch: {', '.join(duplicates)}")
-        problems += _conflict_errors(document)
+        problems += _conflict_errors(document) + _report_errors(document)
         if problems:
             raise SnapshotError(problems)
 

@@ -162,7 +162,9 @@
       "evidence": [
         "tests/test_admission.py::test_retrieval_packets_carry_reference_only",
         "tests/test_admission.py::test_threshold_and_age_eligibility",
-        "tests/test_admission.py::test_an_item_without_a_score_cannot_clear_a_threshold"
+        "tests/test_admission.py::test_an_item_without_a_score_cannot_clear_a_threshold",
+        "tests/test_snapshot.py::test_a_reported_duplicate_must_name_a_candidate_of_its_own_batch",
+        "tests/test_snapshot.py::test_a_reported_duplicate_is_carried_into_the_trace_as_reported"
       ]
     },
     {

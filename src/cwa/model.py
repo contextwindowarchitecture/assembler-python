@@ -80,6 +80,8 @@ class ProducerExclusion:
     item_id: str
     reason: str
     stage: str
+    duplicate_of: str | None = None
+    """For duplicate_content: the candidate the producer kept in this item's place (R-13)."""
 
 
 @dataclass(frozen=True, slots=True)

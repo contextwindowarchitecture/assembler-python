@@ -159,7 +159,7 @@
     "code": "duplicate_content",
     "kind": "exclusion",
     "rule": "R-24",
-    "text": "The route asked this slot for deduplication, and the item's body equals a kept item's body once whitespace is collapsed. duplicate_of names the item kept."
+    "text": "The item's body duplicates a kept item's: either the route asked this slot for exact deduplication and the bodies match once whitespace is collapsed (R-24), or a retriever dropped it as a near-duplicate and reported it at stage producer (R-13). duplicate_of names the item kept."
   },
   {
     "code": "source_diversity_cap",

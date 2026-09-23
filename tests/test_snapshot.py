@@ -138,3 +138,23 @@ def test_a_surrogate_pair_is_one_character(fixture_snapshot):
     fixture_snapshot["batches"][0]["items"][0]["body"] = "a pair 😀 is fine"
     batches = Snapshot.from_json(fixture_snapshot).to_json()["batches"]
     assert next(b for b in batches if b["producer"]["id"] == "policy-registry")["items"][0]["body"] == "a pair \U0001f600 is fine"
+
+
+# R-13: a retriever's reported near-duplicate names a candidate it kept, from the same batch.
+
+def report(snapshot: dict, producer: str, **row) -> None:
+    batch = next(b for b in snapshot["batches"] if b["producer"]["id"] == producer)
+    batch["excluded"].append({"item_id": "kb:paraphrase", "reason": "duplicate_content", "stage": "producer", **row})
+
+
+@pytest.mark.parametrize("kept", ["nobody", "turn:18"])
+def test_a_reported_duplicate_must_name_a_candidate_of_its_own_batch(fixture_snapshot, kept):
+    report(fixture_snapshot, "policy-corpus", duplicate_of=kept)
+    with pytest.raises(SnapshotError, match=f"kb:paraphrase names {kept!r} as kept, which is not a candidate in policy-corpus's batch"):
+        Snapshot.from_json(fixture_snapshot)
+
+
+def test_a_reported_duplicate_is_carried_into_the_trace_as_reported(fixture_snapshot):
+    report(fixture_snapshot, "policy-corpus", duplicate_of="refunds-eu:v17#p4")
+    trace = assemble(Snapshot.from_json(fixture_snapshot)).trace
+    assert {"item_id": "kb:paraphrase", "reason": "duplicate_content", "stage": "producer", "duplicate_of": "refunds-eu:v17#p4"} in trace["excluded"]

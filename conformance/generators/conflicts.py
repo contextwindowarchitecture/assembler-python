@@ -5,7 +5,8 @@ declared group with the decision it intends: decided_by, resolution, winner and 
 excludes. A case may also list the items it intends supersession to exclude ("superseded") and the
 duplicates it intends deduplication to exclude ("duplicates"), each with the item kept in its place,
 the items it intends the source diversity cap to exclude ("capped"), and producers beyond the fixed
-set ("producers"). supersede.py, dedupe.py and diversity.py build those cases. Expected traces and payloads come from those
+set ("producers"), and the rows each producer reports in its batch's excluded list ("producer_excluded").
+supersede.py, dedupe.py and diversity.py build those cases. Expected traces and payloads come from those
 tables, not from a resolution algorithm, so the cases can fail an implementation. The generator
 only checks that each table is self-consistent with conformance/README.md's Conflicts,
 Supersession, Deduplication and Source diversity sections: excluded and winning items are admitted members, no
@@ -91,15 +92,22 @@ def build(case):
         assert it["slot"] in slots_of[producer], f"{name}: {producer} cannot emit {it['slot']}"
         batches.setdefault(producer, []).append(it)
     groups = case["groups"]
+    reported = case.get("producer_excluded", {})
+    for p, report in reported.items():  # R-13: a reported duplicate names a candidate the producer kept
+        for row in report:
+            assert row["stage"] == "producer" and ("duplicate_of" in row) == (row["reason"] == "duplicate_content")
+            assert "duplicate_of" not in row or row["duplicate_of"] in {it["id"] for it in batches.get(p, [])}, f"{name}: {row} names no candidate of {p}"
     snapshot = {"assembly_time": T, "scope": SCOPE, "budget": {"input": 4000, "reserved_output": 1024}, "profile": profile,
                 "route_policy": policy, "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1",
-                "batches": [{"producer": {"id": p, "kind": kinds[p]}, "items": batches[p], "excluded": []} for p in sorted(batches, key=U16)],
+                "batches": [{"producer": {"id": p, "kind": kinds[p]}, "items": batches.get(p, []), "excluded": reported.get(p, [])}
+                            for p in sorted(set(batches) | set(reported), key=U16)],
                 "conflicts": [{k: g[k] for k in ("id", "kind", "fact", "items") if k in g} for g in groups]}
 
     producer_of = {it["id"]: p for it, p, _ in rows}
     admitted = {it["id"]: it for it, _, r in rows if r == "admit"}
-    excluded = [{"item_id": i, "reason": r, "stage": "assembler", "slot": s}
-                for _, i, r, s in sorted(((p, it["id"], r, it["slot"]) for it, p, r in rows if r != "admit"), key=lambda r: (U16(r[0]), U16(r[1])))]
+    excluded = [dict(row) for p in sorted(reported, key=U16) for row in sorted(reported[p], key=lambda row: U16(row["item_id"]))]
+    excluded += [{"item_id": i, "reason": r, "stage": "assembler", "slot": s}
+                 for _, i, r, s in sorted(((p, it["id"], r, it["slot"]) for it, p, r in rows if r != "admit"), key=lambda r: (U16(r[0]), U16(r[1])))]
 
     # Self-consistency of the intent table.
     ids = [g["id"] for g in groups]

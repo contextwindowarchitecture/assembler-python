@@ -62,7 +62,7 @@
   {
     "id": "R-13",
     "scope": "boundary",
-    "note": "Requires relevance and reference_only. It cannot tell whether a producer merged passages."
+    "note": "Requires relevance and reference_only, and that a reported near-duplicate names a candidate the producer kept. It cannot tell whether a producer merged passages or dropped one silently."
   },
   {
     "id": "R-14",
