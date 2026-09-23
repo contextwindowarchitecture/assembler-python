@@ -566,7 +566,7 @@ flowchart LR
   M4 --> M5["M5 · Hardening<br/>R-21 R-22 R-23<br/>conformance-report → website"]
 ```
 
-**M5 status (2026-09-22): done. Hardening** (R-21, R-22, R-23). The maintainer took the recommended option on all four open questions (D-7 to D-10, §9). Spec first again: each spec change lands in the website, is vendored, and fails here before it is implemented.
+**M5 status (2026-09-22): done. Hardening** (R-21, R-22, R-23). The maintainer took the recommended option on all four open questions (D-7 to D-10, §9), and on D-11, which the work turned up. Spec first again: each spec change lands in the website, is vendored, and fails here before it is implemented.
 
 ```mermaid
 flowchart LR
@@ -582,7 +582,7 @@ flowchart LR
 - **Snapshot digest (D-10), done.** The spec defines the normalization and RFC 8785 serialization this assembler already used (website `52c9c5d`). Every expected trace carries the digest, the website recomputes it in JavaScript, and conformance here compares it. A snapshot string with an unpaired surrogate, which RFC 8785 cannot serialize, is a `SnapshotError`.
 - **Eligibility, done.** `included[]` rows carry the item's `eligibility` after defaults and route overrides are filled (website `ce40ef5`, R-22).
 - **Timings (D-9), done.** `assemble(snapshot, clock=...)` takes an optional monotonic clock in seconds from the caller and records `admission_ms`, `conflicts_ms`, `fitting_ms` (refusal checks and fitting) and `render_ms`. Without one, the trace has no `timings` and assembly reads no clock; the purity test runs both ways. A clock that runs backwards records 0.
-- **Conformance report (D-8).** A schema'd, language-neutral `conformance-report.json` records each case's outcome (website `c9027ec`). `python -m cwa.conformance` writes it, this assembler commits it beside `status.json`, and a test fails when it is stale. `tests/test_status.py` rejects an *implemented* or *boundary-checked* claim while a case tagged with its rule fails in the report.
+- **Conformance report (D-8).** A schema'd, language-neutral `conformance-report.json` records each case's outcome (website `c9027ec`). `python -m cwa.conformance` writes it, this assembler commits it beside `status.json`, and a test fails when it is stale. `tests/test_status.py` rejects an *implemented* or *boundary-checked* claim while a case tagged with its rule fails in the report. The website imports it beside `status.json` (website `d70e14b`), and its matrix shows each requirement's passing cases, counting a case published after the last run as not passing.
 
 Result: all twenty-five vendored cases pass, and `status.json` claims R-21, R-22 and R-23 implemented, so every checkable requirement is claimed: 14 implemented and 8 boundary-checked. Beyond the plan, M5 found and closed three cross-language traps (blank strings, timestamps, unpaired surrogates) and a Python `$` anchor that let a trailing newline through two checks. Not built: hypothesis property tests.
 
