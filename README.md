@@ -15,6 +15,8 @@ result = assemble(snapshot)               # pure: no I/O, clock or model
 result.payload    # bytes, or None when refused
 result.trace      # dict matching trace.schema.json
 snapshot.digest() # SHA-256 of the RFC 8785 form, the replay key
+
+assemble(snapshot, clock=time.perf_counter).trace["timings"]   # stage timings, only from a clock you lend
 ```
 
 Load profiles and route policies through the registry, so an edit under an unchanged version is caught before it reaches a snapshot:

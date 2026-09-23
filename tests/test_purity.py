@@ -4,6 +4,7 @@ import ast
 import builtins
 import datetime
 import io
+import itertools
 import os
 import random
 import socket
@@ -67,6 +68,7 @@ def test_assemble_needs_no_network_or_clock(case, monkeypatch):
     with _sealed(monkeypatch):
         if case not in PENDING:
             assemble(snapshot, trace_id="t")
+            assemble(snapshot, trace_id="t", clock=itertools.count().__next__)  # a lent clock is the only one read (D-9)
             return
         try:
             assemble(snapshot, trace_id="t")

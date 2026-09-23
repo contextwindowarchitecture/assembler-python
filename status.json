@@ -304,7 +304,10 @@
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_admission.py::test_assembler_exclusion_rows_carry_the_slot_the_candidate_names",
         "tests/test_fitting.py::test_over_budget_rows_name_the_slot_after_the_admission_rows",
-        "tests/test_golden.py::test_included_rows_record_eligibility_after_defaults_are_filled"
+        "tests/test_golden.py::test_included_rows_record_eligibility_after_defaults_are_filled",
+        "tests/test_timings.py::test_a_lent_clock_times_each_stage_in_milliseconds",
+        "tests/test_timings.py::test_a_refusal_times_only_the_stages_that_ran",
+        "tests/test_timings.py::test_a_clock_that_runs_backwards_records_zero"
       ]
     },
     {
@@ -320,7 +323,9 @@
         "tests/test_snapshot.py::test_producer_rows_order_by_producer_then_item_in_utf16_code_units",
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_snapshot.py::test_strings_with_unpaired_surrogates_are_rejected_before_assembly",
-        "tests/test_snapshot.py::test_a_surrogate_pair_is_one_character"
+        "tests/test_snapshot.py::test_a_surrogate_pair_is_one_character",
+        "tests/test_timings.py::test_without_a_clock_the_trace_has_no_timings",
+        "tests/test_timings.py::test_timings_never_change_the_payload_or_the_rest_of_the_trace"
       ]
     }
   ]

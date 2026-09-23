@@ -9,7 +9,7 @@ import hashlib
 import uuid
 from collections import Counter
 from dataclasses import dataclass, replace
-from typing import Any
+from typing import Any, Callable
 
 from .admission import Admission, admit
 from .conflicts import Resolution, resolve
@@ -117,23 +117,49 @@ def _original_body(snapshot: Snapshot, occurrence: Occurrence, compression: Comp
     return snapshot.renderer.render((replace(occurrence, item=original),)).bodies[0]
 
 
-def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResult:
+class _Stopwatch:
+    """Stage timings from a clock the caller lends (R-22, D-9). Without one, nothing reads a clock
+    and the trace has no timings. A clock that runs backwards records 0, never a negative time."""
+
+    def __init__(self, clock: Callable[[], float] | None):
+        self._clock, self._timings = clock, {}
+        self._last = clock() if clock else 0.0
+
+    def lap(self, stage: str) -> None:
+        if self._clock:
+            now = self._clock()
+            self._timings[f"{stage}_ms"] = max(0.0, (now - self._last) * 1000)
+            self._last = now
+
+    def recorded(self) -> dict[str, Any]:
+        return {"timings": self._timings} if self._clock else {}
+
+
+def assemble(snapshot: Snapshot, *, trace_id: str | None = None, clock: Callable[[], float] | None = None) -> AssemblyResult:
+    """clock, when given, is a monotonic clock in seconds, such as time.perf_counter. It only times
+    the stages; nothing it returns reaches the payload (R-23)."""
+    watch = _Stopwatch(clock)
     admission = admit(snapshot)
     items = admission.items
+    watch.lap("admission")
     # Conflicts resolve before any refusal check, so every trace records them (R-11).
     resolution = resolve(snapshot, items, admission.producers)
+    watch.lap("conflicts")
     reason, fitted, recovery = _refusal(snapshot, resolution)
+    watch.lap("fitting")  # the refusal checks, and fitting when they reach it
     if reason:
         # R-17: a refusal has no payload; exclusions found so far, including fitting's, stay in the trace.
         outcome = {"refused": {"bool": True, "reason": reason}, **({"recovery": {"action": recovery}} if recovery else {})}
-        return AssemblyResult(payload=None, trace=_trace(snapshot, admission, resolution, trace_id, fitted.omitted if fitted else (), **outcome))
+        return AssemblyResult(payload=None, trace=_trace(snapshot, admission, resolution, trace_id, fitted.omitted if fitted else (),
+                                                         **outcome, **watch.recorded()))
 
     occurrences = place(snapshot.profile, fitted.items, resolution.marks)
     rendered = snapshot.renderer.render(occurrences)
     input_tokens = rendered.tokens(snapshot.tokenizer)
+    watch.lap("render")
 
     return AssemblyResult(payload=rendered.payload, trace=_trace(
-        snapshot, admission, resolution, trace_id, fitted.omitted,
+        snapshot, admission, resolution, trace_id, fitted.omitted, **watch.recorded(),
         result={"input_tokens": input_tokens, "hash": hashlib.sha256(rendered.payload).hexdigest()},
         included=[
             {"slot": o.slot, "item_id": o.item.id, "tokens": snapshot.tokenizer.count(body), "source_version": o.item.source_version,
