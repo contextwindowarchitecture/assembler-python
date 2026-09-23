@@ -11,6 +11,7 @@ from .canonical import canonical_json, digest, utf16
 from .model import (Budget, CapabilityGrant, ConflictGroup, Placement, ProducerBatch, ProducerExclusion, ProducerIdentity,
                     Profile, RoutePolicy)
 from .render import REGISTRY as RENDERERS, Renderer
+from .strings import blank
 from .tokenize import REGISTRY as TOKENIZERS, Tokenizer
 
 
@@ -25,7 +26,7 @@ class SnapshotError(ValueError):
 def usable_id(candidate: Mapping[str, Any]) -> str | None:
     """The candidate's id if it is a non-blank string (R-2)."""
     value = candidate.get("id")
-    return value if isinstance(value, str) and value.strip() else None
+    return value if isinstance(value, str) and not blank(value) else None
 
 
 def _normalize(document: dict[str, Any]) -> dict[str, Any]:

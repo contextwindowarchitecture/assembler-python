@@ -7,15 +7,14 @@ import random
 import pytest
 
 from cwa import Snapshot, SnapshotError, assemble
+from cwa.snapshot import usable_id
 from cwa.trace import TraceError
 from conftest import CASES, read_json
 
 IGNORED = ("trace_id", "timings")
 
 # Cases whose milestone is in progress. Strict: once a case passes, pytest fails until it is removed here.
-PENDING: dict[str, str] = {
-    "admission-reasons": "M5: a U+FEFF id still counts as non-blank",
-}
+PENDING: dict[str, str] = {}
 # What a pending case may raise in place of an outcome: its milestone's gap, a trace the newer
 # schema rejects, or a missing renderer or tokenizer, which conformance/README.md treats as a
 # skipped case.
@@ -50,7 +49,7 @@ def _shuffled(document: dict, rng: random.Random) -> dict:
     document = copy.deepcopy(document)
     rng.shuffle(document["batches"])
     for batch in document["batches"]:
-        named = [c for c in batch["items"] if isinstance(c, dict) and isinstance(c.get("id"), str) and c["id"].strip()]
+        named = [c for c in batch["items"] if isinstance(c, dict) and usable_id(c)]
         rng.shuffle(named)
         batch["items"] = named + [c for c in batch["items"] if not any(c is n for n in named)]
         rng.shuffle(batch["excluded"])

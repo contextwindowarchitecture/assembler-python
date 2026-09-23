@@ -577,6 +577,7 @@ flowchart LR
 ```
 
 - **Order (D-7), done.** Wherever the spec orders strings, it compares UTF-16 code units, as RFC 8785 already orders member names (website `3b9bb51`). Only ids with characters outside the Basic Multilingual Plane notice. `cwa.canonical.utf16` is the sort key at every site: snapshot normalization, placement, admission, conflict and fitting rows, and the id tie-break in shedding. `ordering-astral-ids` (website `78a9d10`) passes.
+- **Blank strings, done.** A trap found on the way: R-2's "non-blank" was undefined, and the schemas' `\S` pattern reads differently in JavaScript and in Python's `re` at U+001C–U+001F and U+FEFF. The spec now defines blank by the ECMAScript whitespace set and spells that set out in every pattern (website `4f465ca`). `cwa.strings.blank` decides usable ids.
 - **Snapshot digest (D-10).** The spec defines the normalization and RFC 8785 serialization this assembler already uses, so every implementation computes the same `context.snapshot_digest` and conformance compares it.
 - **Timings (D-9).** `assemble(snapshot, clock=...)` takes an optional monotonic clock from the caller. Without one, the trace has no `timings` and assembly reads no clock. `included[]` rows also gain `eligibility` (R-22).
 - **Conformance report (D-8).** A schema'd, language-neutral `conformance-report.json` records each case's outcome. This assembler commits one beside `status.json`, the website matrix imports both, and an *implemented* claim is rejected while a case tagged with its rule fails.
