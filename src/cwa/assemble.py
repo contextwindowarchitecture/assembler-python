@@ -1,7 +1,7 @@
 """assemble(): a pure function from a frozen Snapshot to a payload and a trace.
 
-It admits, checks required slots, places, renders, counts, hashes and traces. Budget fitting (M2)
-and conflict resolution (M3) are not implemented yet, so any snapshot that would need them raises
+It admits, checks required slots, fits the budget, places, renders, counts, hashes and traces.
+Conflict resolution (M3) is not implemented yet, so any snapshot that would need it raises
 NotImplementedError rather than producing a payload the spec would not allow.
 """
 from __future__ import annotations
@@ -12,8 +12,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from .admission import Admission, admit
+from .fitting import fit
 from .model import Item
-from .render import Occurrence
+from .render import place
 from .snapshot import Snapshot
 from .trace import validate
 
@@ -78,19 +79,17 @@ def assemble(snapshot: Snapshot, *, trace_id: str | None = None) -> AssemblyResu
         raise NotImplementedError(f"admitted items in unplaced slots {unplaced} need placement checks (M4)")
     if snapshot.conflicts:
         raise NotImplementedError("conflict resolution lands in M3")
-    if reason := _refusal(snapshot, items):
+    fitted = None
+    if not (reason := _refusal(snapshot, items)):
+        fitted = fit(snapshot, items)
+        reason = fitted.refusal
+    if reason:
         # R-17: a refusal has no payload; exclusions found so far stay in the trace.
         return AssemblyResult(payload=None, trace=_trace(snapshot, admission, trace_id, refused={"bool": True, "reason": reason}))
 
-    occurrences = tuple(
-        Occurrence(position, placement.slot, placement.wrap, item)
-        for position, placement in enumerate(snapshot.profile.placement)
-        for item in sorted((i for i in items if i.slot == placement.slot), key=lambda i: i.id)
-    )
+    occurrences = place(snapshot.profile, fitted.items)
     rendered = snapshot.renderer.render(occurrences)
     input_tokens = snapshot.tokenizer.count(rendered.payload.decode("utf-8"))
-    if input_tokens > snapshot.budget.input:
-        raise NotImplementedError("budget fitting lands in M2")
 
     return AssemblyResult(payload=rendered.payload, trace=_trace(
         snapshot, admission, trace_id,

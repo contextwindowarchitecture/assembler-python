@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Iterable, Protocol
 
 from ..model import Item, Profile
 from .fixture_xml import FixtureXml
@@ -22,6 +22,16 @@ class Rendered:
     payload: bytes
     bodies: tuple[str, ...]
     """Each occurrence's rendered body, in order, for per-item token attribution."""
+
+
+def place(profile: Profile, items: Iterable[Item]) -> tuple[Occurrence, ...]:
+    """One occurrence per item per placement of its slot, in profile order and by id within a placement."""
+    by_id = sorted(items, key=lambda item: item.id)
+    return tuple(
+        Occurrence(position, placement.slot, placement.wrap, item)
+        for position, placement in enumerate(profile.placement)
+        for item in by_id if item.slot == placement.slot
+    )
 
 
 class Renderer(Protocol):

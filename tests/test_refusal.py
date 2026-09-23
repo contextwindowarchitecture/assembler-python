@@ -54,3 +54,24 @@ def test_a_parser_route_also_needs_an_output_contract(fixture_snapshot):
 
 def test_other_routes_do_not_need_an_output_contract(fixture_snapshot):
     assert not assemble(Snapshot.from_json(fixture_snapshot)).refused
+
+
+# R-17: protected content that cannot fit refuses rather than truncating, and nothing is shed first.
+
+def test_protected_content_over_budget_refuses_without_shedding(fixture_snapshot):
+    fixture_snapshot["budget"]["input"] = 20  # instructions and query alone render 21 tokens
+    result = assemble(Snapshot.from_json(fixture_snapshot))
+    assert_refused(result, "protected_content_over_budget")
+    assert [row["reason"] for row in result.trace["excluded"]] == ["expired"]
+
+
+def test_protected_content_that_exactly_fits_is_not_refused(fixture_snapshot):
+    fixture_snapshot["budget"]["input"] = 21
+    items(fixture_snapshot, "policy-corpus").clear()
+    assert not assemble(Snapshot.from_json(fixture_snapshot)).refused
+
+
+def test_a_missing_required_slot_is_reported_before_the_budget(fixture_snapshot):
+    fixture_snapshot["budget"]["input"] = 1
+    items(fixture_snapshot, "conversation").clear()
+    assert_refused(assemble(Snapshot.from_json(fixture_snapshot)), "required_slot_missing")

@@ -17,7 +17,6 @@ PENDING: dict[str, str] = {
     "evidence-precompute-summary": "M2: budget fitting and refusal",
     "evidence-request-context": "M2: budget fitting and refusal",
     "evidence-retrieve-narrower": "M2: budget fitting and refusal",
-    "protected-over-budget": "M2: budget fitting and refusal",
 }
 
 
