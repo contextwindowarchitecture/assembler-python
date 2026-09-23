@@ -2,13 +2,15 @@
 
 Each case lists its candidates with their authenticated producer and admission intent, and each
 declared group with the decision it intends: decided_by, resolution, winner and the members it
-excludes. Expected traces and payloads come from those tables, not from a resolution algorithm, so
-the cases can fail an implementation. The generator only checks that each table is self-consistent
-with conformance/README.md's Conflicts section: excluded and winning items are admitted members,
-no protected item is excluded, moot means fewer than two members, and the refusal and recovery
-follow from the groups' resolutions. Budgets are generous, so fitting never acts.
+excludes. A case may also list the duplicates it intends deduplication to exclude, each with the
+item kept in its place (dedupe.py builds those cases). Expected traces and payloads come from those
+tables, not from a resolution algorithm, so the cases can fail an implementation. The generator
+only checks that each table is self-consistent with conformance/README.md's Conflicts and
+Deduplication sections: excluded and winning items are admitted members, no protected item is
+excluded, moot means fewer than two members, the duplicates are exactly those the keys, exemptions
+and ranks imply, and the refusal and recovery follow. Budgets are generous, so fitting never acts.
 """
-import copy, hashlib, json, os, sys
+import copy, hashlib, json, os, re, sys
 U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 sys.dont_write_bytecode = True  # importing fitting must not leave a __pycache__ for implementations to vendor
@@ -23,6 +25,27 @@ SLOTS = {"policy-registry": ["governance.examples", "governance.instructions", "
          "state-svc": ["state.task", "state.user"], "policy-corpus": ["evidence.knowledge"], "wiki-corpus": ["evidence.knowledge"],
          "crm-mcp": ["evidence.tool_results"], "memory-svc": ["interaction.memory"], "conversation": ["interaction.history", "interaction.query"]}
 ESCALATED = {"surfaced", "context_requested", "refused"}
+WS_RUN = re.compile(r"[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+")
+TIMESTAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")  # one format, so text order is instant order
+
+
+def key(body):
+    """A body's deduplication key: whitespace runs (the Blank strings set) collapsed to one space, ends trimmed."""
+    return WS_RUN.sub(" ", body).strip(" ")
+
+
+def ranked(items, order_by):
+    """Item ids, highest rank first: order_by keys, then id (conformance/README.md, Fitting)."""
+    def sort_key(it):
+        keys = []
+        for k in order_by:
+            assert all(TIMESTAMP.fullmatch(i["freshness"]) for i in items), "freshness must compare as text"
+            if k == "-relevance":
+                keys.append((it.get("relevance") is None, -(it.get("relevance") or 0)))
+            else:
+                keys.append(tuple(-c for c in U16(it["freshness"])) if k == "-freshness" else tuple(U16(it["freshness"])))
+        return (*keys, U16(it["id"]))
+    return [it["id"] for it in sorted(items, key=sort_key)]
 
 
 def render(kept, marks):
@@ -96,10 +119,36 @@ def build(case):
             refusing.append(g["resolution"])
     excluded += [conflict_rows[i] for i in sorted(conflict_rows, key=U16)]
 
+    # Deduplication (R-24): right after conflicts, in the slots the route asks.
+    upgrades = policy.get("tier_upgrades", {})
+    rank_of = {"droppable": 0, "compressible": 1, "protected": 2}
+    tier = lambda it: it.get("tier") or max(DEFAULTS[it["slot"]]["tier"], upgrades.get(it["slot"], "droppable"), key=rank_of.get)
+    exempt = lambda i: tier(kept[i]) == "protected" or i in named
+    duplicates, implied = case.get("duplicates", {}), {}
+    for slot, rules in policy.get("slots", {}).items():
+        if rules.get("dedupe") != "exact":
+            continue
+        sets = {}
+        for i in ranked([it for it in kept.values() if it["slot"] == slot], rules.get("order_by", ["-relevance", "-freshness"])):
+            sets.setdefault(key(kept[i]["body"]), []).append(i)
+        for members in sets.values():
+            keep = [i for i in members if exempt(i)] or members[:1]
+            implied.update({i: keep[0] for i in members if i not in keep})
+    assert duplicates == implied, f"{name}: the duplicates table should be {implied}"
+    for i in sorted(duplicates, key=U16):
+        excluded.append({"item_id": i, "reason": "duplicate_content", "stage": "assembler", "slot": kept[i]["slot"], "duplicate_of": duplicates[i]})
+        del kept[i]
+
     required = any(it["slot"] == "governance.instructions" for it in kept.values()) and any(it["slot"] == "interaction.query" for it in kept.values())
-    refusal = "required_slot_missing" if not required else "conflict_unresolved" if refusing else None
+    evidence = [it for it in kept.values() if it["slot"] in ("evidence.knowledge", "evidence.tool_results")]
+    short = policy.get("requires_evidence") and (not evidence or any(
+        sum(it["slot"] == s for it in evidence) < policy.get("slots", {}).get(s, {}).get("min_included", 0)
+        for s in ("evidence.knowledge", "evidence.tool_results")))
+    refusal = "required_slot_missing" if not required else "conflict_unresolved" if refusing else "evidence_required" if short else None
     assert refusal == case.get("refuse"), f"{name}: the table implies refusal {refusal}"
     recovery = "request_context" if refusal == "conflict_unresolved" and all(r == "context_requested" for r in refusing) else None
+    if refusal == "evidence_required":
+        recovery = "request_context"  # nothing is omitted for budget here (R-12)
     assert recovery == case.get("recovery"), f"{name}: the table implies recovery {recovery}"
 
     payload, included = render(kept, marks)
@@ -127,7 +176,7 @@ def build(case):
             os.remove(payload_file)
     else:
         open(payload_file, "wb").write(payload)
-    print(f"{name}: {len(admitted)} admitted, {len(groups)} groups, {len(conflict_rows)} excluded by conflicts -> "
+    print(f"{name}: {len(admitted)} admitted, {len(groups)} groups, {len(conflict_rows)} excluded by conflicts, {len(duplicates)} duplicates -> "
           f"{refusal or trace['result']['input_tokens']}{' / ' + recovery if recovery else ''}")
 
 

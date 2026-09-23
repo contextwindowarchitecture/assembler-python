@@ -14,7 +14,7 @@ ALLOWED = {
 
 
 def test_every_requirement_has_one_status_in_order():
-    assert [row["id"] for row in STATUS] == [f"R-{n}" for n in range(1, 24)]
+    assert [row["id"] for row in STATUS] == [row["id"] for row in contract.load("requirements.json")]
 
 
 def test_each_status_fits_its_scope():

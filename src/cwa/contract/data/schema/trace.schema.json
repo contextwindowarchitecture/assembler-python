@@ -197,6 +197,12 @@
               "assembler"
             ]
           },
+          "duplicate_of": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]",
+            "description": "For duplicate_content only: the id of the item kept in its place (R-24)."
+          },
           "slot": {
             "type": "string",
             "enum": [
@@ -219,7 +225,35 @@
           "reason",
           "stage"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "if": {
+          "properties": {
+            "reason": {
+              "const": "duplicate_content"
+            }
+          },
+          "required": [
+            "reason"
+          ]
+        },
+        "then": {
+          "required": [
+            "duplicate_of"
+          ],
+          "properties": {
+            "duplicate_of": true
+          }
+        },
+        "else": {
+          "not": {
+            "required": [
+              "duplicate_of"
+            ],
+            "properties": {
+              "duplicate_of": true
+            }
+          }
+        }
       }
     },
     "conflicts": {

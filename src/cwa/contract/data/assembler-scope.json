@@ -113,5 +113,10 @@
     "id": "R-23",
     "scope": "assembler",
     "note": "Snapshot replay across processes, hash seeds, time zones and locales, with ordering, blank strings, timestamps and the digest pinned for every language."
+  },
+  {
+    "id": "R-24",
+    "scope": "assembler",
+    "note": "Excludes exact duplicate bodies in the slots a route opts in, after conflicts, keeping protected and grouped items."
   }
 ]

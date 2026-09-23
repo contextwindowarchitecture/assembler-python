@@ -150,6 +150,12 @@
     "text": "Route fact policy chose another member of the item's declared fact conflict group, by authenticated producer precedence or an allowed freshness tie-break. A protected item is never excluded this way; its group escalates."
   },
   {
+    "code": "duplicate_content",
+    "kind": "exclusion",
+    "rule": "R-24",
+    "text": "The route asked this slot for deduplication, and the item's body equals a kept item's body once whitespace is collapsed. duplicate_of names the item kept."
+  },
+  {
     "code": "over_budget",
     "kind": "exclusion",
     "rule": "R-16",

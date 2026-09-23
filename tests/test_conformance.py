@@ -13,7 +13,11 @@ from cwa.trace import TraceError
 from conftest import CASES, read_json
 
 # Cases whose milestone is in progress. Strict: once a case passes, pytest fails until it is removed here.
-PENDING: dict[str, str] = {}
+PENDING: dict[str, str] = {
+    "dedupe-evidence-required": "route-requested deduplication (R-24)",
+    "dedupe-exact": "route-requested deduplication (R-24)",
+    "dedupe-exemptions": "route-requested deduplication (R-24)",
+}
 # What a pending case may raise in place of an outcome: its milestone's gap, a trace the newer
 # schema rejects, or a missing renderer or tokenizer, which conformance/README.md treats as a
 # skipped case.

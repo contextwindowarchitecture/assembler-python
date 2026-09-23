@@ -5,7 +5,7 @@
     "language": "python"
   },
   "contract": {
-    "website_commit": "05266860655ea82ce3b552edae93db6a5fff3d8e",
+    "website_commit": "d2e8bd66841039c0713eff1046094fe7c192ef1a",
     "dirty": false
   },
   "cases": [
@@ -156,6 +156,39 @@
         "R-21"
       ],
       "outcome": "passed"
+    },
+    {
+      "id": "dedupe-evidence-required",
+      "rules": [
+        "R-12",
+        "R-17",
+        "R-21",
+        "R-24"
+      ],
+      "outcome": "failed",
+      "detail": "a payload, but a refusal was expected"
+    },
+    {
+      "id": "dedupe-exact",
+      "rules": [
+        "R-21",
+        "R-22",
+        "R-24"
+      ],
+      "outcome": "failed",
+      "detail": "payload bytes differ"
+    },
+    {
+      "id": "dedupe-exemptions",
+      "rules": [
+        "R-6",
+        "R-11",
+        "R-16",
+        "R-21",
+        "R-24"
+      ],
+      "outcome": "failed",
+      "detail": "payload bytes differ"
     },
     {
       "id": "evidence-precompute-summary",

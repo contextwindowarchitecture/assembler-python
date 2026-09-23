@@ -159,5 +159,12 @@
     "keyword": "MUST",
     "summary": "Determinism includes the clock and policy snapshot",
     "text": "Given identical items, variants, producer exclusions, conflict groups, authenticated producer context, scope, route-policy version and configuration, profile, tokenizer, renderer, assembly_time and budget, an assembler MUST produce identical rendered UTF-8 payload bytes and the same SHA-256 result hash, or the same refusal decision. Any mutable external reads or model calls MUST occur before that immutable assembly snapshot. Trace IDs and measured timing fields MAY differ; they are not part of the payload hash."
+  },
+  {
+    "id": "R-24",
+    "section": "fit",
+    "keyword": "MUST",
+    "summary": "Route-requested exact deduplication",
+    "text": "When a route sets dedupe: exact on a slot, the assembler MUST, after conflict resolution and before any refusal check or fitting, exclude each item in that slot whose body equals the body of an item it keeps in the slot, with reason duplicate_content, stage assembler and duplicate_of naming the kept item. Bodies MUST be compared code unit for code unit after collapsing each run of whitespace to one space and trimming both ends, without Unicode normalization or case folding. The assembler MUST NOT exclude a protected item or an item a conflict group names: a set of equal bodies that contains one keeps every such item, and otherwise keeps its highest-ranked item by the slot's fitting rank. Deduplication never compares items across slots, and a slot without dedupe keeps equal bodies."
   }
 ]
