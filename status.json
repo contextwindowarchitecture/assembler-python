@@ -1,0 +1,187 @@
+{
+  "description": "What this assembler claims for each requirement, and the tests that back each claim. Statuses must fit the requirement's scope in contract/data/assembler-scope.json. The website imports this file into its conformance matrix.",
+  "requirements": [
+    {
+      "id": "R-1",
+      "status": "implemented",
+      "evidence": [
+        "tests/test_admission.py::test_retrieval_packets_carry_reference_only",
+        "tests/test_admission.py::test_governance_items_cannot_be_untrusted",
+        "tests/test_admission.py::test_other_slots_may_lower_to_untrusted",
+        "tests/test_admission.py::test_prior_model_turns_must_be_untrusted",
+        "tests/test_conformance.py::test_conformance_case"
+      ]
+    },
+    {
+      "id": "R-2",
+      "status": "implemented",
+      "evidence": [
+        "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason",
+        "tests/test_admission.py::test_items_without_a_usable_id_are_recorded_by_producer_and_position",
+        "tests/test_admission.py::test_repeated_ids_exclude_every_copy",
+        "tests/test_admission.py::test_ids_used_by_refused_candidates_still_count",
+        "tests/test_admission.py::test_lifetime_boundaries",
+        "tests/test_admission.py::test_scope_must_match_and_required_keys_must_be_present",
+        "tests/test_instants.py::test_compares_beyond_microseconds",
+        "tests/test_snapshot.py::test_timestamps_are_format_checked",
+        "tests/test_conformance.py::test_conformance_case"
+      ]
+    },
+    {
+      "id": "R-3",
+      "status": "in progress",
+      "evidence": [
+        "tests/test_admission.py::test_route_overrides_replace_slot_defaults_and_are_traced",
+        "tests/test_golden.py::test_defaults_filled_are_traced_as_records",
+        "tests/test_admission.py::test_threshold_and_age_eligibility"
+      ]
+    },
+    {
+      "id": "R-4",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "R-5",
+      "status": "documented",
+      "evidence": []
+    },
+    {
+      "id": "R-6",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "R-7",
+      "status": "in progress",
+      "evidence": [
+        "tests/test_render.py::test_untrusted_bodies_cannot_break_out_of_their_wrapper"
+      ]
+    },
+    {
+      "id": "R-8",
+      "status": "boundary-checked",
+      "evidence": [
+        "tests/test_admission.py::test_state_slots_only_accept_state_producers_even_if_the_route_lists_others",
+        "tests/test_admission.py::test_state_older_than_the_route_allows_is_stale"
+      ]
+    },
+    {
+      "id": "R-9",
+      "status": "boundary-checked",
+      "evidence": [
+        "tests/test_admission.py::test_lifetime_boundaries",
+        "tests/test_admission.py::test_memory_sources_must_name_their_turn",
+        "tests/test_admission.py::test_expired_memory_a_producer_failed_to_suppress_is_still_excluded",
+        "tests/test_conformance.py::test_conformance_case"
+      ]
+    },
+    {
+      "id": "R-10",
+      "status": "in progress",
+      "evidence": [
+        "tests/test_admission.py::test_governance_requires_verified_unmarked_content",
+        "tests/test_admission.py::test_retrieved_and_user_content_must_stay_marked",
+        "tests/test_admission.py::test_only_a_route_verified_mcp_server_may_leave_output_unmarked"
+      ]
+    },
+    {
+      "id": "R-11",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "R-12",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "R-13",
+      "status": "boundary-checked",
+      "evidence": [
+        "tests/test_admission.py::test_retrieval_packets_carry_reference_only",
+        "tests/test_admission.py::test_threshold_and_age_eligibility",
+        "tests/test_admission.py::test_an_item_without_a_score_cannot_clear_a_threshold"
+      ]
+    },
+    {
+      "id": "R-14",
+      "status": "boundary-checked",
+      "evidence": [
+        "tests/test_admission.py::test_memory_is_generated_or_untrusted_never_state",
+        "tests/test_admission.py::test_expired_memory_a_producer_failed_to_suppress_is_still_excluded",
+        "tests/test_conformance.py::test_conformance_case"
+      ]
+    },
+    {
+      "id": "R-15",
+      "status": "boundary-checked",
+      "evidence": [
+        "tests/test_admission.py::test_the_capability_policy_admits_allowed_tools",
+        "tests/test_admission.py::test_tools_off_the_allow_list_are_refused",
+        "tests/test_admission.py::test_an_adapter_cannot_place_a_tool_even_when_the_route_grants_it_the_slot",
+        "tests/test_admission.py::test_without_a_capability_grant_no_tool_is_admitted",
+        "tests/test_admission.py::test_only_a_route_verified_mcp_server_may_leave_output_unmarked",
+        "tests/test_admission.py::test_producers_the_route_does_not_list_are_refused_before_structure",
+        "tests/test_admission.py::test_a_producer_whose_kind_differs_from_the_route_is_refused"
+      ]
+    },
+    {
+      "id": "R-16",
+      "status": "in progress",
+      "evidence": [
+        "tests/test_admission.py::test_items_cannot_downgrade_a_protected_slot",
+        "tests/test_admission.py::test_items_cannot_protect_themselves",
+        "tests/test_admission.py::test_the_route_can_raise_a_tier_and_items_may_then_claim_it"
+      ]
+    },
+    {
+      "id": "R-17",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "R-18",
+      "status": "in progress",
+      "evidence": [
+        "tests/test_admission.py::test_variant_ids_must_differ_from_the_parent_and_each_other",
+        "tests/test_purity.py::test_assemble_needs_no_network_or_clock"
+      ]
+    },
+    {
+      "id": "R-19",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "R-20",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "R-21",
+      "status": "in progress",
+      "evidence": [
+        "tests/test_conformance.py::test_conformance_case",
+        "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason"
+      ]
+    },
+    {
+      "id": "R-22",
+      "status": "in progress",
+      "evidence": [
+        "tests/test_golden.py::test_defaults_filled_are_traced_as_records",
+        "tests/test_conformance.py::test_conformance_case"
+      ]
+    },
+    {
+      "id": "R-23",
+      "status": "in progress",
+      "evidence": [
+        "tests/test_golden.py::test_assembly_is_repeatable_and_input_order_does_not_matter",
+        "tests/test_purity.py::test_assemble_needs_no_network_or_clock",
+        "tests/test_admission.py::test_items_without_a_usable_id_are_recorded_by_producer_and_position"
+      ]
+    }
+  ]
+}
