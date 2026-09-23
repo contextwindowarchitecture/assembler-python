@@ -7,6 +7,9 @@ issue_refund(order_id: string, amount: number)
 <state.user id="user:plan">
 plan=pro
 </state.user>
+<state.user id="user:seats">
+seats=4
+</state.user>
 <state.task id="task:8821">
 refund_request: verify_eligibility=done
 </state.task>

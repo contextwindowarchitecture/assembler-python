@@ -287,6 +287,13 @@ def test_variant_ids_must_differ_from_the_parent_and_each_other(fixture_snapshot
     assert exclusions(add(fixture_snapshot, "policy-corpus", knowledge(variants=variants))) == [("kb:x", "duplicate_variant_id")]
 
 
+@pytest.mark.parametrize("field", ["id", "body", "method", "lineage"])
+def test_a_variant_missing_one_of_its_fields_is_invalid_structure(fixture_snapshot, field):
+    # R-2, R-21: missing_field:<name> names the item's own fields only (conformance/README.md).
+    broken = {k: v for k, v in variant("kb:x/short").items() if k != field}
+    assert exclusions(add(fixture_snapshot, "policy-corpus", knowledge(variants=[broken]))) == [("kb:x", "invalid_structure")]
+
+
 def test_distinct_variant_ids_are_admitted(fixture_snapshot):
     add(fixture_snapshot, "policy-corpus", knowledge(variants=[variant("kb:x/short"), variant("kb:x/shorter")]))
     assert exclusions(fixture_snapshot) == []

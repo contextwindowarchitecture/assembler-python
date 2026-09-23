@@ -9,8 +9,8 @@
     "reserved_output": 1200
   },
   "result": {
-    "input_tokens": 108,
-    "hash": "de1f12669e43a8e087ab79dd36fc7b5f1bf89096613f340da6279b6f9c6e4214"
+    "input_tokens": 112,
+    "hash": "87d0382bd47f2b8f70517fa6d861bb23b87f6a245c8338ceb3fe174fff911253"
   },
   "included": [
     {
@@ -30,6 +30,13 @@
     {
       "slot": "state.user",
       "item_id": "user:plan",
+      "tokens": 1,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "state.user",
+      "item_id": "user:seats",
       "tokens": 1,
       "source_version": "1",
       "eligibility": "route-policy"
@@ -113,6 +120,11 @@
       "stage": "producer"
     },
     {
+      "item_id": "rogue:0",
+      "reason": "below_threshold",
+      "stage": "producer"
+    },
+    {
       "item_id": "cap:delete_account",
       "reason": "capability_not_allowed",
       "stage": "assembler",
@@ -190,6 +202,18 @@
       "slot": "evidence.knowledge"
     },
     {
+      "item_id": "kb:dup-invalid",
+      "reason": "duplicate_item_id",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
+      "item_id": "kb:dup-invalid",
+      "reason": "missing_field:body",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
       "item_id": "kb:expired",
       "reason": "expired",
       "stage": "assembler",
@@ -224,6 +248,11 @@
       "reason": "invalid_structure",
       "stage": "assembler",
       "slot": "evidence.knowledge"
+    },
+    {
+      "item_id": "kb:no-slot",
+      "reason": "missing_field:slot",
+      "stage": "assembler"
     },
     {
       "item_id": "kb:old",
@@ -268,6 +297,12 @@
       "slot": "evidence.knowledge"
     },
     {
+      "item_id": "kb:variant-no-method",
+      "reason": "invalid_structure",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
       "item_id": "kb:variants",
       "reason": "duplicate_variant_id",
       "stage": "assembler",
@@ -280,6 +315,12 @@
       "slot": "state.user"
     },
     {
+      "item_id": "m:expired",
+      "reason": "duplicate_item_id",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
       "item_id": "policy-corpus#invalid-0",
       "reason": "missing_field:id",
       "stage": "assembler",
@@ -290,6 +331,18 @@
       "reason": "invalid_structure",
       "stage": "assembler",
       "slot": "evidence.knowledge"
+    },
+    {
+      "item_id": "rogue:1",
+      "reason": "duplicate_item_id",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
+      "item_id": "policy:plan",
+      "reason": "producer_slot_not_allowed",
+      "stage": "assembler",
+      "slot": "state.user"
     },
     {
       "item_id": "policy:unverified",
@@ -333,7 +386,7 @@
     "route_policy_version": "admission/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "ecdcf1a83e595bb62032855b4192457fe8adef5b3fb54e362cb08bfa367d77c3"
+    "snapshot_digest": "f7b45c1bc48fbd824367a35f23726d8861870890a07fc57a556c89c8c2b10d0f"
   },
   "defaults_filled": [
     {

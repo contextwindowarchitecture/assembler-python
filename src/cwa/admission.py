@@ -47,7 +47,8 @@ class Admission:
 
 
 def _schema_codes(error: ValidationError) -> list[str]:
-    if error.validator == "required":
+    # missing_field names the item's own fields; a variant missing one of its fields is invalid_structure.
+    if error.validator == "required" and not error.absolute_path:
         required, instance = cast(list[str], error.validator_value), cast(dict[str, Any], error.instance)
         return [f"missing_field:{name}" for name in required if name not in instance]
     if error.validator == "enum" and list(error.absolute_path) == ["slot"]:

@@ -116,7 +116,8 @@
       "policy-registry": {
         "kind": "policy",
         "slots": [
-          "governance.instructions"
+          "governance.instructions",
+          "state.user"
         ]
       },
       "state-svc": {
@@ -467,6 +468,25 @@
           }
         },
         {
+          "id": "kb:no-slot",
+          "source": "src:kb:no-slot",
+          "source_version": "1",
+          "authority": "reference_only",
+          "trust": "unverified",
+          "freshness": "2026-09-12T15:30:00Z",
+          "body": "An item without a slot.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content",
+          "relevance": 0.91,
+          "scope": {
+            "tenant": "acme"
+          }
+        },
+        {
           "id": "﻿",
           "slot": "evidence.knowledge",
           "source": "src:﻿",
@@ -673,6 +693,111 @@
           "body": "Second copy.",
           "token_budget": null,
           "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content",
+          "relevance": 0.91,
+          "scope": {
+            "tenant": "acme"
+          }
+        },
+        {
+          "id": "kb:dup-invalid",
+          "slot": "evidence.knowledge",
+          "source": "src:kb:dup-invalid",
+          "source_version": "1",
+          "authority": "reference_only",
+          "trust": "unverified",
+          "freshness": "2026-09-12T15:30:00Z",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content",
+          "relevance": 0.91,
+          "scope": {
+            "tenant": "acme"
+          }
+        },
+        {
+          "id": "kb:dup-invalid",
+          "slot": "evidence.knowledge",
+          "source": "src:kb:dup-invalid",
+          "source_version": "1",
+          "authority": "reference_only",
+          "trust": "unverified",
+          "freshness": "2026-09-12T15:30:00Z",
+          "body": "A valid copy of a schema-invalid candidate's id.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content",
+          "relevance": 0.91,
+          "scope": {
+            "tenant": "acme"
+          }
+        },
+        {
+          "id": "rogue:1",
+          "slot": "evidence.knowledge",
+          "source": "src:rogue:1",
+          "source_version": "1",
+          "authority": "reference_only",
+          "trust": "unverified",
+          "freshness": "2026-09-12T15:30:00Z",
+          "body": "The id of an unauthenticated producer's candidate.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content",
+          "relevance": 0.91,
+          "scope": {
+            "tenant": "acme"
+          }
+        },
+        {
+          "id": "m:expired",
+          "slot": "evidence.knowledge",
+          "source": "src:m:expired",
+          "source_version": "1",
+          "authority": "reference_only",
+          "trust": "unverified",
+          "freshness": "2026-09-12T15:30:00Z",
+          "body": "The id of another producer's exclusion.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content",
+          "relevance": 0.91,
+          "scope": {
+            "tenant": "acme"
+          }
+        },
+        {
+          "id": "kb:variant-no-method",
+          "slot": "evidence.knowledge",
+          "source": "src:kb:variant-no-method",
+          "source_version": "1",
+          "authority": "reference_only",
+          "trust": "unverified",
+          "freshness": "2026-09-12T15:30:00Z",
+          "body": "Long passage.",
+          "token_budget": null,
+          "variants": [
+            {
+              "id": "kb:variant-no-method~short",
+              "body": "Short.",
+              "lineage": "extracted"
+            }
+          ],
           "conflict_policy": "defers",
           "lineage": "verbatim",
           "eligibility": "route-policy",
@@ -967,6 +1092,26 @@
           "lineage": "verbatim",
           "eligibility": "route-policy",
           "injection_risk": "none"
+        },
+        {
+          "id": "policy:plan",
+          "slot": "state.user",
+          "source": "src:policy:plan",
+          "source_version": "1",
+          "authority": "state",
+          "trust": "unverified",
+          "freshness": "2026-09-22T11:59:30Z",
+          "body": "plan=enterprise",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "governs",
+          "lineage": "extracted",
+          "eligibility": "route-policy",
+          "injection_risk": "none",
+          "scope": {
+            "tenant": "acme",
+            "user": "u_91"
+          }
         }
       ],
       "excluded": []
@@ -998,7 +1143,13 @@
           }
         }
       ],
-      "excluded": []
+      "excluded": [
+        {
+          "item_id": "rogue:0",
+          "reason": "below_threshold",
+          "stage": "producer"
+        }
+      ]
     },
     {
       "producer": {
@@ -1075,6 +1226,27 @@
             "user": "u_91"
           },
           "tier": "protected"
+        },
+        {
+          "id": "user:seats",
+          "slot": "state.user",
+          "source": "src:user:seats",
+          "source_version": "1",
+          "authority": "state",
+          "trust": "unverified",
+          "freshness": "2026-09-22T11:59:30Z",
+          "body": "seats=4",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "governs",
+          "lineage": "extracted",
+          "eligibility": "route-policy",
+          "injection_risk": "none",
+          "scope": {
+            "tenant": "acme",
+            "user": "u_91"
+          },
+          "tier": "droppable"
         },
         {
           "id": "user:other",

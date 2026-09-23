@@ -23,7 +23,7 @@ Some cases have a generator in `generators/`. It holds a table of each candidate
 Array order in the trace is part of the expectation:
 
 - `included[]` follows placement order, and `id` order within a placement. For `fixture-xml/v1` that is payload order.
-- `excluded[]` lists producer-stage rows first, ordered by producer id and then `item_id`. Assembler rows follow in pipeline order. Admission rows are ordered by producer id and then recorded `item_id`. Conflict rows follow, ordered by `item_id`, then supersession, deduplication and source-diversity rows, each stage ordered by `item_id`, and fitting rows follow in the order items were omitted.
+- `excluded[]` lists producer-stage rows first, ordered by producer id, then `item_id`, then the bytes of their RFC 8785 serialization. They come from every batch, including one whose producer the route does not admit: they carry no content, and R-9 merges them. Assembler rows follow in pipeline order. Admission rows are ordered by producer id, then recorded `item_id`, and candidates sharing an id by the bytes of their own RFC 8785 serialization, as Snapshot digest orders them, so snapshots with the same digest give the same trace. Conflict rows follow, ordered by `item_id`, then supersession, deduplication and source-diversity rows, each stage ordered by `item_id`, and fitting rows follow in the order items were omitted.
 - `conflicts[]` has one record per declared group, ordered by `group_id`.
 - `compressed[]` has one row per included occurrence of a compressed item, in `included[]` order.
 - Assembler rows in `excluded[]` carry `slot` whenever the candidate names one of the eleven slots, even when it fails for another reason (R-22). Producer rows carry what the producer reported, which has no slot.
@@ -32,6 +32,14 @@ Array order in the trace is part of the expectation:
 Each `included[]` row carries the item's `source_version` and its `eligibility` after defaults are filled (R-3, R-22).
 
 When an item fails several admission checks, the trace records the earliest applicable code in `contract/reasons.json` order (R-21).
+
+`duplicate_item_id` compares a candidate's id with the non-blank string id of every other candidate, in any batch and whatever that candidate's own outcome, and with the `item_id` of every producer exclusion, in any batch. Each candidate sharing an id is excluded with the earliest code that applies to it, so a schema-invalid copy keeps its schema code and an unauthenticated producer's copy keeps `producer_not_authenticated`.
+
+`protected_tier_changed` applies in the slots whose default tier in `contract/slot-defaults.json` is `protected`. In a slot that only the route's `tier_upgrades` raised, an item may set a lower tier of its own, and it is then not protected.
+
+`missing_field:<name>` names a field of the item itself: one of the eight minimum fields, or one its slot requires, such as `expires` for memory. An item without a slot requires no slot-specific field, so it is `missing_field:slot`. A variant missing one of its own fields is `invalid_structure`.
+
+A state item comes only from a producer of kind `state` (R-8). A route may list a producer of another kind for a state slot, but that producer's state items are excluded with `producer_slot_not_allowed`.
 
 The last admission check is placement (R-20). An item whose slot the profile does not place is excluded with `slot_unplaced`, unless it is protected: a protected item is admitted, and assembly then refuses with `protected_slot_unplaced`. An item is protected when its tier is, which is its own `tier` when it sets one and otherwise its slot's default raised by the route's `tier_upgrades`.
 

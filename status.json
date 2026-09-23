@@ -27,7 +27,8 @@
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_strings.py::test_ecmascript_whitespace_is_blank",
         "tests/test_strings.py::test_characters_python_or_unicode_call_space_are_not_blank",
-        "tests/test_instants.py::test_only_the_portable_profile_parses"
+        "tests/test_instants.py::test_only_the_portable_profile_parses",
+        "tests/test_admission.py::test_a_variant_missing_one_of_its_fields_is_invalid_structure"
       ]
     },
     {
@@ -337,7 +338,8 @@
         "tests/test_golden.py::test_fixture_payload_hash_and_tokens",
         "tests/test_properties.py::test_included_tokens_fit_within_the_payload_and_the_payload_within_the_budget",
         "tests/test_properties.py::test_a_refusal_has_no_payload_and_a_payload_carries_its_hash",
-        "tests/test_placement.py::test_every_trace_names_the_specification_its_profile_follows"
+        "tests/test_placement.py::test_every_trace_names_the_specification_its_profile_follows",
+        "tests/test_admission.py::test_a_variant_missing_one_of_its_fields_is_invalid_structure"
       ]
     },
     {

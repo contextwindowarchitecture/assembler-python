@@ -391,6 +391,23 @@ CASES = [
         "refuse": "conflict_unresolved", "recovery": "request_context",
     },
     {
+        "id": "render-attribute-escaping",
+        "rules": ["R-11", "R-21"],
+        "description": "fixture-xml/v1 escapes &, < and > everywhere and \" as well in attribute values: an item id and a surfaced group id "
+                       "holding all four render escaped in id and conflict, while the trace records them as given and a body's quotes stay as they are.",
+        "policy": {"on_unresolved_instruction": "surface"},
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), REG, "admit"),
+            (item('policy:"tone"&<v2>', "governance.instructions", 'Say "please" & <thank you>.'), REG, "admit"),
+            (kb('kb:"a"', 'Refunds are "available" within 30 days.'), CORPUS, "admit"),
+            (item("turn:18", "interaction.query", QUERY), CONV, "admit"),
+        ],
+        "groups": [
+            {"id": 'g"tone"&<1>', "kind": "instruction", "items": ["policy:v12", 'policy:"tone"&<v2>'],
+             "decided_by": "escalated", "resolution": "surfaced"},
+        ],
+    },
+    {
         "id": "conflict-required-slot-first",
         "rules": ["R-4", "R-11", "R-21"],
         "description": "Conflicts are resolved before refusal checks, so a trace refused for a missing query still records the unresolved group.",

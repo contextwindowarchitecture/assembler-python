@@ -221,6 +221,9 @@
   "allOf": [
     {
       "if": {
+        "required": [
+          "slot"
+        ],
         "properties": {
           "slot": {
             "const": "interaction.memory"
@@ -243,6 +246,9 @@
     },
     {
       "if": {
+        "required": [
+          "slot"
+        ],
         "properties": {
           "slot": {
             "const": "evidence.knowledge"

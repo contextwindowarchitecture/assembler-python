@@ -643,6 +643,20 @@ CASES = [
         "actions": [("omit", "user:plan")],
     },
     {
+        "id": "budget-margin-rounding",
+        "rules": ["R-16", "R-21"],
+        "description": "The margin charge rounds up, however small its fraction: the payload counts 39 and charges 39 × 101 / 100 = 39.39, rounded up to 40, over budget.input 39, so the droppable item is shed. Rounding down or to the nearest integer would charge 39 and keep it.",
+        "budget": 39,
+        "margin": 1,
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("user:plan", "state.user", "plan=pro since 2026-09-01", scope={"tenant": "acme", "user": "u_91"}), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within 30 days.", relevance=0.9), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "actions": [("omit", "user:plan")],
+    },
+    {
         "id": "budget-margin-protected",
         "rules": ["R-16", "R-17", "R-21"],
         "description": "The margin applies to the protected-content test too: the protected items alone count 29, within budget.input 30, but charge 32 under a 10% margin, so assembly refuses with protected_content_over_budget.",
