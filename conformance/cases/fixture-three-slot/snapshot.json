@@ -38,7 +38,34 @@
   },
   "route_policy": {
     "route": "contract-fixture",
-    "version": "fixture/v1"
+    "version": "fixture/v1",
+    "producers": {
+      "policy-registry": {
+        "kind": "policy",
+        "slots": [
+          "governance.instructions"
+        ]
+      },
+      "policy-corpus": {
+        "kind": "retrieval",
+        "slots": [
+          "evidence.knowledge"
+        ]
+      },
+      "memory-svc": {
+        "kind": "memory",
+        "slots": [
+          "interaction.memory"
+        ]
+      },
+      "conversation": {
+        "kind": "interaction",
+        "slots": [
+          "interaction.history",
+          "interaction.query"
+        ]
+      }
+    }
   },
   "tokenizer": "fixture-whitespace/v1",
   "renderer": "fixture-xml/v1",

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://contextwindowarchitecture.io/schema/snapshot.schema.json",
   "title": "CWA assembly snapshot",
-  "description": "Everything that can affect an assembly, frozen before assembly begins (R-23). Conformance cases use this shape so implementations in any language replay the same input. route_policy is a draft: route, version and any further fields an implementation documents, until a route-policy schema is published.",
+  "description": "Everything that can affect an assembly, frozen before assembly begins (R-23). Conformance cases use this shape so implementations in any language replay the same input. Batch items are raw producer output: admission validates each one and records an invalid item as an exclusion rather than rejecting the snapshot (R-2).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -46,23 +46,7 @@
       "$ref": "profile.schema.json"
     },
     "route_policy": {
-      "type": "object",
-      "required": [
-        "route",
-        "version"
-      ],
-      "properties": {
-        "route": {
-          "type": "string",
-          "minLength": 1,
-          "pattern": "\\S"
-        },
-        "version": {
-          "type": "string",
-          "minLength": 1,
-          "pattern": "\\S"
-        }
-      }
+      "$ref": "route_policy.schema.json"
     },
     "tokenizer": {
       "type": "string",
@@ -110,17 +94,15 @@
                   "capability_policy",
                   "interaction"
                 ]
-              },
-              "verified_server": {
-                "type": "boolean"
               }
             }
           },
           "items": {
             "type": "array",
             "items": {
-              "$ref": "context_item.schema.json"
-            }
+              "type": "object"
+            },
+            "description": "Candidate items exactly as the producer emitted them. Validated per item at admission against context_item.schema.json."
           },
           "excluded": {
             "$ref": "producer_batch.schema.json#/properties/excluded"

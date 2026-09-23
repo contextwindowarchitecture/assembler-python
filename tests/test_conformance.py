@@ -8,6 +8,11 @@ from conftest import CASES, read_json
 
 IGNORED = ("trace_id", "timings")
 
+# Cases whose milestone is in progress. Strict: once a case passes, pytest fails until it is removed here.
+PENDING = {
+    "admission-reasons": "M1 admission in progress",
+}
+
 
 def comparable(trace: dict) -> dict:
     trace = {k: v for k, v in trace.items() if k not in IGNORED}
@@ -15,7 +20,10 @@ def comparable(trace: dict) -> dict:
     return trace
 
 
-@pytest.mark.parametrize("case", sorted(p.name for p in CASES.iterdir()))
+@pytest.mark.parametrize("case", [
+    pytest.param(name, marks=pytest.mark.xfail(reason=PENDING[name], strict=True)) if name in PENDING else name
+    for name in sorted(p.name for p in CASES.iterdir())
+])
 def test_conformance_case(case: str) -> None:
     directory = CASES / case
     result = assemble(Snapshot.from_json(read_json(directory / "snapshot.json")))

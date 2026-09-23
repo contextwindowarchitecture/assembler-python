@@ -1,5 +1,11 @@
 [
   {
+    "code": "producer_not_authenticated",
+    "kind": "exclusion",
+    "rule": "R-15",
+    "text": "The route policy does not list this batch's producer, or lists it with a different kind. Identity comes from the application's authentication and the route, never from item fields."
+  },
+  {
     "code": "missing_field:<name>",
     "kind": "exclusion",
     "rule": "R-2",
@@ -24,22 +30,22 @@
     "text": "The item fails the published schema for another reason, such as a wrong type, an undeclared field or a malformed timestamp."
   },
   {
-    "code": "authority_not_allowed",
+    "code": "duplicate_item_id",
     "kind": "exclusion",
-    "rule": "R-1",
-    "text": "The authority value is not allowed for this slot or authenticated producer. These roles are not a factual ranking."
-  },
-  {
-    "code": "producer_not_authenticated",
-    "kind": "exclusion",
-    "rule": "R-15",
-    "text": "The application did not authenticate the emitting producer. Identity comes from trusted context, never from item fields."
+    "rule": "R-2",
+    "text": "Another candidate or producer exclusion in the same assembly uses this ID."
   },
   {
     "code": "producer_slot_not_allowed",
     "kind": "exclusion",
     "rule": "R-15",
     "text": "The authenticated producer is not permitted to emit into this slot."
+  },
+  {
+    "code": "authority_not_allowed",
+    "kind": "exclusion",
+    "rule": "R-1",
+    "text": "The authority value is not allowed for this slot or authenticated producer. These roles are not a factual ranking."
   },
   {
     "code": "capability_not_allowed",
@@ -72,12 +78,6 @@
     "text": "The item claims a tier above its slot's effective tier. Only the route's versioned policy can raise a tier; a producer cannot protect its own items."
   },
   {
-    "code": "duplicate_item_id",
-    "kind": "exclusion",
-    "rule": "R-2",
-    "text": "Another candidate or producer exclusion in the same assembly uses this ID."
-  },
-  {
     "code": "duplicate_variant_id",
     "kind": "exclusion",
     "rule": "R-18",
@@ -102,16 +102,34 @@
     "text": "freshness is later than assembly_time."
   },
   {
-    "code": "below_threshold",
+    "code": "stale_state",
     "kind": "exclusion",
-    "rule": "R-13",
-    "text": "The rerank score is under the route's versioned threshold."
+    "rule": "R-8",
+    "text": "A state item was observed longer ago than its slot's max_age_seconds. State must be current at assembly time."
+  },
+  {
+    "code": "source_invalid",
+    "kind": "exclusion",
+    "rule": "R-9",
+    "text": "The item's source does not start with its slot's source_prefix. For memory, this is how the source turn is identified."
   },
   {
     "code": "out_of_scope",
     "kind": "exclusion",
     "rule": "R-2",
     "text": "Tenant, user or session scope does not match the request."
+  },
+  {
+    "code": "below_threshold",
+    "kind": "exclusion",
+    "rule": "R-13",
+    "text": "The rerank score is under the route's versioned threshold."
+  },
+  {
+    "code": "not_eligible",
+    "kind": "exclusion",
+    "rule": "R-3",
+    "text": "The route's eligibility predicate rejected the item, for example because it was observed longer ago than its slot's max_age_seconds."
   },
   {
     "code": "over_budget",

@@ -24,6 +24,7 @@ Rules:
 
 - No production code without a failing test that demanded it. Bug fixes start with a test that reproduces the bug.
 - Conformance cases (`conformance/cases/`) come from the website repo. When a milestone needs a new spec-level case, add it there first (with its own website tests), re-vendor, and let it fail here before implementing.
+- While its milestone is in progress, a vendored case that cannot pass yet goes in `PENDING` in `tests/test_conformance.py`. That marks it as a strict expected failure, so the suite stays green and fails as soon as the case starts passing. Remove it from `PENDING` in the commit that makes it pass.
 - Before claiming a test protects something, break the code on purpose and watch the test fail. Restore the code afterwards.
 - A conformance-matrix row moves to *implemented* only when tests cover every assembler-scoped clause of that requirement (`contract/assembler-scope.json` in the website repo).
 
