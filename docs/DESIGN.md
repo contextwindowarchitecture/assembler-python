@@ -553,7 +553,7 @@ flowchart LR
   M4 --> M5["M5 · Hardening<br/>R-21 R-22 R-23<br/>conformance-report → website"]
 ```
 
-**M3 status (2026-09-22): in progress. Conflicts** (R-6, R-11, and the last clause of R-3). As in M2, the spec came first. Website `89660ed` defines resolution, and `271f4c3` adds five conflict conformance cases generated from intent tables, vendored here as pending. The maintainer took the recommended option on each open question:
+**M3 status (2026-09-22): done. Conflicts** (R-6, R-11, and the last clause of R-3). As in M2, the spec came first. Website `89660ed` defines resolution, and `271f4c3` adds five conflict conformance cases generated from intent tables, vendored here as pending. The maintainer took the recommended option on each open question:
 
 - **Instruction groups (DA-7).** Deciding by authority excludes nothing. Among two or more peers at the top instructing authority, one `governs` and the rest `defers` excludes the deferring peers with `conflict_deferred`. Any other pattern escalates.
 - **`conflicts[].resolution`** is a closed vocabulary tied to `decided_by` (`resolved`, `surfaced`, `context_requested`, `refused`, `moot`), with an optional `winner`.
@@ -574,10 +574,14 @@ flowchart LR
   S1["Spec<br/>website 89660ed"] --> S2["Cases<br/>website 271f4c3"] --> V["Vendor<br/>68882a7"] --> C1["Snapshot<br/>group checks"] --> C2["Instruction<br/>groups"] --> C3["Fact<br/>groups"] --> C4["Escalation,<br/>refusal, marks"] --> ST["status.json<br/>R-6, R-11"]
 ```
 
-Done so far:
+Result: `src/cwa/conflicts.py` resolves every group kind and every escalation action (§4.3), and all nineteen vendored conformance cases pass byte for byte. `status.json` now claims R-3 and R-6 implemented and R-11 boundary-checked. It diverged from the old §4.3 in four ways, each written into the spec:
 
-- `Snapshot.from_json` rejects unknown, shared and duplicate group ids and undefined facts. It also sorts each group's items, so their order cannot change the digest.
-- `src/cwa/conflicts.py` resolves every group kind and every escalation action (§4.3). All five conflict conformance cases pass byte for byte, and all nineteen vendored cases pass.
+- **Protected items are never excluded by a conflict, in fact groups as well.** The old design protected only deferring instruction peers. A fact decision that would drop protected content escalates too, so the required-slot check stays sound.
+- **Eligibility is explicit.** A fact member is eligible only when its authenticated producer is listed in `precedence` and it carries the policy's `scope` keys. Ineligible members cannot win, and they are excluded when another member does.
+- **Conflicts resolve before every refusal check**, not after the required-slot check. Every trace records them, including a `required_slot_missing` refusal.
+- **Group checks happen at the boundary.** Overlapping groups, unknown ids and undefined facts are `SnapshotError`s, so no outcome depends on the order groups are processed in.
+
+**Next: M4.** Registry and profiles (R-19, R-20), plus R-7, which M3 handed on: prior turns rendering as a transcript and only the query as the live user turn need the D-1 message renderer.
 
 **M2 status (2026-09-22): done.** Budget fitting and refusal are implemented test-first, spec first. The website gained the route-policy fields (`c0f5890`), `excluded[].slot` (`574fc6d`), and nine budget and refusal conformance cases generated from intent tables (`9e40504`). All eleven vendored cases pass byte for byte. Three followed: `budget-route-tiers` (website `d84bbd8`) closed a gap in the R-16 claim, since no test showed fitting honor a tier the route raised; `budget-token-caps` and `protected-over-cap` (website `adae6e1`) cover caps. `status.json` now claims R-4, R-12, R-16 and R-17 implemented and R-18 boundary-checked. Fitting is §4.4, refusals are §4, and the recovery mapping is §4.5. It diverged from this document in six ways, each written into the spec:
 
