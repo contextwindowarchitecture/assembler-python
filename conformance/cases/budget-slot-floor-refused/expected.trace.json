@@ -1,0 +1,41 @@
+{
+  "trace_id": "budget-slot-floor-refused",
+  "profile": {
+    "id": "fitting-fixture",
+    "version": 1
+  },
+  "budget": {
+    "input": 50,
+    "reserved_output": 1024
+  },
+  "result": null,
+  "included": [],
+  "compressed": [],
+  "excluded": [
+    {
+      "item_id": "kb:b",
+      "reason": "over_budget",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
+      "item_id": "kb:a",
+      "reason": "over_budget",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    }
+  ],
+  "conflicts": [],
+  "refused": {
+    "bool": true,
+    "reason": "slot_floor_over_budget"
+  },
+  "context": {
+    "assembly_time": "2026-09-22T12:00:00Z",
+    "route_policy_version": "budget-slot-floor-refused/v1",
+    "tokenizer": "fixture-whitespace/v1",
+    "renderer": "fixture-xml/v1",
+    "snapshot_digest": "ff6938b0abf0681d519450f98d8e8f6b64d94c482ebb4e34a4203190fa5afa89"
+  },
+  "defaults_filled": []
+}

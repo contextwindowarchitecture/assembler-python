@@ -204,6 +204,12 @@
     "text": "Protected content alone exceeds budget.input or its slot's max_tokens, or a protected item exceeds its own token_budget. The assembler refuses rather than truncating."
   },
   {
+    "code": "slot_floor_over_budget",
+    "kind": "refusal",
+    "rule": "R-17",
+    "text": "The payload does not fit budget.input without shedding a slot below the route's min_tokens. The assembler refuses rather than break the floor."
+  },
+  {
     "code": "evidence_required",
     "kind": "refusal",
     "rule": "R-12",

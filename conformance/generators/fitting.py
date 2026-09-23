@@ -3,12 +3,14 @@
 Each case lists its candidates, the admission reason for any it excludes, the token_budget cap
 actions it intends ("caps"), the max_tokens slot-cap actions it intends ("slot_caps"), and the
 budget-pressure actions it intends ("actions"), each in order: ("omit", id) or
-("compress", id, variant_id). Expected traces and
+("compress", id, variant_id), or ("hold", id, "omit") or ("hold", id, "compress", variant_id) for a
+reduction a slot floor withholds, which freezes the slot. Expected traces and
 payloads come from those tables, not from a fitting algorithm, so the cases can fail an
 implementation. The generator only checks that each table agrees with the budget: the payload
 fits after the last action and not before it, each capped slot is within its cap after its last
-slot-cap action and not before it, and each chosen variant is the one conformance/README.md's
-Fitting section selects.
+slot-cap action and not before it, each chosen variant is the one conformance/README.md's
+Fitting section selects, no reduction leaves a floored slot below min_tokens or touches a frozen
+slot, each hold would have, and a slot_floor_over_budget refusal leaves only frozen or protected items.
 """
 import copy, hashlib, json, os, re, sys
 sys.dont_write_bytecode = True  # importing digest must not leave a __pycache__ for implementations to vendor
@@ -177,8 +179,19 @@ def build(case):
         assert not any(over_slot_cap(kept, s) for s in slot_caps), f"{name}: a slot is still over its cap"
         assert fits(kept) == (not actions), f"{name}: the items {'fit' if fits(kept) else 'do not fit'} before budget pressure"
 
+    floors = {slot: rules["min_tokens"] for slot, rules in policy["slots"].items() if "min_tokens" in rules}
+    frozen = set()
     for n, action in enumerate(actions):
         it = admitted[action[1]]
+        assert it["slot"] not in frozen, f"{name}: {action} reduces frozen {it['slot']}"
+        if action[0] == "hold":
+            assert it["slot"] in floors, f"{name}: {it['slot']} has no floor to hold"
+            after = {k: v for k, v in kept.items() if k != it["id"]} if action[2] == "omit" else \
+                {**kept, it["id"]: (it, next(v for v in it["variants"] if v["id"] == action[3])["body"])}
+            assert slot_size(after, it["slot"]) < floors[it["slot"]], f"{name}: {action} would keep {it['slot']} at its floor"
+            frozen.add(it["slot"])
+            assert not fits(kept) and n < len(actions) - 1 or refusal == "slot_floor_over_budget", f"{name}: a hold ends a fitting case"
+            continue
         if action[0] == "omit":
             del kept[it["id"]]
             excluded.append({"item_id": it["id"], "reason": "over_budget", "stage": "assembler", "slot": it["slot"]})
@@ -196,7 +209,13 @@ def build(case):
                 assert chosen == min(shorter, key=size), f"{name}: {chosen['id']} is not the shortest variant"
             kept[it["id"]] = (it, chosen["body"])
             compressed[it["id"]] = chosen
-        assert fits(kept) == (n == len(actions) - 1), f"{name}: action {n} {action} leaves the payload {'fitting' if fits(kept) else 'over budget'}"
+        assert it["slot"] not in floors or slot_size(kept, it["slot"]) >= floors[it["slot"]], f"{name}: {action} breaks {it['slot']}'s floor"
+        ends = n == len(actions) - 1 and refusal != "slot_floor_over_budget"
+        assert fits(kept) == ends, f"{name}: action {n} {action} leaves the payload {'fitting' if fits(kept) else 'over budget'}"
+    if refusal == "slot_floor_over_budget":
+        assert not fits(kept), f"{name}: the payload fits"
+        stuck = [i for i, (x, _) in kept.items() if tier(x) != "protected" and x["slot"] not in frozen]
+        assert not stuck, f"{name}: {stuck} could still be shed"
 
     payload, included = render(placement, kept)
     trace = {
@@ -232,6 +251,17 @@ def build(case):
 POLICY_TEXT = "Follow verified refund policy and cite the evidence you use."
 QUERY = "Can I refund my Pro plan?"
 CONTRACT = "Answer as JSON with fields decision and citations."
+
+FLOOR_ITEMS = [
+    (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+    (item("ex:1", "governance.examples", "Example: refunds within thirty days are approved."), "admit"),
+    (item("kb:a", "evidence.knowledge", "Pro plans refund in full within thirty days of purchase.", relevance=0.9,
+          variants=[variant("kb:a~short", "Pro: full refund, 30 days.")]), "admit"),
+    (item("kb:b", "evidence.knowledge", "Annual plans refund pro rata for unused months.", relevance=0.7), "admit"),
+    (item("turn:15", "interaction.history", "We upgraded to Pro two weeks ago but the seats are wrong.", freshness="2026-09-22T11:52:00Z"), "admit"),
+    (item("turn:16", "interaction.history", "Seats cannot change.", freshness="2026-09-22T11:54:00Z"), "admit"),
+    (item("turn:18", "interaction.query", QUERY), "admit"),
+]
 
 CASES = [
     {
@@ -405,6 +435,40 @@ CASES = [
             (item("turn:18", "interaction.query", QUERY), "admit"),
         ],
         "refuse": "protected_content_over_budget",
+    },
+    {
+        "id": "budget-slot-floor",
+        "rules": ["R-16", "R-18", "R-21"],
+        "description": "Budget pressure never leaves a slot below the route's min_tokens: a droppable example its floor holds stays while knowledge is compressed, "
+                       "and history, whose oldest turn would take it below its floor, freezes, so its small newer turn stays although omitting it alone would have kept the floor.",
+        "budget": 65,
+        "policy": {"slots": {"governance.examples": {"min_tokens": 5},
+                             "interaction.history": {"min_tokens": 10, "priority": -1, "order_by": ["-freshness"]}}},
+        "items": FLOOR_ITEMS,
+        "actions": [("hold", "ex:1", "omit"), ("compress", "kb:a", "kb:a~short"), ("hold", "turn:15", "omit"), ("omit", "kb:b")],
+    },
+    {
+        "id": "budget-slot-floor-refused",
+        "rules": ["R-16", "R-17", "R-21"],
+        "description": "When every reduction the floors allow is made and the payload still exceeds budget.input, assembly refuses with slot_floor_over_budget "
+                       "rather than break a floor; the refused trace keeps the fitting rows.",
+        "budget": 50,
+        "policy": {"slots": {"governance.examples": {"min_tokens": 5},
+                             "interaction.history": {"min_tokens": 10, "priority": -1, "order_by": ["-freshness"]}}},
+        "items": FLOOR_ITEMS,
+        "actions": [("hold", "ex:1", "omit"), ("compress", "kb:a", "kb:a~short"), ("hold", "turn:15", "omit"), ("omit", "kb:b"), ("omit", "kb:a")],
+        "refuse": "slot_floor_over_budget",
+    },
+    {
+        "id": "budget-slot-floor-under-cap",
+        "rules": ["R-16", "R-18", "R-21"],
+        "description": "Floors do not guard slot caps: history's max_tokens, below its min_tokens, omits the oldest turn first, and budget pressure then leaves "
+                       "the rest of history whole, since any reduction would take it further below its floor.",
+        "budget": 40,
+        "policy": {"slots": {"interaction.history": {"max_tokens": 8, "min_tokens": 10, "priority": -1, "order_by": ["-freshness"]}}},
+        "items": FLOOR_ITEMS,
+        "slot_caps": [("omit", "turn:15")],
+        "actions": [("omit", "ex:1"), ("compress", "kb:a", "kb:a~short"), ("hold", "turn:16", "omit"), ("omit", "kb:b")],
     },
     {
         "id": "protected-over-slot-cap",

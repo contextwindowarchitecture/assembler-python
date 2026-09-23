@@ -190,7 +190,7 @@
     },
     {
       "id": "R-16",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_admission.py::test_items_cannot_downgrade_a_protected_slot",
         "tests/test_admission.py::test_items_cannot_protect_themselves",
@@ -231,7 +231,7 @@
     },
     {
       "id": "R-17",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_refusal.py::test_an_excluded_instruction_does_not_count_and_its_exclusion_stays_in_the_trace",
         "tests/test_conformance.py::test_conformance_case",
@@ -249,7 +249,7 @@
     },
     {
       "id": "R-18",
-      "status": "boundary-checked",
+      "status": "in progress",
       "evidence": [
         "tests/test_admission.py::test_variant_ids_must_differ_from_the_parent_and_each_other",
         "tests/test_purity.py::test_assemble_needs_no_network_or_clock",
@@ -293,7 +293,7 @@
     },
     {
       "id": "R-21",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason",
