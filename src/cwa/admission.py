@@ -11,7 +11,7 @@ from typing import Any, Mapping
 from jsonschema import ValidationError
 
 from .contract import POLICY_FIELDS, REASONS, validator
-from .model import Item
+from .model import Item, ProducerIdentity
 from .snapshot import Snapshot, usable_id
 
 _PRECEDENCE = {code: rank for rank, code in enumerate(REASONS)}
@@ -53,19 +53,42 @@ def _structure(candidate: Mapping[str, Any]) -> str | None:
     return min(codes, key=_rank) if codes else None
 
 
+def _slot_permission(item: Item, producer: ProducerIdentity, granted: Mapping[str, Any]) -> str | None:
+    # State is application-written (R-8): only state producers, whatever else a route lists.
+    if item.slot not in granted["slots"] or (item.slot.startswith("state.") and producer.kind != "state"):
+        return "producer_slot_not_allowed"
+    return None
+
+
+def _item_reason(item: Item, producer: ProducerIdentity, granted: Mapping[str, Any]) -> str | None:
+    """The first failing check for a schema-valid item, in reasons.json order."""
+    for check in (_slot_permission,):
+        if reason := check(item, producer, granted):
+            return reason
+    return None
+
+
 def admit(snapshot: Snapshot) -> Admission:
     items, excluded, filled = [], [], []
     for batch in snapshot.batches:
+        granted = snapshot.route_policy.document["producers"].get(batch.producer.id)
+        authenticated = granted is not None and granted["kind"] == batch.producer.kind
         unnamed = 0
         for candidate in batch.candidates:
             item_id = usable_id(candidate)
             if item_id is None:
                 item_id, unnamed = f"{batch.producer.id}#invalid-{unnamed}", unnamed + 1
+            if not authenticated:
+                excluded.append(Exclusion(batch.producer.id, item_id, "producer_not_authenticated"))
+                continue
             if reason := _structure(candidate):
                 excluded.append(Exclusion(batch.producer.id, item_id, reason))
                 continue
             item = Item.from_json(candidate)
             filled += [(item.id, field) for field in item.defaults_filled]
+            if reason := _item_reason(item, batch.producer, granted):
+                excluded.append(Exclusion(batch.producer.id, item_id, reason))
+                continue
             items.append(item)
     return Admission(
         items=tuple(items),

@@ -59,3 +59,38 @@ def test_excluded_items_never_reach_the_payload(fixture_snapshot):
     before = assemble(Snapshot.from_json(fixture_snapshot)).payload
     add(fixture_snapshot, "policy-corpus", knowledge(body=None), knowledge(id="kb:bad", slot="evidence.web"))
     assert assemble(Snapshot.from_json(fixture_snapshot)).payload == before
+
+
+def add_batch(snapshot: dict, producer: str, kind: str, *items: dict) -> dict:
+    snapshot["batches"].append({"producer": {"id": producer, "kind": kind}, "items": copy.deepcopy(list(items)), "excluded": []})
+    return snapshot
+
+
+def state_user(**fields) -> dict:
+    item = {"id": "user:plan", "slot": "state.user", "source": "accounts-db", "source_version": "1", "authority": "state",
+            "trust": "verified", "freshness": "2026-09-22T11:59:00Z", "scope": {"tenant": "acme"}, "body": "plan=pro"}
+    item.update(fields)
+    return {k: v for k, v in item.items() if v is not None}
+
+
+# R-15, R-8: producer identity comes from the application and the route, never from item fields.
+
+def test_producers_the_route_does_not_list_are_refused_before_structure(fixture_snapshot):
+    add_batch(fixture_snapshot, "rogue", "retrieval", knowledge(id="rogue:1"), knowledge(id="rogue:2", body=None))
+    assert exclusions(fixture_snapshot) == [("rogue:1", "producer_not_authenticated"), ("rogue:2", "producer_not_authenticated")]
+
+
+def test_a_producer_whose_kind_differs_from_the_route_is_refused(fixture_snapshot):
+    fixture_snapshot["batches"][KNOWLEDGE]["producer"]["kind"] = "mcp"
+    assert exclusions(fixture_snapshot) == [("refunds-eu:v17#p4", "producer_not_authenticated")]
+
+
+def test_a_producer_may_only_emit_the_slots_the_route_grants(fixture_snapshot):
+    add(fixture_snapshot, "policy-corpus", state_user())
+    assert exclusions(fixture_snapshot) == [("user:plan", "producer_slot_not_allowed")]
+
+
+def test_state_slots_only_accept_state_producers_even_if_the_route_lists_others(fixture_snapshot):
+    fixture_snapshot["route_policy"]["producers"]["policy-corpus"]["slots"].append("state.user")
+    add(fixture_snapshot, "policy-corpus", state_user())
+    assert exclusions(fixture_snapshot) == [("user:plan", "producer_slot_not_allowed")]
