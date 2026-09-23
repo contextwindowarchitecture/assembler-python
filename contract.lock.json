@@ -1,7 +1,7 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "c9027ec3f222b69e4c27e8b8334c865715edda42",
+    "commit": "d70e14be0351b07929ebaf12c1222b90d0ddcf20",
     "dirty": false
   },
   "files": {
@@ -104,7 +104,7 @@
     "conformance/registry/lock.json": "7fbb47e27908eb5cdeb462d026cf0b1ca63c32e5d3d23a2ea83e3fbccec57b74",
     "conformance/registry/profiles.json": "5e08ec619f0c17631ed2151b20594e1a2845a826201b3babf57c223a1ed7cd0b",
     "conformance/registry/route-policies.json": "12b22bac5be7da3e0643a204234b3923c7495c06e83244e6e6a85aad8e8ef616",
-    "src/cwa/contract/data/assembler-scope.json": "c33e75cf955610f1d869ba152f439b4130fdd940c66a82dd3ccae3f2582f00e8",
+    "src/cwa/contract/data/assembler-scope.json": "fe08c1b982e43d4f4ae6091d6c716617779e6b90a32b82626a492391f1008c12",
     "src/cwa/contract/data/reasons.json": "3b574fe12e7237d5556704cb6366c2dfd7ede43caba16a008029e0d27a656ffe",
     "src/cwa/contract/data/requirements.json": "a9e7e3db750bfd6bae2c6dd5698dd31b7716bee0d15b75b43e2c1aa1da0ace6c",
     "src/cwa/contract/data/schema/conflict_group.schema.json": "06b6df97c84474371194b7f8758c3264d61c96b4a50ca1e865bff3e811365b89",

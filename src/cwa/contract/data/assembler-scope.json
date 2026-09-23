@@ -102,16 +102,16 @@
   {
     "id": "R-21",
     "scope": "assembler",
-    "note": "Every emitted trace is validated against the published schema in tests."
+    "note": "Traces are checked against the schema and the reason registry, and must match every published case field for field."
   },
   {
     "id": "R-22",
     "scope": "assembler",
-    "note": "Emits the recommended trace fields."
+    "note": "Emits source_version, eligibility, excluded slots, snapshot_digest and defaults_filled, and stage timings when the caller lends a clock."
   },
   {
     "id": "R-23",
     "scope": "assembler",
-    "note": "Snapshot replay across processes, hash seeds and time zones."
+    "note": "Snapshot replay across processes, hash seeds, time zones and locales, with ordering, blank strings, timestamps and the digest pinned for every language."
   }
 ]
