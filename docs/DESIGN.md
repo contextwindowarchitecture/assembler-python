@@ -396,7 +396,7 @@ flowchart LR
 
 Rows follow the conflict rows and precede the dedupe rows, in item id order. The producer comes from `Admission.producers`, the identity the application authenticated, never from the item. `supersede_ms` times the stage when a clock is lent.
 
-**Still deferred.** The diversity cap needs a reason code (`source_diversity_cap`), a route-policy field (`max_per_source`) and conformance cases in the website spec first, and until then producers own it. The original design notes follow; D-13 moved dedupe after conflict resolution and dropped NFC.
+**Source diversity (M9, in progress, D-15).** R-26 specifies it. The original design notes follow; D-13 moved dedupe after conflict resolution and dropped NFC.
 
 
 - **Deduplicate.** v0 uses an exact hash of NFC-normalized, whitespace-collapsed body → `duplicate_content`, keeping the item that sorts first by `order_by`. "Near-identical" needs a similarity metric. It stays deterministic only with fixed seeds (MinHash) or precomputed cluster ids from producers, and there is no schema field for those yet.
@@ -602,6 +602,14 @@ flowchart LR
   M5 --> M6["M6 · Per-slot budgets<br/>route max_tokens<br/>R-3 R-16 R-17"]
   M6 --> M7["M7 · Exact dedupe<br/>route dedupe: exact<br/>R-24"]
   M7 --> M8["M8 · Supersede<br/>route supersede: source<br/>R-25"]
+  M8 --> M9["M9 · Source diversity<br/>route max_per_source<br/>R-26"]
+```
+
+**M9 status (2026-09-23): in progress. Route-requested source diversity** (R-26). The maintainer took the recommended option on all four questions (D-15): a source is one authenticated producer and one `source`, a hard cap as its own stage after dedupe, exempt items fill places first, and a new requirement. Spec first: website `ab46b9b` adds R-26, `slots.<slot>.max_per_source` and the `source_diversity_cap` reason, tells retrievers to set `source` to the document, and widens the report schema to R-26; `6ba14c0` adds three cases, vendored here as pending. `status.json` holds R-26 and every requirement the cases tag (R-6, R-11, R-12, R-13, R-15, R-16, R-17, R-21, R-22, R-24, R-25) at *in progress* until they pass.
+
+```mermaid
+flowchart LR
+  S["Spec: R-26,<br/>max_per_source,<br/>source_diversity_cap"] --> C["Cases: cap,<br/>exemptions,<br/>evidence refusal"] --> V["Vendor; cases pending,<br/>claims in progress"] --> I["Implement the cap<br/>after dedupe"] --> R["Claims, report,<br/>website import"]
 ```
 
 **M8 status (2026-09-23): done. Route-requested supersession of stale observations** (R-25). The maintainer took the recommended option on all four questions (D-14): a call is one authenticated producer and one `source`, opt-in on any slot, ties for the latest instant all stay, and a new requirement. Spec first: website `a752d91` adds R-25, `slots.<slot>.supersede: "source"`, the `superseded` reason and `excluded[].superseded_by`, and widens the report schema to R-25; `13d4ff9` adds three cases, vendored here as pending, with R-25 and every requirement they tag (R-2, R-6, R-11, R-12, R-15, R-16, R-17, R-21, R-22, R-24) held at *in progress* until they passed.
@@ -757,6 +765,7 @@ Result: `src/cwa/conflicts.py` resolves every group kind and every escalation ac
 | D-12 | How does a route cap a slot's share of the payload? (M6) | **Decided 2026-09-22:** `slots.<slot>.max_tokens`, a ceiling only; floors that reserve room for a slot stay deferred. It holds whether or not the payload fits, after item caps and before budget pressure, and the slot sheds only its own items in tier order. Protected items alone over it refuse with `protected_content_over_budget`, so no new reason code. It is named `max_tokens` rather than the `token_budget` first proposed, because `default_overrides.<slot>.token_budget` already sets each item's default cap. |
 | D-13 | How does the assembler deduplicate? (M7) | **Decided 2026-09-23:** only in the slots a route opts in with `slots.<slot>.dedupe: "exact"` (an enum, so `"cluster"` can follow when producers emit cluster ids). A body's key collapses whitespace runs to one space and trims the ends, with no Unicode normalization or case folding, because runtimes ship different Unicode versions. It runs after conflict resolution and before refusal checks, never compares across slots, and never excludes a protected item or one a conflict group names, so a group cannot go moot while an ungoverned copy survives. Otherwise the highest-ranked copy stays, and `excluded[].duplicate_of` names it. It is a new requirement, R-24, the first appended after the v2 numbering. |
 | D-14 | How are stale observations superseded? (M8) | **Decided 2026-09-23:** only in the slots a route opts in with `slots.<slot>.supersede: "source"` (an enum, so a producer call key can follow). A call is one authenticated producer and one exact `source`: `source` alone is item-controlled, and R-15 forbids trusting it, so a producer supersedes only its own items. Within a call, every item older than the latest `freshness` (instants at full precision) is excluded as `superseded`, with `superseded_by` naming the highest-ranked latest item; items tied for the latest all stay. It runs after conflicts and before dedupe, with dedupe's exemptions. It is a new requirement, R-25, rather than a clause of R-24, because it rests on staleness, not identical text. |
+| D-15 | How does a route keep one source from dominating a slot? (M9) | **Decided 2026-09-23:** `slots.<slot>.max_per_source`, an integer of at least 1. After dedupe and before any refusal check, whether or not the payload fits, each pair of authenticated producer and `source` keeps at most that many items and the rest are excluded as `source_diversity_cap`. Protected and conflict-grouped items are never excluded and take places first; the others fill what is left in the slot's rank. A hard cap rather than a fitting preference, so the outcome never depends on the budget. Producers must set `source` to the document, not the passage. A new requirement, R-26. |
 
 ## 10. What to revisit as it grows
 

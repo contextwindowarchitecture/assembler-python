@@ -21,7 +21,7 @@ Some cases have a generator in `generators/`. It holds a table of each candidate
 Array order in the trace is part of the expectation:
 
 - `included[]` follows placement order, and `id` order within a placement. For `fixture-xml/v1` that is payload order.
-- `excluded[]` lists producer-stage rows first, ordered by producer id and then `item_id`. Assembler rows follow in pipeline order. Admission rows are ordered by producer id and then recorded `item_id`. Conflict rows follow, ordered by `item_id`, then supersession rows and then deduplication rows, each ordered by `item_id`, and fitting rows follow in the order items were omitted.
+- `excluded[]` lists producer-stage rows first, ordered by producer id and then `item_id`. Assembler rows follow in pipeline order. Admission rows are ordered by producer id and then recorded `item_id`. Conflict rows follow, ordered by `item_id`, then supersession, deduplication and source-diversity rows, each stage ordered by `item_id`, and fitting rows follow in the order items were omitted.
 - `conflicts[]` has one record per declared group, ordered by `group_id`.
 - `compressed[]` has one row per included occurrence of a compressed item, in `included[]` order.
 - Assembler rows in `excluded[]` carry `slot` whenever the candidate names one of the eleven slots, even when it fails for another reason (R-22). Producer rows carry what the producer reported, which has no slot.
@@ -58,7 +58,7 @@ Every other array keeps its order, including profile placements and route-policy
 
 ## Refusals
 
-A refused trace has `result: null`, `included: []` and `compressed: []` (R-17). It keeps the producer, admission, conflict, supersession and deduplication rows in `excluded[]`, `conflicts[]` and `defaults_filled[]`: conflicts are resolved right after admission, then stale observations are superseded and duplicates removed, all before any refusal check, and none of these ever excludes a protected item, so none can cause `required_slot_missing`. An `evidence_required` refusal comes after fitting, so it also keeps the fitting rows. Assembly checks the refusal conditions in `contract/reasons.json` order and records the first that holds (R-21):
+A refused trace has `result: null`, `included: []` and `compressed: []` (R-17). It keeps the producer, admission, conflict, supersession, deduplication and source-diversity rows in `excluded[]`, `conflicts[]` and `defaults_filled[]`: conflicts are resolved right after admission, then stale observations are superseded, duplicates removed and sources capped, all before any refusal check, and none of these ever excludes a protected item, so none can cause `required_slot_missing`. An `evidence_required` refusal comes after fitting, so it also keeps the fitting rows. Assembly checks the refusal conditions in `contract/reasons.json` order and records the first that holds (R-21):
 
 1. `required_slot_missing`: no admitted item in `governance.instructions` or `interaction.query`, or, on a route with `parser: true`, in `governance.output_contract` (R-4).
 2. `protected_slot_unplaced`: an admitted protected item's slot has no placement in the profile (R-20).
@@ -121,9 +121,20 @@ Deduplication runs right after supersession, before any refusal check, and only 
 
 Deduplication compares bodies only. It ignores variants, and a kept item keeps its own. Each excluded item adds one `excluded[]` row with reason `duplicate_content`, stage `assembler`, its slot and `duplicate_of`, and takes no further part in assembly. It was not omitted for budget, so it does not count toward R-12's recovery action.
 
+## Source diversity
+
+The source diversity cap runs right after deduplication, before any refusal check, and only in the slots whose route rules set `max_per_source` (R-26). It considers the items that neither conflict resolution, supersession nor deduplication excluded.
+
+1. Within one slot, items share a *source* when they share the authenticated producer of their batch and the same `source`, compared exactly, as Supersession groups a call.
+2. A source keeps its *exempt* items (protected, or named by a conflict group, as Deduplication defines it), which take places first.
+3. Its other items then fill the places left, up to `max_per_source`, from the highest rank down, by the slot's rank as Fitting defines it. A source with as many exempt items as the cap, or more, keeps no other item.
+4. Each item left over adds one `excluded[]` row with reason `source_diversity_cap`, stage `assembler` and its slot.
+
+A capped item takes no further part in assembly and was not omitted for budget, so it does not count toward R-12's recovery action. The cap groups passages only as well as producers name their sources: a retriever should set `source` to the document a passage comes from, not to the passage.
+
 ## Fitting
 
-Fitting reduces the admitted items the profile places, less any that conflict resolution, supersession or deduplication excluded, until the payload fits (R-16). The payload *fits* when the whole payload, rendered and counted with the declared tokenizer, is at most `budget.input`. An implementation may estimate, but it must reach the same decisions. An item's tier is its own `tier` when it sets one, and otherwise its slot's default raised by the route's `tier_upgrades`.
+Fitting reduces the admitted items the profile places, less any that conflict resolution, supersession, deduplication or the source diversity cap excluded, until the payload fits (R-16). The payload *fits* when the whole payload, rendered and counted with the declared tokenizer, is at most `budget.input`. An implementation may estimate, but it must reach the same decisions. An item's tier is its own `tier` when it sets one, and otherwise its slot's default raised by the route's `tier_upgrades`.
 
 1. If a protected item's rendered body exceeds its `token_budget`, the protected items in a slot exceed the slot's `max_tokens`, or the protected items alone do not fit, refuse with `protected_content_over_budget`.
 2. Enforce the other items' `token_budget` caps, in shedding order, whether or not the payload fits. A droppable item whose rendered body exceeds its cap is omitted. A compressible one takes the variant with the most tokens whose rendered body is within the cap, the earlier one on ties, and is omitted when there is none. A `null` cap sets no per-item limit.

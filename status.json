@@ -64,7 +64,7 @@
     },
     {
       "id": "R-6",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_conflicts.py::test_governing_instructions_prevail_over_the_user_without_excluding_the_request",
         "tests/test_conflicts.py::test_members_that_cannot_instruct_stay_as_material",
@@ -124,7 +124,7 @@
     },
     {
       "id": "R-11",
-      "status": "boundary-checked",
+      "status": "in progress",
       "evidence": [
         "tests/test_snapshot.py::test_conflict_groups_must_agree_with_the_snapshot",
         "tests/test_conflicts.py::test_a_group_with_fewer_than_two_admitted_members_is_moot",
@@ -142,7 +142,7 @@
     },
     {
       "id": "R-12",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_refusal.py::test_no_admitted_evidence_asks_for_context",
         "tests/test_refusal.py::test_routes_that_do_not_require_evidence_answer_without_it",
@@ -158,7 +158,7 @@
     },
     {
       "id": "R-13",
-      "status": "boundary-checked",
+      "status": "in progress",
       "evidence": [
         "tests/test_admission.py::test_retrieval_packets_carry_reference_only",
         "tests/test_admission.py::test_threshold_and_age_eligibility",
@@ -176,7 +176,7 @@
     },
     {
       "id": "R-15",
-      "status": "boundary-checked",
+      "status": "in progress",
       "evidence": [
         "tests/test_admission.py::test_the_capability_policy_admits_allowed_tools",
         "tests/test_admission.py::test_tools_off_the_allow_list_are_refused",
@@ -190,7 +190,7 @@
     },
     {
       "id": "R-16",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_admission.py::test_items_cannot_downgrade_a_protected_slot",
         "tests/test_admission.py::test_items_cannot_protect_themselves",
@@ -231,7 +231,7 @@
     },
     {
       "id": "R-17",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_refusal.py::test_an_excluded_instruction_does_not_count_and_its_exclusion_stays_in_the_trace",
         "tests/test_conformance.py::test_conformance_case",
@@ -293,7 +293,7 @@
     },
     {
       "id": "R-21",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason",
@@ -318,7 +318,7 @@
     },
     {
       "id": "R-22",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_golden.py::test_defaults_filled_are_traced_as_records",
         "tests/test_conformance.py::test_conformance_case",
@@ -352,7 +352,7 @@
     },
     {
       "id": "R-24",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_dedupe.py::test_equal_keys_in_a_deduplicated_slot_keep_the_highest_ranked_copy",
         "tests/test_dedupe.py::test_duplicate_rows_carry_the_slot_and_the_kept_item",
@@ -373,7 +373,7 @@
     },
     {
       "id": "R-25",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_supersede.py::test_only_the_latest_observation_of_a_call_stays",
         "tests/test_supersede.py::test_superseded_rows_carry_the_slot_and_the_latest_item",
@@ -391,6 +391,11 @@
         "tests/test_properties.py::test_a_superseding_slot_keeps_only_the_latest_of_each_call",
         "tests/test_conformance.py::test_conformance_case"
       ]
+    },
+    {
+      "id": "R-26",
+      "status": "in progress",
+      "evidence": []
     }
   ]
 }

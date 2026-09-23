@@ -365,6 +365,11 @@
             "exact"
           ],
           "description": "exact: after conflict resolution, exclude each item whose body equals a kept item's body in this slot once whitespace runs are collapsed and the ends trimmed, with reason duplicate_content (R-24). Protected items and items a conflict group names are never excluded. Absent, the slot keeps equal bodies."
+        },
+        "max_per_source": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "After deduplication, keep at most this many items in the slot from each pair of authenticated producer and source, excluding the rest with reason source_diversity_cap (R-26). Protected items and items a conflict group names are never excluded and fill places first; the others fill what is left in rank order. Absent, the slot is not capped."
         }
       }
     }

@@ -3,13 +3,14 @@
 Each case lists its candidates with their authenticated producer and admission intent, and each
 declared group with the decision it intends: decided_by, resolution, winner and the members it
 excludes. A case may also list the items it intends supersession to exclude ("superseded") and the
-duplicates it intends deduplication to exclude ("duplicates"), each with the item kept in its place
-(supersede.py and dedupe.py build those cases), and producers beyond the fixed set ("producers"). Expected traces and payloads come from those
+duplicates it intends deduplication to exclude ("duplicates"), each with the item kept in its place,
+the items it intends the source diversity cap to exclude ("capped"), and producers beyond the fixed
+set ("producers"). supersede.py, dedupe.py and diversity.py build those cases. Expected traces and payloads come from those
 tables, not from a resolution algorithm, so the cases can fail an implementation. The generator
 only checks that each table is self-consistent with conformance/README.md's Conflicts,
-Supersession and Deduplication sections: excluded and winning items are admitted members, no
-protected item is excluded, moot means fewer than two members, the superseded items and duplicates
-are exactly those the calls, instants, keys, exemptions and ranks imply, and the refusal and
+Supersession, Deduplication and Source diversity sections: excluded and winning items are admitted members, no
+protected item is excluded, moot means fewer than two members, the superseded, duplicate and capped
+items are exactly those the calls, instants, keys, sources, exemptions and ranks imply, and the refusal and
 recovery follow. Budgets are generous, so fitting never acts.
 """
 import calendar, copy, hashlib, json, os, re, sys
@@ -171,6 +172,22 @@ def build(case):
         excluded.append({"item_id": i, "reason": "duplicate_content", "stage": "assembler", "slot": kept[i]["slot"], "duplicate_of": duplicates[i]})
         del kept[i]
 
+    # Source diversity (R-26): right after deduplication.
+    capped, implied = sorted(case.get("capped", []), key=U16), []
+    for slot, rules in policy.get("slots", {}).items():
+        if "max_per_source" not in rules:
+            continue
+        sources = {}
+        for i in ranked([it for it in kept.values() if it["slot"] == slot], order_of(slot)):
+            sources.setdefault((producer_of[i], kept[i]["source"]), []).append(i)
+        for members in sources.values():
+            places = max(0, rules["max_per_source"] - sum(exempt(i) for i in members))
+            implied += [i for i in members if not exempt(i)][places:]
+    assert capped == sorted(implied, key=U16), f"{name}: the capped list should be {sorted(implied, key=U16)}"
+    for i in capped:
+        excluded.append({"item_id": i, "reason": "source_diversity_cap", "stage": "assembler", "slot": kept[i]["slot"]})
+        del kept[i]
+
     required = any(it["slot"] == "governance.instructions" for it in kept.values()) and any(it["slot"] == "interaction.query" for it in kept.values())
     evidence = [it for it in kept.values() if it["slot"] in ("evidence.knowledge", "evidence.tool_results")]
     short = policy.get("requires_evidence") and (not evidence or any(
@@ -208,7 +225,7 @@ def build(case):
             os.remove(payload_file)
     else:
         open(payload_file, "wb").write(payload)
-    print(f"{name}: {len(admitted)} admitted, {len(groups)} groups, {len(conflict_rows)} excluded by conflicts, {len(superseded)} superseded, {len(duplicates)} duplicates -> "
+    print(f"{name}: {len(admitted)} admitted, {len(groups)} groups, {len(conflict_rows)} excluded by conflicts, {len(superseded)} superseded, {len(duplicates)} duplicates, {len(capped)} capped -> "
           f"{refusal or trace['result']['input_tokens']}{' / ' + recovery if recovery else ''}")
 
 

@@ -123,5 +123,10 @@
     "id": "R-25",
     "scope": "assembler",
     "note": "Keeps only the latest observation per producer and source in the slots a route opts in, after conflicts, keeping protected and grouped items."
+  },
+  {
+    "id": "R-26",
+    "scope": "assembler",
+    "note": "Keeps at most max_per_source items per producer and source in the slots a route opts in, after dedupe, keeping protected and grouped items."
   }
 ]

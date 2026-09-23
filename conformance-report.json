@@ -5,7 +5,7 @@
     "language": "python"
   },
   "contract": {
-    "website_commit": "13d4ff9f47808c162572a60f16a37f71e69d27ea",
+    "website_commit": "6ba14c0127afcd052c680586f719c7b3a61ad398",
     "dirty": false
   },
   "cases": [
@@ -186,6 +186,44 @@
         "R-24"
       ],
       "outcome": "passed"
+    },
+    {
+      "id": "diversity-cap",
+      "rules": [
+        "R-13",
+        "R-15",
+        "R-21",
+        "R-22",
+        "R-24",
+        "R-26"
+      ],
+      "outcome": "failed",
+      "detail": "payload bytes differ"
+    },
+    {
+      "id": "diversity-evidence-required",
+      "rules": [
+        "R-12",
+        "R-17",
+        "R-21",
+        "R-26"
+      ],
+      "outcome": "failed",
+      "detail": "a payload, but a refusal was expected"
+    },
+    {
+      "id": "diversity-exemptions",
+      "rules": [
+        "R-6",
+        "R-11",
+        "R-16",
+        "R-21",
+        "R-24",
+        "R-25",
+        "R-26"
+      ],
+      "outcome": "failed",
+      "detail": "payload bytes differ"
     },
     {
       "id": "evidence-precompute-summary",

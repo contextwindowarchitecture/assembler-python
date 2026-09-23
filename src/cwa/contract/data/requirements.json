@@ -173,5 +173,12 @@
     "keyword": "MUST",
     "summary": "Route-requested supersession of stale observations",
     "text": "When a route sets supersede: source on a slot, the assembler MUST, after conflict resolution and before deduplication, exclude each item in that slot for which another item in the slot, from the same authenticated producer and with the same source, has a later freshness, compared as instants at full precision. It MUST record each such exclusion with reason superseded, stage assembler and superseded_by naming the highest-ranked of the latest items by the slot's fitting rank. Items tied for the latest freshness are all kept. The assembler MUST NOT exclude a protected item or an item a conflict group names. source and freshness decide alone: bodies, variants and source_version are not compared, and a slot without supersede keeps every observation."
+  },
+  {
+    "id": "R-26",
+    "section": "fit",
+    "keyword": "MUST",
+    "summary": "Route-requested source diversity",
+    "text": "When a route sets max_per_source on a slot, the assembler MUST, after deduplication and before any refusal check or fitting, keep at most that many items in the slot from each pair of authenticated producer and source, and exclude the rest with reason source_diversity_cap and stage assembler. The assembler MUST NOT exclude a protected item or an item a conflict group names; those count toward the cap first, and the other items fill any places left in the slot's fitting rank. Each slot is capped on its own, and a slot without max_per_source is not capped."
   }
 ]
