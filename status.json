@@ -196,7 +196,8 @@
         "tests/test_admission.py::test_producers_the_route_does_not_list_are_refused_before_structure",
         "tests/test_admission.py::test_a_producer_whose_kind_differs_from_the_route_is_refused",
         "tests/test_conflicts.py::test_precedence_reads_the_authenticated_producer_never_the_item_source",
-        "tests/test_admission.py::test_an_mcp_producer_emits_only_evidence_slots_whatever_the_route_lists"
+        "tests/test_admission.py::test_an_mcp_producer_emits_only_evidence_slots_whatever_the_route_lists",
+        "tests/test_admission.py::test_the_grants_producer_must_be_listed_with_kind_capability_policy"
       ]
     },
     {

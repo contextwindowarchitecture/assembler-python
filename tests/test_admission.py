@@ -293,6 +293,14 @@ def test_without_a_capability_grant_no_tool_is_admitted(with_tools):
     assert exclusions(with_tools) == [("cap:issue_refund", "capability_not_allowed")]
 
 
+def test_the_grants_producer_must_be_listed_with_kind_capability_policy(with_tools):
+    # R-15: the route capability policy is the grant's producer listed with kind capability_policy; the same producer
+    # listed with another kind cannot emit tools, although the grant names it and the allow-list names the tool.
+    with_tools["route_policy"]["producers"]["cap-policy"]["kind"] = "policy"
+    add_batch(with_tools, "cap-policy", "policy", tool("cap:issue_refund"))
+    assert exclusions(with_tools) == [("cap:issue_refund", "capability_not_allowed")]
+
+
 def instruction(**fields) -> dict:
     item = {"id": "policy:v13", "slot": "governance.instructions", "source": "policy-registry", "source_version": "v13",
             "authority": "governing", "trust": "verified", "freshness": "2026-09-01T00:00:00Z", "injection_risk": "none",
