@@ -1,5 +1,6 @@
-"""Builds conformance/registry/: the published example profiles, a few conformance route policies,
-and a lock pinning each by the digest conformance/README.md's Registry section defines.
+"""Builds conformance/registry/: the published example profiles, a few conformance route policies, the
+illustrative route policies the example profiles name, and a lock pinning each by the digest
+conformance/README.md's Registry section defines.
 
 Implementations check that they compute the same digests. The website's tests recompute them in
 JavaScript, independently of this generator.
@@ -25,7 +26,7 @@ def digest(value):
 
 
 profiles = read("examples/profiles.json") + [read("examples/fixture-profile.json")]
-policies = [read(f"conformance/cases/{case}/snapshot.json")["route_policy"] for case in POLICY_CASES]
+policies = [read(f"conformance/cases/{case}/snapshot.json")["route_policy"] for case in POLICY_CASES] + read("examples/route-policies.json")
 lock = {
     "profiles": [{"id": p["id"], "version": p["version"], "sha256": digest({k: v for k, v in p.items() if k != "evaluation"})} for p in profiles],
     "route_policies": [{"route": p["route"], "version": p["version"], "sha256": digest(p)} for p in policies],

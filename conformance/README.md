@@ -209,7 +209,7 @@ A registry holds the profiles and route policies an application assembles with, 
 - **Locking.** Locking adds an entry for each identity not yet pinned. It refuses content whose identity is already pinned with another digest, so the author must increase the version instead. It never rewrites an entry.
 - **Deployment.** An application deploying a profile asks for it in deployment mode, which returns only a profile with `evaluation.status: evaluated`. The profile schema then requires a concrete `model_family` and the evaluation's `suite`, `date`, `result` and `artifact` (R-19). Draft use, such as development and these conformance cases, may load unevaluated profiles. A profile's digest covers `model_family`, so promoting a draft that has `model_family: null` changes its model target and needs a new version (R-20); only a profile that already names its model can be promoted at the same version, by changing `evaluation` alone.
 
-`registry/` holds the published example profiles, four conformance route policies and a lock that pins them, so that implementations can check they compute the same digests. `generators/registry.py` builds it.
+`registry/` holds the published example profiles, four conformance route policies, the illustrative route policies the example profiles name (`examples/route-policies.json`) and a lock that pins them all, so that implementations can check they compute the same digests. `generators/registry.py` builds it.
 
 ## Reporting results
 

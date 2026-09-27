@@ -1,11 +1,11 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "fbb9a0c55a09186db30ab26ba7b66483c6edbae5",
+    "commit": "84807a5948d8b43b01f7ec2924b76a57106df25b",
     "dirty": false
   },
   "files": {
-    "conformance/README.md": "aba43b9ee3472f9353ff60e25760151fd1ca82d91d5a9723ec1629f70499a0e2",
+    "conformance/README.md": "f4e74e98ab6900d04b4f18a6feca7e8011840950d105ecc16dece82fa36e2959",
     "conformance/cases/admission-reasons/case.json": "51f506b50fb36f72e8824848527f14e51616a4d350fe41ca6056f65299434e56",
     "conformance/cases/admission-reasons/expected.payload.txt": "e4d155cd1c95bf4433e3da230f8029beb7ae20d59ecd01a643db27dc3639cc13",
     "conformance/cases/admission-reasons/expected.trace.json": "434326becaa39058a5c3a99de9ebb7f8ef61cdc773a48cfc0fa2d68296f5f5c9",
@@ -187,7 +187,7 @@
     "conformance/cases/tokenizer-estimate-utf8/expected.payload.txt": "ab80692164867aa12cabec2f37ebaa26d614276dbfb9728e6e4070bfbebed920",
     "conformance/cases/tokenizer-estimate-utf8/expected.trace.json": "9740ecdca02aa0d7ec5aa433d909a24aca7953e682a0ea786973c581d8b60867",
     "conformance/cases/tokenizer-estimate-utf8/snapshot.json": "220e97bf340e14f5755c89ea689322fd76ee04fd34f7ee3cadb6b2a4926c1243",
-    "conformance/check.py": "716b12831df969159a26a83656cf02be851eaf9cec0a81c6134baff5ebcced33",
+    "conformance/check.py": "85d9d9441aa19acf489d4447538e09a7ad65722c656f10138260967ee7828aa8",
     "conformance/generators/admission-reasons.py": "7f9e81833a9e405077ce52edd2875e555577518b796bb53bad7f9bc0f5e08445",
     "conformance/generators/conflicts.py": "c83e04b738df0bbc259c73fbb287ec92f55aec7ed419e487d2256d9837d13192",
     "conformance/generators/dedupe.py": "2c67027bebbd8d51fb6a0127b32f95f88bc8350cd64e883ce208d693d0412d10",
@@ -195,12 +195,12 @@
     "conformance/generators/diversity.py": "224f324967cbd2e74dffd249650aa175fe91b83bb64d9e5cb64b979c82762d81",
     "conformance/generators/fitting.py": "b65e0778f99f2e9f1a5cf17e9e6258c10a087ca9cad0084af93d97d1fed31aa5",
     "conformance/generators/messages.py": "a59f596de5c930e5d30bd2f21ee5ef8c49a24ffdd5b57aaa77c79e98b3d006ea",
-    "conformance/generators/registry.py": "be771b2605b21ee772ede8aebc616e5eaadba716335b571affc0a7cff3a1e745",
+    "conformance/generators/registry.py": "09ba73de7b72424ff9123b122898f5e808b3d837fd25e73ed796ce3a76e5c832",
     "conformance/generators/rejections.py": "baa7d0beef4f136b7857a5acf59c9410c80d7c8d90efd93489c5ecb215f965dc",
     "conformance/generators/supersede.py": "1004bcf373898ce67c5469ea7ead756ce1e547e1d9492db8a47618e17dcdd4e1",
-    "conformance/registry/lock.json": "84c4c0ac93c2bf336f9bbb786c3b1409e803735e94fb54eef5cccc56f2f3d9b4",
+    "conformance/registry/lock.json": "ea0122340945f72dbd956f718cd31c5e9f3b37f2c32923dd8ac449f17ccb8e00",
     "conformance/registry/profiles.json": "fd4452a4869cc806a0ba0693e5e9f0d74aa0a6d92aeae782e4356e67194a4cfa",
-    "conformance/registry/route-policies.json": "12b22bac5be7da3e0643a204234b3923c7495c06e83244e6e6a85aad8e8ef616",
+    "conformance/registry/route-policies.json": "a6b6ae3cd8e241078a7741b7ed27aa02770b7084cf843a77551893a55546963c",
     "conformance/rejections/conflict-group-overlap/case.json": "cd24152ead3dfe5b6d68196b18eeaf25bbdd0322fcf1abb38f8840e21333d20b",
     "conformance/rejections/conflict-group-overlap/snapshot.json": "feb1458569a76ea21a33e83c82f08eb495b8b46475fb23f217217bddbee5424f",
     "conformance/rejections/conflict-group-repeated-id/case.json": "c5fe5234d1adc1d7465ec397db84e2ccc08d391737cb464e8253971c7581f0ab",

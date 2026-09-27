@@ -40,7 +40,7 @@
     {
       "route": "support-chat",
       "version": "admission/v1",
-      "sha256": "04629c717fca9fe67b8029f914da95ba5f8554e73d049988204de65027ac9f1d"
+      "sha256": "6671b11f9fa407f107212d8e1243c28e7037d3b4179d4b0a6442248a66c6b73f"
     },
     {
       "route": "support-chat",
@@ -50,7 +50,32 @@
     {
       "route": "support-chat",
       "version": "conflict-fact/v1",
-      "sha256": "b1960f1fd5c0c54b4ffa58365a4b626dadbb6a9e5643391ae72d2e04fe1e6426"
+      "sha256": "093535f85301ea6f3a5b07be7fb6f9ebd37e58a060faf042c63475ea7b5f4e31"
+    },
+    {
+      "route": "support-chat",
+      "version": "illustrative/v1",
+      "sha256": "474d6e1fb8563eb94e39663976c19682317e30e8cf952955b5505b8c17a91191"
+    },
+    {
+      "route": "document-qa",
+      "version": "illustrative/v1",
+      "sha256": "54c297f1270c2f26b815f9bc9f8dca25f5b68d70a5ae57a42f5af8a9141b6e71"
+    },
+    {
+      "route": "long-context-qa",
+      "version": "illustrative/v1",
+      "sha256": "4b25b81d923d6e9ddab1a52c4451ce0a4f33dc2bba356c1a00b3bd066a3f48ee"
+    },
+    {
+      "route": "agent-loop",
+      "version": "illustrative/v1",
+      "sha256": "f9fd153ee1e346c879f3bd96fa989159d5c09cde20c9d83e2cf607d2ac29451f"
+    },
+    {
+      "route": "extract",
+      "version": "illustrative/v1",
+      "sha256": "86ae19a39b56321205dbbbb3d67cae9caa347e0ff0da69d018123420026b8e8c"
     }
   ]
 }
