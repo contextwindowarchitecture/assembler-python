@@ -51,7 +51,7 @@
     "code": "capability_not_allowed",
     "kind": "exclusion",
     "rule": "R-15",
-    "text": "The authenticated emitter is not the route capability policy, or the tool is not on the route/user allow-list. Item source strings cannot prove permission."
+    "text": "The snapshot carries no capability grant, the authenticated emitter is not the producer the grant names as policy_producer listed by the route with kind capability_policy, or the tool is not on the grant's allow-list. Item source strings cannot prove permission."
   },
   {
     "code": "untrusted_in_governance",
