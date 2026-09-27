@@ -28,6 +28,9 @@ Refunds are paid as store credit.
 <evidence.tool_results id="obs:fee-b">
 refund fee: none
 </evidence.tool_results>
+<evidence.tool_results id="obs:method-b">
+refund method: original card
+</evidence.tool_results>
 <evidence.tool_results id="obs:stage" conflict="f-protected">
 refund request 8821: approved
 </evidence.tool_results>

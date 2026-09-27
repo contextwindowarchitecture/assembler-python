@@ -9,8 +9,8 @@
     "reserved_output": 1024
   },
   "result": {
-    "input_tokens": 117,
-    "hash": "27fe148f69899fc6c7614d2d3a4d5f5a9aa70e1215bcc28a2054d66af1e0e60e"
+    "input_tokens": 124,
+    "hash": "b7a074a6aca0d970440ad59178a1450703558f73a7038b82cdab1c8917eaa2b5"
   },
   "included": [
     {
@@ -85,6 +85,13 @@
     },
     {
       "slot": "evidence.tool_results",
+      "item_id": "obs:method-b",
+      "tokens": 4,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "evidence.tool_results",
       "item_id": "obs:stage",
       "tokens": 4,
       "source_version": "1",
@@ -114,6 +121,12 @@
     },
     {
       "item_id": "obs:fee-a",
+      "reason": "conflict_lost",
+      "stage": "assembler",
+      "slot": "evidence.tool_results"
+    },
+    {
+      "item_id": "obs:method-a",
       "reason": "conflict_lost",
       "stage": "assembler",
       "slot": "evidence.tool_results"
@@ -205,6 +218,17 @@
       ],
       "decided_by": "escalated",
       "resolution": "surfaced"
+    },
+    {
+      "group_id": "f-trust-blind",
+      "kind": "fact",
+      "items": [
+        "obs:method-a",
+        "obs:method-b"
+      ],
+      "decided_by": "freshness",
+      "resolution": "resolved",
+      "winner": "obs:method-b"
     }
   ],
   "refused": {
@@ -217,7 +241,7 @@
     "route_policy_version": "conflict-fact/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "5a169c7c88bad06f5c269efcdc0f251faf5862be486b156c8e26b8ad6b21018c"
+    "snapshot_digest": "c4d74c0951e37ad5275772cac0014ff89613103b08b3451704896c4033430534"
   },
   "defaults_filled": []
 }

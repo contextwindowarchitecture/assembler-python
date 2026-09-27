@@ -10,7 +10,7 @@
   },
   "result": {
     "input_tokens": 71,
-    "hash": "d87561b5b23bfa7dbe5dd9afcda7dd303974adf9537f17c05b8a63ff0dd379ba"
+    "hash": "381383c084fa16087b4c6180785dced309b5cceb79daada5e872bedfd3de8fd4"
   },
   "included": [
     {
@@ -114,7 +114,7 @@
     "route_policy_version": "messages-render/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "cwa-messages/v1",
-    "snapshot_digest": "d366841eaa3174f1c175b6467fc24327524cf6c3135e83c3fcc861830d3a392b"
+    "snapshot_digest": "640dab0314624c10d17017bf670a9c4a5ae8cb703638343ea77f520931b0e564"
   },
   "defaults_filled": []
 }

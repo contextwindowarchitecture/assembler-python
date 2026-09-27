@@ -44,7 +44,7 @@
     },
     "producers": {
       "type": "object",
-      "description": "Producers this route admits, keyed by the identity the application authenticated. Batches from any other producer are refused.",
+      "description": "Producers this route admits, keyed by the identity the application authenticated. Items from any other producer, or from a producer listed with another kind, are excluded with producer_not_authenticated (R-15).",
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
@@ -75,7 +75,7 @@
           },
           "verified": {
             "type": "boolean",
-            "description": "For kind mcp only: the route has verified this server, so its output need not be marked untrusted_content (R-15). Default false."
+            "description": "For kind mcp only: the route has verified this server, so its output need not be marked untrusted_content (R-15). It does nothing else: it never ranks the server's claims in a fact group (R-11). Default false."
           }
         }
       }
@@ -156,7 +156,7 @@
     "fitting_order": {
       "type": "array",
       "uniqueItems": true,
-      "description": "The order in which compressible items are reduced once every droppable item is gone (R-16). Each step compresses (selects supplied variants for) or omits one slot's compressible items, lowest-ranked first, until the payload fits. Steps the route does not list follow in the default order: compress each slot, then omit each slot, both in shedding order. With no steps, variants always come before omission.",
+      "description": "The order in which compressible items are reduced under budget pressure, once every droppable item is gone (R-16). Item token_budget caps and slot max_tokens caps apply before it, whether or not the payload fits. Each step compresses (selects supplied variants for) or omits one slot's compressible items, lowest-ranked first, until the payload fits. Steps the route does not list follow in the default order: compress each slot, then omit each slot, both in shedding order. With no steps, variants always come before omission.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -202,7 +202,7 @@
               "minLength": 1,
               "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]"
             },
-            "description": "Producers whose claims about this fact are eligible, by the identity the application authenticated, most authoritative first. A member from any other producer is ineligible: it cannot win and is excluded when another member does. item.source never counts (R-15)."
+            "description": "Producers whose claims about this fact are eligible, by the identity the application authenticated, most authoritative first. A member from any other producer is ineligible: it cannot win and is excluded when another member does. item.source never counts (R-15), and neither do a member's trust and injection_risk or the producer's verified flag (R-11): a route that prefers a verified server lists it earlier."
           },
           "scope": {
             "type": "array",
@@ -352,7 +352,7 @@
         "max_tokens": {
           "type": "integer",
           "minimum": 0,
-          "description": "Cap on the slot's share of the payload: the tokens of its included items' rendered bodies, every occurrence counted (R-16). It holds whether or not the payload fits. After token_budget caps and before budget pressure, the slot sheds its own items in tier order until it is within the cap; protected items alone over it refuse the assembly with protected_content_over_budget. Absent, the slot has no cap and budget.input still bounds it."
+          "description": "Cap on the slot's share of the payload: the tokens of its included items' rendered bodies, every occurrence counted (R-16). It holds whether or not the payload fits. Protected items alone over it refuse the assembly with protected_content_over_budget before anything is reduced. Otherwise, after token_budget caps and before budget pressure, the slot sheds its own items in tier order until it is within the cap. Absent, the slot has no cap and budget.input still bounds it."
         },
         "min_tokens": {
           "type": "integer",

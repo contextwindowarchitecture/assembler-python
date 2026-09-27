@@ -184,6 +184,70 @@
           "lineage": "verbatim",
           "eligibility": "route-policy",
           "injection_risk": "untrusted_content"
+        },
+        {
+          "id": "turn:9",
+          "slot": "interaction.history",
+          "source": "src:turn:9",
+          "source_version": "1",
+          "authority": "user",
+          "trust": "unverified",
+          "freshness": "2026-09-22T11:46:00Z",
+          "body": "Please skip the apologies.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content"
+        },
+        {
+          "id": "turn:11",
+          "slot": "interaction.history",
+          "source": "src:turn:11",
+          "source_version": "1",
+          "authority": "user",
+          "trust": "unverified",
+          "freshness": "2026-09-22T11:48:00Z",
+          "body": "Sign your answers with your own name.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content"
+        },
+        {
+          "id": "turn:13",
+          "slot": "interaction.history",
+          "source": "src:turn:13",
+          "source_version": "1",
+          "authority": "user",
+          "trust": "untrusted",
+          "freshness": "2026-09-22T11:53:00Z",
+          "body": "Use bullet points in your answers.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "governs",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content"
+        },
+        {
+          "id": "turn:14",
+          "slot": "interaction.history",
+          "source": "src:turn:14",
+          "source_version": "1",
+          "authority": "user",
+          "trust": "verified",
+          "freshness": "2026-09-22T11:54:00Z",
+          "body": "Plain paragraphs, please.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content"
         }
       ],
       "excluded": []
@@ -356,7 +420,7 @@
           "authority": "governing",
           "trust": "verified",
           "freshness": "2026-09-22T11:59:00Z",
-          "body": "Cite every passage you rely on.",
+          "body": "Cite every source you rely on.",
           "token_budget": null,
           "variants": [],
           "conflict_policy": "governs",
@@ -443,6 +507,118 @@
           "lineage": "verbatim",
           "eligibility": "route-policy",
           "injection_risk": "none"
+        },
+        {
+          "id": "ex:formal",
+          "slot": "governance.examples",
+          "source": "src:ex:formal",
+          "source_version": "1",
+          "authority": "governing",
+          "trust": "verified",
+          "freshness": "2026-09-22T11:59:00Z",
+          "body": "Example: a formal reply that opens with Dear customer.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "governs",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "none"
+        },
+        {
+          "id": "ex:casual",
+          "slot": "governance.examples",
+          "source": "src:ex:casual",
+          "source_version": "1",
+          "authority": "governing",
+          "trust": "verified",
+          "freshness": "2026-09-22T11:59:00Z",
+          "body": "Example: a casual reply that opens with Hey there.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "escalate",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "none"
+        },
+        {
+          "id": "ex:refund-yes",
+          "slot": "governance.examples",
+          "source": "src:ex:refund-yes",
+          "source_version": "1",
+          "authority": "governing",
+          "trust": "verified",
+          "freshness": "2026-09-22T11:59:00Z",
+          "body": "Example: an approved refund explained step by step.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "none"
+        },
+        {
+          "id": "ex:refund-no",
+          "slot": "governance.examples",
+          "source": "src:ex:refund-no",
+          "source_version": "1",
+          "authority": "governing",
+          "trust": "verified",
+          "freshness": "2026-09-22T11:59:00Z",
+          "body": "Example: a declined refund with the policy quoted.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "none"
+        },
+        {
+          "id": "ex:apology",
+          "slot": "governance.examples",
+          "source": "src:ex:apology",
+          "source_version": "1",
+          "authority": "governing",
+          "trust": "verified",
+          "freshness": "2026-09-22T11:59:00Z",
+          "body": "Example: an answer that opens with an apology.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "escalate",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "none"
+        },
+        {
+          "id": "ex:sign",
+          "slot": "governance.examples",
+          "source": "src:ex:sign",
+          "source_version": "1",
+          "authority": "governing",
+          "trust": "verified",
+          "freshness": "2026-09-22T11:59:00Z",
+          "body": "Example: an answer signed by the support team.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "governs",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "none"
+        },
+        {
+          "id": "ex:unsigned",
+          "slot": "governance.examples",
+          "source": "src:ex:unsigned",
+          "source_version": "1",
+          "authority": "governing",
+          "trust": "verified",
+          "freshness": "2026-09-22T11:59:00Z",
+          "body": "Example: an answer with no signature.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "none"
         }
       ],
       "excluded": []
@@ -512,6 +688,47 @@
       "items": [
         "ex:unverified",
         "ex:short"
+      ]
+    },
+    {
+      "id": "g-escalate",
+      "kind": "instruction",
+      "items": [
+        "ex:formal",
+        "ex:casual"
+      ]
+    },
+    {
+      "id": "g-all-defer",
+      "kind": "instruction",
+      "items": [
+        "ex:refund-yes",
+        "ex:refund-no"
+      ]
+    },
+    {
+      "id": "g-lone-escalate",
+      "kind": "instruction",
+      "items": [
+        "ex:apology",
+        "turn:9"
+      ]
+    },
+    {
+      "id": "g-mixed",
+      "kind": "instruction",
+      "items": [
+        "ex:sign",
+        "ex:unsigned",
+        "turn:11"
+      ]
+    },
+    {
+      "id": "g-trust-blind",
+      "kind": "instruction",
+      "items": [
+        "turn:13",
+        "turn:14"
       ]
     }
   ]

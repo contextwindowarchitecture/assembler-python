@@ -11,7 +11,7 @@ from conflicts import CONV, CORPUS, CRM, QUERY, POLICY_TEXT, REG, STATE, WIKI, b
 from fitting import item  # noqa: E402
 
 KNOWLEDGE = {"min_relevance": 0.5, "required_scope": ["tenant"], "dedupe": "exact"}
-PASSAGE = "Pro plans refund in full within 30 days."
+CHUNK = "Pro plans refund in full within 30 days."
 USER = {"scope": {"tenant": "acme", "user": "u_91"}}
 
 CASES = [
@@ -24,16 +24,16 @@ CASES = [
         "policy": {"slots": {"evidence.knowledge": KNOWLEDGE, "evidence.tool_results": {"dedupe": "exact"}}},
         "items": [
             (item("policy:v12", "governance.instructions", POLICY_TEXT), REG, "admit"),
-            (kb("kb:a", PASSAGE, relevance=0.9), CORPUS, "admit"),
-            (kb("kb:mirror", PASSAGE, relevance=0.95), CORPUS, "admit"),
+            (kb("kb:a", CHUNK, relevance=0.9), CORPUS, "admit"),
+            (kb("kb:mirror", CHUNK, relevance=0.95), CORPUS, "admit"),
             (kb("kb:spaced", "\ufeff\u3000Pro plans\trefund in full\u00a0within\n30 days.  ", relevance=0.6), CORPUS, "admit"),
             (kb("kb:case", "pro plans refund in full within 30 days.", relevance=0.6), CORPUS, "admit"),
             (kb("kb:cafe-nfc", "Caf\u00e9 purchases refund to store credit.", relevance=0.7), CORPUS, "admit"),
             (kb("kb:cafe-nfd", "Cafe\u0301 purchases refund to store credit.", relevance=0.7), CORPUS, "admit"),
             (kb("kb:tie-2", "Refunds go to the original payment method.", relevance=0.8), CORPUS, "admit"),
             (kb("kb:tie-1", "Refunds go to the original payment method.", relevance=0.8), CORPUS, "admit"),
-            (item("obs:old", "evidence.tool_results", PASSAGE, freshness="2026-09-22T11:50:00Z"), CRM, "admit"),
-            (item("obs:new", "evidence.tool_results", PASSAGE, freshness="2026-09-22T11:58:00Z"), CRM, "admit"),
+            (item("obs:old", "evidence.tool_results", CHUNK, freshness="2026-09-22T11:50:00Z"), CRM, "admit"),
+            (item("obs:new", "evidence.tool_results", CHUNK, freshness="2026-09-22T11:58:00Z"), CRM, "admit"),
             (item("turn:15", "interaction.history", "Yes, please."), CONV, "admit"),
             (item("turn:17", "interaction.history", "Yes, please."), CONV, "admit"),
             (item("turn:18", "interaction.query", QUERY), CONV, "admit"),
@@ -49,8 +49,8 @@ CASES = [
         "policy": {"slots": {"evidence.knowledge": KNOWLEDGE}},
         "items": [
             (item("policy:v12", "governance.instructions", POLICY_TEXT), REG, "admit"),
-            (kb("kb:a", PASSAGE, relevance=0.9), CORPUS, "admit"),
-            (kb("wiki:refund", PASSAGE, relevance=0.8), WIKI, "admit"),
+            (kb("kb:a", CHUNK, relevance=0.9), CORPUS, "admit"),
+            (kb("wiki:refund", CHUNK, relevance=0.8), WIKI, "admit"),
             (kb("wiki:fees", "Refunds carry no processing fee.", relevance=0.7), WIKI, "admit"),
             (item("turn:18", "interaction.query", QUERY), CONV, "admit"),
         ],
@@ -93,8 +93,8 @@ CASES = [
         "policy": {"requires_evidence": True, "slots": {"evidence.knowledge": {**KNOWLEDGE, "min_included": 2}}},
         "items": [
             (item("policy:v12", "governance.instructions", POLICY_TEXT), REG, "admit"),
-            (kb("kb:a", PASSAGE, relevance=0.9), CORPUS, "admit"),
-            (kb("kb:b", PASSAGE + "\n", relevance=0.8), CORPUS, "admit"),
+            (kb("kb:a", CHUNK, relevance=0.9), CORPUS, "admit"),
+            (kb("kb:b", CHUNK + "\n", relevance=0.8), CORPUS, "admit"),
             (item("turn:18", "interaction.query", QUERY), CONV, "admit"),
         ],
         "groups": [],

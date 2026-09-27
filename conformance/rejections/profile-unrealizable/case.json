@@ -1,9 +1,8 @@
 {
   "id": "profile-unrealizable",
   "rules": [
-    "R-7",
     "R-17",
     "R-20"
   ],
-  "description": "The profile wraps evidence.knowledge as system, which fixture-xml/v1 cannot render."
+  "description": "The profile wraps evidence.knowledge as system, which fixture-xml/v1 cannot render: it supports only xml: wraps."
 }

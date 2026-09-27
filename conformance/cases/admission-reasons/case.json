@@ -15,5 +15,5 @@
     "R-21",
     "R-22"
   ],
-  "description": "One candidate per admission reason, each failing exactly its intended check first, plus admitted items at the boundaries: clock skew, sub-millisecond expiry, route tier upgrade, verified MCP server, and escaped history."
+  "description": "One candidate per admission reason, each failing exactly its intended check first, memory a producer should have suppressed, plus admitted items at the boundaries: clock skew, sub-millisecond expiry, route tier upgrade, verified MCP server, escaped history, untrusted authority where R-1 allows it, and a retrieval chunk admitted in tool results with that slot's authority while retrieval producers stay gated to the evidence slots."
 }

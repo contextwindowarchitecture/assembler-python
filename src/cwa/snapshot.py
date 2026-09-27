@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import json
+import math
 from dataclasses import dataclass
 from typing import Any, Mapping
 
@@ -29,15 +30,18 @@ def usable_id(candidate: Mapping[str, Any]) -> str | None:
     return value if isinstance(value, str) and not blank(value) else None
 
 
-def _unpaired_surrogates(value: Any, path: str = "") -> list[str]:
-    """Paths of strings, keys included, holding a surrogate. After a JSON round trip every pair is
-    one character, so any surrogate left is unpaired, and RFC 8785 cannot serialize it (I-JSON)."""
+def _not_i_json(value: Any, path: str = "") -> list[str]:
+    """Paths of strings, keys included, holding a surrogate, and of numbers a double cannot hold (I-JSON, RFC 7493).
+    After a JSON round trip every pair is one character, so any surrogate left is unpaired; JSON reads 1e400 as
+    Infinity. RFC 8785 can serialize neither, so the snapshot has no digest (R-17)."""
     if isinstance(value, str):
         return [f"{path or '/'} holds an unpaired surrogate"] if any("\ud800" <= c <= "\udfff" for c in value) else []
+    if isinstance(value, float) and not math.isfinite(value):
+        return [f"{path or '/'} is not a number a double can hold"]
     if isinstance(value, list):
-        return [p for i, v in enumerate(value) for p in _unpaired_surrogates(v, f"{path}/{i}")]
+        return [p for i, v in enumerate(value) for p in _not_i_json(v, f"{path}/{i}")]
     if isinstance(value, dict):
-        return [p for k, v in value.items() for p in _unpaired_surrogates(k, path) + _unpaired_surrogates(v, f"{path}/{k}")]
+        return [p for k, v in value.items() for p in _not_i_json(k, path) + _not_i_json(v, f"{path}/{k}")]
     return []
 
 
@@ -88,13 +92,14 @@ def _conflict_errors(document: Mapping[str, Any]) -> list[str]:
 
 
 def _report_errors(document: Mapping[str, Any]) -> list[str]:
-    """R-13: a near-duplicate a producer reports names a candidate it kept, from its own batch."""
+    """R-13, R-9: a near-duplicate or a superseded item a producer reports names a candidate it kept, from its own batch."""
     problems = []
     for batch in document["batches"]:
         candidates = {usable_id(item) for item in batch["items"]}
         for row in batch["excluded"]:
-            if "duplicate_of" in row and row["duplicate_of"] not in candidates:
-                problems.append(f"{row['item_id']} names {row['duplicate_of']!r} as kept, which is not a candidate in {batch['producer']['id']}'s batch")
+            for field in ("duplicate_of", "superseded_by"):
+                if field in row and row[field] not in candidates:
+                    problems.append(f"{row['item_id']} names {row[field]!r} as kept, which is not a candidate in {batch['producer']['id']}'s batch")
     return problems
 
 
@@ -140,7 +145,7 @@ class Snapshot:
             raise ValueError(f"tokenizer {', '.join(redefined)} is built in; give yours another id")
         tokenizers = {**TOKENIZERS, **tokenizers}
         data: dict[str, Any] = json.loads(json.dumps(document))
-        if problems := contract.errors("snapshot", data) + _unpaired_surrogates(data):
+        if problems := contract.errors("snapshot", data) + _not_i_json(data):
             raise SnapshotError(problems)
         data = _normalize(data)
 

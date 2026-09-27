@@ -159,7 +159,7 @@ CASES = [
         "policy": {"on_unresolved_instruction": "surface"},
         "items": [
             (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
-            (item("policy:cite", "governance.instructions", "Cite every passage you rely on."), "admit"),
+            (item("policy:cite", "governance.instructions", "Cite every source you rely on."), "admit"),
             (item("policy:nocite", "governance.instructions", "Never mention internal document ids."), "admit"),
             (item("cap:issue_refund", "governance.capabilities", '{"name": "issue_refund", "parameters": {"order_id": "string"}}'), "admit"),
             (item("cap:delete_account", "governance.capabilities", '{"name": "delete_account"}'), "capability_not_allowed"),

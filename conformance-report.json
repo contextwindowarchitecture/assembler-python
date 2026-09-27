@@ -5,7 +5,7 @@
     "language": "python"
   },
   "contract": {
-    "website_commit": "387a3e96248e0d5d496e4fa82497cdef755b4b39",
+    "website_commit": "fbb9a0c55a09186db30ab26ba7b66483c6edbae5",
     "dirty": false
   },
   "cases": [
@@ -71,6 +71,15 @@
         "R-18",
         "R-21",
         "R-22"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "budget-protected-variants",
+      "rules": [
+        "R-16",
+        "R-18",
+        "R-21"
       ],
       "outcome": "passed"
     },
@@ -210,6 +219,15 @@
       "outcome": "passed"
     },
     {
+      "id": "conflict-surfaced-shed",
+      "rules": [
+        "R-11",
+        "R-16",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
       "id": "dedupe-evidence-required",
       "rules": [
         "R-12",
@@ -281,6 +299,17 @@
         "R-24",
         "R-25",
         "R-26"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "evidence-cap-omitted",
+      "rules": [
+        "R-12",
+        "R-16",
+        "R-17",
+        "R-21",
+        "R-22"
       ],
       "outcome": "passed"
     },
@@ -420,6 +449,16 @@
       "outcome": "passed"
     },
     {
+      "id": "required-instructions-missing",
+      "rules": [
+        "R-4",
+        "R-10",
+        "R-17",
+        "R-21"
+      ],
+      "outcome": "passed"
+    },
+    {
       "id": "required-slot-missing",
       "rules": [
         "R-4",
@@ -513,10 +552,71 @@
       "outcome": "rejected"
     },
     {
+      "id": "messages-system-after-xml",
+      "rules": [
+        "R-7",
+        "R-17",
+        "R-20"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "messages-system-on-evidence",
+      "rules": [
+        "R-7",
+        "R-17",
+        "R-20"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "messages-tools-on-instructions",
+      "rules": [
+        "R-7",
+        "R-17",
+        "R-20"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "number-out-of-range",
+      "rules": [
+        "R-17",
+        "R-23"
+      ],
+      "outcome": "rejected"
+    },
+    {
       "id": "producer-in-two-batches",
       "rules": [
         "R-15",
         "R-17"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "producer-reason-unknown",
+      "rules": [
+        "R-9",
+        "R-17",
+        "R-21"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "profile-invalid-tag",
+      "rules": [
+        "R-17",
+        "R-20"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "profile-missing-instructions",
+      "rules": [
+        "R-4",
+        "R-17",
+        "R-20"
       ],
       "outcome": "rejected"
     },
@@ -557,7 +657,6 @@
     {
       "id": "profile-unrealizable",
       "rules": [
-        "R-7",
         "R-17",
         "R-20"
       ],
@@ -575,6 +674,14 @@
       "rules": [
         "R-17",
         "R-19"
+      ],
+      "outcome": "rejected"
+    },
+    {
+      "id": "superseded-by-unknown",
+      "rules": [
+        "R-9",
+        "R-17"
       ],
       "outcome": "rejected"
     },

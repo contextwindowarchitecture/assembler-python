@@ -88,6 +88,8 @@ class ProducerExclusion:
     stage: str
     duplicate_of: str | None = None
     """For duplicate_content: the candidate the producer kept in this item's place (R-13)."""
+    superseded_by: str | None = None
+    """For superseded: the candidate the producer kept in this item's place (R-9)."""
 
 
 @dataclass(frozen=True, slots=True)

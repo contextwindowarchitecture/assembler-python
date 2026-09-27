@@ -7,5 +7,5 @@
     "R-15",
     "R-21"
   ],
-  "description": "Fact groups: the authenticated producer ranked first in route precedence wins, scope and unlisted producers make members ineligible, freshness breaks ties only when allowed and at full precision, and ties, groups with no eligible member and protected losers are surfaced and marked."
+  "description": "Fact groups: the authenticated producer ranked first in route precedence wins, scope and unlisted producers make members ineligible, freshness breaks ties only when allowed and at full precision, and ties, groups with no eligible member and protected losers are surfaced and marked; trust never decides a fact."
 }

@@ -13,6 +13,8 @@ Each directory under `rejections/` holds a `case.json` and a `snapshot.json` tha
 
 Some cases have a generator in `generators/`. It holds a table of each candidate's intended outcome, and it derives the expected trace and payload from that table rather than from any assembler's logic. Regenerate a case with `python3 conformance/generators/<case>.py`, and review the diff.
 
+`check.py` checks the contract's own consistency: every case and rejection against the schemas, digests and hashes against their definitions here, each rejection against exactly one Snapshot check, reason codes against the requirements that cite them, and `SPEC.md` and the spec page against `contract/requirements.json`. Run `python3 conformance/check.py` after editing any of them, or `python3 conformance/check.py --write` to regenerate the derived copies; it needs the `jsonschema` package.
+
 ## Running a case
 
 1. Validate `snapshot.json` and load it. A snapshot that fails its schemas or any check in Snapshot checks is rejected before assembly and has no trace (R-17). Resolve `tokenizer` and `renderer` by ID; an implementation that does not provide one skips the case and reports it as skipped, not passed.
@@ -39,7 +41,7 @@ When an item fails several admission checks, the trace records the earliest appl
 
 `missing_field:<name>` names a field of the item itself: one of the eight minimum fields, or one its slot requires, such as `expires` for memory. An item without a slot requires no slot-specific field, so it is `missing_field:slot`. A variant missing one of its own fields is `invalid_structure`.
 
-A state item comes only from a producer of kind `state` (R-8). A route may list a producer of another kind for a state slot, but that producer's state items are excluded with `producer_slot_not_allowed`.
+A producer's kind limits its slots, whatever the route lists. A state item comes only from a producer of kind `state` (R-8), a producer of kind `memory` sends only `interaction.memory` items (R-14), and a producer of kind `retrieval` (R-13) or `mcp` (R-15) only `evidence.knowledge` and `evidence.tool_results` items. Any other item from them is excluded with `producer_slot_not_allowed`. The one exception is a tool specification an `mcp` producer sends to `governance.capabilities`: R-15's capability check excludes it with `capability_not_allowed`, since only the route's capability policy may emit capabilities.
 
 The last admission check is placement (R-20). An item whose slot the profile does not place is excluded with `slot_unplaced`, unless it is protected: a protected item is admitted, and assembly then refuses with `protected_slot_unplaced`. An item is protected when its tier is, which is its own `tier` when it sets one and otherwise its slot's default raised by the route's `tier_upgrades`.
 
@@ -64,7 +66,7 @@ Wherever this document orders strings (item, producer and group ids, slot names,
 - a batch's `excluded` rows by `item_id`, then by the bytes of their serialization;
 - `conflicts` by `id`, and each group's `items`.
 
-Every other array keeps its order, including profile placements and route-policy lists such as `precedence` and `fitting_order`, whose order means something. Strings order as Ordering describes. A snapshot's strings must be well-formed Unicode (I-JSON, RFC 7493): a string holding an unpaired surrogate has no RFC 8785 serialization, so the snapshot is rejected before assembly. `generators/digest.py` computes the digest, and the website's tests compute it again in JavaScript.
+Every other array keeps its order, including profile placements and route-policy lists such as `precedence` and `fitting_order`, whose order means something. Strings order as Ordering describes. A snapshot's strings must be well-formed Unicode (I-JSON, RFC 7493): a string holding an unpaired surrogate, or a number outside the IEEE 754 double range such as `1e400`, has no RFC 8785 serialization, so the snapshot is rejected before assembly. RFC 8785 serializes every number as a double, so an integer beyond 2^53 is rounded as JavaScript rounds it. `generators/digest.py` computes the digest, and the website's tests compute it again in JavaScript.
 
 ## Refusals
 
@@ -84,19 +86,22 @@ A refused trace has `result: null`, `included: []` and `compressed: []` (R-17). 
 
 Conflict resolution runs right after admission (R-6, R-11). It acts only on the groups the application declared, and it never reads a body. A group's *members* are the items it names that admission admitted. The trace's `items` lists every id the group names, in `id` order.
 
-**Moot.** A group with fewer than two members changes nothing: `decided_by: moot`, `resolution: moot`.
+**Moot.** A group with fewer than two members changes nothing: `decided_by: moot`, `resolution: moot`. The steps below decide only groups that are not moot (R-11).
 
 **Instruction groups.**
 
-1. Only `governing` and `user` authority may instruct. Members with any other authority stay in the payload as material and take no part in the decision.
+1. Only `governing` and `user` authority may instruct (R-6). Members with any other authority, `untrusted` included, stay in the payload as material and take no part in the decision. A member's `trust` and `injection_risk` are never read here: a marked history turn with `authority: user` may instruct like any other user member.
 2. The *peers* are the members at the highest instructing authority present: `governing`, or else `user`. With one peer, or none, the group is decided by authority, and nothing is excluded: `decided_by: authority`, `resolution: resolved`, and `winner` is that peer when there is one.
-3. With two or more peers, if exactly one peer's `conflict_policy` is `governs` and every other peer's is `defers`, the deferring peers are excluded with `conflict_deferred`: `decided_by: policy`, `resolution: resolved`, `winner` the governing peer. Any other combination escalates.
+3. With two or more peers, if exactly one peer's `conflict_policy` is `governs` and every other peer's is `defers`, the deferring peers are excluded with `conflict_deferred`: `decided_by: policy`, `resolution: resolved`, `winner` the governing peer. Any other combination escalates: two peers that govern, peers that all defer, or any peer whose `conflict_policy` is `escalate`. A lone peer is decided by authority in step 2 whatever its `conflict_policy` says, so `escalate` takes effect only against another peer.
+4. Only peers are excluded. A member below the peers, such as a `user` member when governing peers are present, stays in the payload however the peers are decided.
 
 **Fact groups** use the route's `facts[<fact>]` policy.
 
 1. A member is *eligible* when the authenticated producer of its batch appears in `precedence` and its `scope` carries every key the policy's `scope` lists.
 2. The *leaders* are the eligible members whose producer comes earliest in `precedence`. A single leader wins: `decided_by: policy`. When there are several, the policy has `freshness_tiebreak: true`, and one leader's `freshness` is strictly later than every other leader's, that leader wins: `decided_by: freshness`. Otherwise, and when no member is eligible, the group escalates.
 3. Every other member, eligible or not, is excluded with `conflict_lost`. The result has `resolution: resolved` and `winner` the winning member.
+
+Nothing else decides eligibility or precedence: not a member's `authority`, `trust` or `injection_risk`, and not its producer's `verified` flag (R-11). A route that wants a verified server's output to win lists that producer earlier in `precedence`.
 
 **Protected members.** Resolution never excludes a protected item (R-16's tier, as Fitting defines it). A decision that would exclude one escalates instead, and nothing in the group is excluded.
 
@@ -130,7 +135,7 @@ Deduplication runs right after supersession, before any refusal check, and only 
 3. An item is *exempt* when it is protected (its tier, as Fitting defines it) or a conflict group names it, whatever the group's resolution.
 4. A duplicate set with an exempt member keeps every exempt member and excludes the rest, naming its highest-ranked exempt member in `duplicate_of`. A set without one keeps its highest-ranked member and excludes the rest, naming that member. Rank is the slot's rank as Fitting defines it: its `order_by` keys, then `id`.
 
-Deduplication compares bodies only. It ignores variants, and a kept item keeps its own. Near-duplicates are the retriever's to find: one that drops a passage as a near-duplicate reports it in its batch's `excluded` list as `duplicate_content` with `duplicate_of` (R-13), and the trace carries that producer row as reported, ahead of the assembler's rows. Each excluded item adds one `excluded[]` row with reason `duplicate_content`, stage `assembler`, its slot and `duplicate_of`, and takes no further part in assembly. It was not omitted for budget, so it does not count toward R-12's recovery action.
+Deduplication compares bodies only. It ignores variants, and a kept item keeps its own. Near-duplicates are the retriever's to find: one that drops a chunk as a near-duplicate reports it in its batch's `excluded` list as `duplicate_content` with `duplicate_of` (R-13), and the trace carries that producer row as reported, ahead of the assembler's rows. Each excluded item adds one `excluded[]` row with reason `duplicate_content`, stage `assembler`, its slot and `duplicate_of`, and takes no further part in assembly. It was not omitted for budget, so it does not count toward R-12's recovery action.
 
 ## Source diversity
 
@@ -141,7 +146,7 @@ The source diversity cap runs right after deduplication, before any refusal chec
 3. Its other items then fill the places left, up to `max_per_source`, from the highest rank down, by the slot's rank as Fitting defines it. A source with as many exempt items as the cap, or more, keeps no other item.
 4. Each item left over adds one `excluded[]` row with reason `source_diversity_cap`, stage `assembler` and its slot.
 
-A capped item takes no further part in assembly and was not omitted for budget, so it does not count toward R-12's recovery action. The cap groups passages only as well as producers name their sources: a retriever should set `source` to the document a passage comes from, not to the passage.
+A capped item takes no further part in assembly and was not omitted for budget, so it does not count toward R-12's recovery action. The cap groups chunks only as well as producers name their sources: a retriever should set `source` to the document a chunk comes from, not to the chunk.
 
 ## Fitting
 
@@ -163,18 +168,20 @@ A slot's *size* is the sum of `included[].tokens` over the slot's rows: the toke
 
 *Shedding order* takes slots by ascending `priority` (default 0), then by slot name, and within each slot takes items from the lowest rank up. Rank sorts by the slot's `order_by` keys, then by `id`, with the first item ranked highest. The default keys are `["-relevance", "-freshness"]`: higher scores rank first and unscored items last, then newer items first.
 
+Fitting treats a member of a surfaced conflict group like any other item: it may omit one, with an `over_budget` row, and the members it keeps still render marked as conflicting, since the conflict was real (R-11). The `conflict-surfaced-shed` case checks this.
+
 Fitting decides per item. A slot the profile places twice sheds or compresses both occurrences together. When those placements render a body differently, as `system` and an `xml:` wrap do in `cwa-messages/v1`, the size of the item's body or of a variant, wherever this section compares one with a cap or with another, is the largest of its occurrences' renderings: a cap bounds the body however it is rendered. Each omitted item adds one `excluded[]` row with reason `over_budget`, stage `assembler` and its slot. Each included occurrence of a compressed item adds one `compressed[]` row: `from` counts the original body and `to` and `included[].tokens` the variant, each as that occurrence renders it, and `method` and `variant_id` name the variant (R-18).
 
-*Cost.* Every reduction in steps 4 and 5 is its own fit test, and every fit test counts the whole payload. Work therefore grows with the number of reductions times the payload's size, and becomes quadratic when most candidates are shed: the reference assembler tokenizes about 49 million characters, in about a third of a second, when budget pressure sheds 498 of 500 passages. An implementation may reach the same decisions faster, but no shortcut may change one; that rules out, for example, adding up the counts of an item's parts where the tokenizer does not count the whole as the sum of its parts. Keep the cost down at the source: a retriever sends no more passages than the route's budget can use, and a route can bound a slot before budget pressure: `max_per_source` (R-26) drops surplus passages without counting anything, and `max_tokens` (R-16) measures only the slot's own items.
+*Cost.* Every reduction in steps 4 and 5 is its own fit test, and every fit test counts the whole payload. Work therefore grows with the number of reductions times the payload's size, and becomes quadratic when most candidates are shed: the reference assembler tokenizes about 49 million characters, in about a third of a second, when budget pressure sheds 498 of 500 chunks. An implementation may reach the same decisions faster, but no shortcut may change one; that rules out, for example, adding up the counts of an item's parts where the tokenizer does not count the whole as the sum of its parts. Keep the cost down at the source: a retriever sends no more chunks than the route's budget can use, and a route can bound a slot before budget pressure: `max_per_source` (R-26) drops surplus chunks without counting anything, and `max_tokens` (R-16) measures only the slot's own items.
 
 ## Snapshot checks
 
 A snapshot is *valid* when it satisfies `snapshot.schema.json`, and the schemas it references, and passes every check below. An invalid snapshot is rejected before assembly, with no payload and no trace, because its profile, budget or context may be missing or contradictory (R-17). Rejection reports the application's error in building the snapshot. An implementation lists the problems in its own words, since no reason code names them; the codes in `contract/reasons.json` describe assemblies of valid snapshots, refusals included.
 
-- **Well-formed Unicode.** No string holds an unpaired surrogate (Snapshot digest).
-- **One batch per producer.** No producer id heads more than one batch. A batch is one authenticated producer's output for the call (R-15), and rows, ranks, supersession and source diversity all key on that producer.
+- **I-JSON (R-17).** No string holds an unpaired surrogate, and every number is within the IEEE 754 double range, so the snapshot has an RFC 8785 serialization (Snapshot digest).
+- **One batch per producer (R-15).** No producer id heads more than one batch. A batch is one authenticated producer's output for the call (R-15), and rows, ranks, supersession and source diversity all key on that producer.
 - **Conflict groups (R-11).** Group ids are unique, every item id a group names is the id of a candidate or a producer exclusion in the snapshot, no item belongs to two groups, and a fact group's `fact` is a key of the route's `facts`.
-- **Producer exclusions (R-13).** An exclusion's `duplicate_of` is the id of a candidate in the same batch.
+- **Producer exclusions (R-9, R-13).** An exclusion's `duplicate_of` or `superseded_by` is the id of a candidate in the same batch. Its `reason` is an exclusion code, which the batch schema checks.
 - **Profile (R-19, R-20).** Its `spec` is `cwa/draft`, which the profile schema fixes and the trace repeats as `context.spec` (R-21). Its `route` and `route_policy_version` equal the route policy's `route` and `version`. It places `governance.instructions` and `interaction.query`, and `governance.output_contract` when the route sets `parser: true`. The snapshot's renderer can realize it (Tokenizers and renderers).
 
 A tokenizer or renderer the implementation does not provide is not a problem with the snapshot: the case is skipped (Reporting results).
@@ -189,18 +196,18 @@ A tokenizer or renderer the implementation does not provide is not a problem wit
   - `tools`: one entry per occurrence placed with wrap `tools`, built the same way.
   - `messages`: exactly one message, `{"role": "user", "content": text}`. `text` holds every occurrence placed with an `xml:` wrap, in placement order and by `id` within a placement, rendered exactly as `fixture-xml/v1` renders it, with one addition: an `interaction.history` occurrence has ` speaker="assistant"` after its `id` attribute when the item has `lineage: generated`, and ` speaker="user"` otherwise, before any `conflict` attribute. Prior turns are part of this transcript and never become messages of their own; the query is the only live user turn (R-7).
 
-  A profile is realizable only when each `wrap` is `system`, `tools` or an `xml:` wrap with a valid tag; `system` is used only on governance slots and `tools` only on `governance.capabilities`, since no other slot may take a platform role (R-7); and every `system` placement comes before every `xml:` placement, because a message request cannot put material ahead of its system text. An unrealizable profile is rejected with the snapshot, before assembly. `result.input_tokens` is the sum of the tokenizer's counts of every entry's `text` and of the message's `content`; role names, ids and JSON punctuation are not counted. Per-item `tokens` count the rendered body: unescaped in `system` and `tools`, escaped in the message. `result.hash` is the SHA-256 of the payload bytes.
+  A profile is realizable only when each `wrap` is `system`, `tools` or an `xml:` wrap with a valid tag; `system` is used only on governance slots and `tools` only on `governance.capabilities`, since no other slot may take a platform role (R-7); and every `system` placement comes before every `xml:` placement, because a message request cannot put material ahead of its system text. An unrealizable profile is rejected with the snapshot, before assembly. `result.input_tokens` is the sum of the tokenizer's counts of every entry's `text` and of the message's `content`; role names, ids and JSON punctuation are not counted, since the renderer does not emit them as text, and a route leaves room for them with `budget.margin_percent` (R-16). Per-item `tokens` count the rendered body: unescaped in `system` and `tools`, escaped in the message. `result.hash` is the SHA-256 of the payload bytes.
 
 Wherever this document counts the payload, in `result.input_tokens` and in every test of whether the payload fits, it means the renderer's count.
 
 ## Registry
 
-A registry holds the profiles and route policies an application assembles with, each pinned in a lock that validates against `schema/registry_lock.schema.json` (R-19, R-20). It works before snapshots are built, outside assembly: a snapshot carries the profile and route policy the registry returned.
+A registry holds the profiles and route policies an application assembles with, each pinned in a lock that validates against `schema/registry_lock.schema.json`. Profiles follow R-19 and R-20; route policies are versioned wherever the requirements say "versioned route policy", as R-3, R-6 and R-16 do. It works before snapshots are built, outside assembly: a snapshot carries the profile and route policy the registry returned.
 
 - **Digests.** A profile's digest is the lowercase SHA-256 of the RFC 8785 serialization of the profile without its `evaluation` member, so a change of evaluation status alone keeps the digest, and may keep the version (R-20). A route policy's digest covers the whole policy.
 - **Loading.** Every profile and route policy a registry is given must be valid against its schema, and must match a lock entry with the same identity (`id` and `version` for a profile, `route` and `version` for a route policy) and the same digest. Loading fails when an entry has the same identity and another digest, because the content changed without a version increase. It also fails for content with no entry, and for a lock that lists an identity twice.
 - **Locking.** Locking adds an entry for each identity not yet pinned. It refuses content whose identity is already pinned with another digest, so the author must increase the version instead. It never rewrites an entry.
-- **Deployment.** An application deploying a profile asks for it in deployment mode, which returns only a profile with `evaluation.status: evaluated`. The profile schema then requires a concrete `model_family` and the evaluation's `suite`, `date`, `result` and `artifact` (R-19). Draft use, such as development and these conformance cases, may load unevaluated profiles.
+- **Deployment.** An application deploying a profile asks for it in deployment mode, which returns only a profile with `evaluation.status: evaluated`. The profile schema then requires a concrete `model_family` and the evaluation's `suite`, `date`, `result` and `artifact` (R-19). Draft use, such as development and these conformance cases, may load unevaluated profiles. A profile's digest covers `model_family`, so promoting a draft that has `model_family: null` changes its model target and needs a new version (R-20); only a profile that already names its model can be promoted at the same version, by changing `evaluation` alone.
 
 `registry/` holds the published example profiles, four conformance route policies and a lock that pins them, so that implementations can check they compute the same digests. `generators/registry.py` builds it.
 
@@ -216,8 +223,8 @@ It also holds one entry per directory under `rejections/`, ordered by id, in `re
 
 - `rejected`: the implementation rejected the snapshot before assembly, with no payload and no trace;
 - `failed`: anything else: it assembled a payload, refused, or raised something other than a rejection. `detail` says what happened;
-- `skipped`: it does not provide the case's tokenizer or renderer. `detail` names it.
+- `skipped`: it does not provide the case's renderer, and the check the case breaks is the renderer's (`profile-unrealizable`, `profile-invalid-tag` and the `messages-*` cases). `detail` names it. Every other check runs before a renderer is needed, so its case is never skipped.
 
-Only `passed` and `rejected` count. A report without `rejections` has not run them. A trace that validates against `schema/trace.schema.json` but differs from the expected one has failed: schema validation alone is not conformance (R-21). The Assembler page imports the reference assembler's report beside its `status.json`.
+Only `passed` and `rejected` count. A report without `rejections` has not run them. A trace that validates against `schema/trace.schema.json` but differs from the expected one has failed: schema validation alone is not conformance (R-21). The Assembler page shows the reports of both implementations, the Python reference assembler (beside its `status.json`) and the TypeScript one. A report counts a case only as the case is now: the import records a digest of each case's files at the report's `contract.website_commit`, and a case published or changed since then counts as not passing until the implementation runs it again.
 
 Implementations vendor these cases pinned by hash, so a case changes only through a reviewed edit here.

@@ -11,6 +11,8 @@ fits after the last action and not before it, each capped slot is within its cap
 slot-cap action and not before it, each chosen variant is the one conformance/README.md's
 Fitting section selects, no reduction leaves a floored slot below min_tokens or touches a frozen
 slot, each hold would have, and a slot_floor_over_budget refusal leaves only frozen or protected items.
+A case may also declare conflict groups ("groups") that escalate and are surfaced; fitting may still
+omit a member, and the members it keeps render marked (R-11).
 """
 import copy, hashlib, json, os, re, sys
 sys.dont_write_bytecode = True  # importing digest must not leave a __pycache__ for implementations to vendor
@@ -64,20 +66,22 @@ PLACEMENT = ["governance.instructions", "governance.examples", "governance.outpu
 BASE_SLOTS = {"evidence.knowledge": {"min_relevance": 0.5, "required_scope": ["tenant"]}}
 
 
-def render(placement, kept, count=count):
-    """kept: {id: (item, body)}. Returns payload bytes and included rows, per the fixture renderer."""
+def render(placement, kept, count=count, marks={}):
+    """kept: {id: (item, body)}; marks: {id: group id} for members of surfaced groups. Returns payload
+    bytes and included rows, per the fixture renderer."""
     parts, included = [], []
     for slot in placement:
         for it, body in sorted((v for v in kept.values() if v[0]["slot"] == slot), key=lambda v: U16(v[0]["id"])):
             b = esc(body)
-            parts.append(f'<{slot} id="{esc(it["id"]).replace(chr(34), "&quot;")}">\n{b}\n</{slot}>\n')
+            mark = f' conflict="{esc(marks[it["id"]]).replace(chr(34), "&quot;")}"' if it["id"] in marks else ""
+            parts.append(f'<{slot} id="{esc(it["id"]).replace(chr(34), "&quot;")}"{mark}>\n{b}\n</{slot}>\n')
             included.append({"slot": slot, "item_id": it["id"], "tokens": count(b), "source_version": it["source_version"],
                              "eligibility": it.get("eligibility", DEFAULTS[it["slot"]]["eligibility"])})
     return "".join(parts).encode(), included
 
 
-def tokens(placement, kept, count=count):
-    return count(render(placement, kept, count)[0].decode())
+def tokens(placement, kept, count=count, marks={}):
+    return count(render(placement, kept, count, marks)[0].decode())
 
 
 def build(case):
@@ -103,13 +107,18 @@ def build(case):
     snapshot = {"assembly_time": T, "scope": SCOPE, "budget": {"input": budget, "reserved_output": 1024, **({"margin_percent": margin} if margin is not None else {})}, "profile": profile,
                 "route_policy": policy, "tokenizer": tokenizer, "renderer": "fixture-xml/v1",
                 "batches": [{"producer": {"id": p, "kind": KINDS[p]}, "items": batches[p], "excluded": []} for p in sorted(batches, key=U16)],
-                "conflicts": []}
+                "conflicts": [{k: g[k] for k in ("id", "kind", "fact", "items") if k in g} for g in case.get("groups", [])]}
 
     admission = sorted(((PRODUCER[it["slot"]], it["id"], r, it["slot"]) for it, r in rows if r != "admit"), key=lambda r: (U16(r[0]), U16(r[1])))
     excluded = [{"item_id": i, "reason": r, "stage": "assembler", "slot": s} for _, i, r, s in admission]
     admitted = {it["id"]: it for it, r in rows if r == "admit"}
     kept = {i: (it, it["body"]) for i, it in admitted.items()}
-    fits = lambda state: charged(tokens(placement, state, count), margin or 0) <= budget
+    # Surfaced groups keep every member through resolution; fitting may still omit one (R-11).
+    for g in case.get("groups", []):
+        assert (g["decided_by"], g["resolution"]) == ("escalated", "surfaced"), f"{name}: fitting cases hold surfaced groups only"
+        assert sum(i in admitted for i in g["items"]) >= 2, f"{name}: {g['id']} would be moot"
+    marks = {i: g["id"] for g in case.get("groups", []) for i in g["items"] if i in admitted}
+    fits = lambda state: charged(tokens(placement, state, count, marks), margin or 0) <= budget
     refusal, recovery, actions, caps = case.get("refuse"), case.get("recovery"), case.get("actions", []), case.get("caps", [])
     rank = {"droppable": 0, "compressible": 1, "protected": 2}
     upgrades = policy.get("tier_upgrades", {})
@@ -223,7 +232,7 @@ def build(case):
         stuck = [i for i, (x, _) in kept.items() if tier(x) != "protected" and x["slot"] not in frozen]
         assert not stuck, f"{name}: {stuck} could still be shed"
 
-    payload, included = render(placement, kept, count)
+    payload, included = render(placement, kept, count, marks)
     trace = {
         "trace_id": name, "profile": {"id": profile["id"], "version": 1}, "budget": snapshot["budget"],
         "result": None if refusal else {"input_tokens": count(payload.decode()), "hash": hashlib.sha256(payload).hexdigest()},
@@ -232,7 +241,10 @@ def build(case):
             {"slot": row["slot"], "item_id": row["item_id"], "from": count(esc(admitted[row["item_id"]]["body"])), "to": row["tokens"],
              "method": compressed[row["item_id"]]["method"], "variant_id": compressed[row["item_id"]]["id"]}
             for row in included if row["item_id"] in compressed],
-        "excluded": excluded, "conflicts": [], "refused": {"bool": bool(refusal), "reason": refusal},
+        "excluded": excluded,
+        "conflicts": [{"group_id": g["id"], "kind": g["kind"], "items": sorted(g["items"], key=U16), "decided_by": g["decided_by"],
+                       "resolution": g["resolution"]} for g in sorted(case.get("groups", []), key=lambda g: U16(g["id"]))],
+        "refused": {"bool": bool(refusal), "reason": refusal},
         "context": {"spec": "cwa/draft", "assembly_time": T, "route_policy_version": policy["version"], "tokenizer": tokenizer, "renderer": "fixture-xml/v1", "snapshot_digest": snapshot_digest(snapshot)},
         "defaults_filled": [{"item_id": i, "field": f} for i, f in
                             sorted(((it["id"], f) for it, _ in rows for f in POLICY if f not in it), key=lambda x: (U16(x[0]), POLICY.index(x[1])))],
@@ -589,6 +601,20 @@ CASES = [
         "refuse": "evidence_required", "recovery": "retrieve_narrower",
     },
     {
+        "id": "evidence-cap-omitted",
+        "rules": ["R-12", "R-16", "R-17", "R-21", "R-22"],
+        "description": "An evidence item omitted for exceeding its own token_budget counts as omitted for budget: the route requires evidence, the only knowledge item has no variant within its cap, so the cap step omits it although the payload fits, and the refusal recommends precompute_summary and keeps the over_budget row.",
+        "budget": 4096,
+        "policy": {"requires_evidence": True},
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within thirty days of purchase for new customers.", relevance=0.9, token_budget=4), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "caps": [("omit", "kb:a")],
+        "refuse": "evidence_required", "recovery": "precompute_summary",
+    },
+    {
         "id": "placement-unplaced-slot",
         "rules": ["R-20", "R-21", "R-22"],
         "description": "Items in slots the profile does not place are excluded with slot_unplaced after every other admission check, "
@@ -700,6 +726,56 @@ CASES = [
             (item("kb:a", "evidence.knowledge", "Pro plans refund in full within 30 days.", relevance=0.9), "admit"),
         ],
         "refuse": "required_slot_missing",
+    },
+    {
+        "id": "required-instructions-missing",
+        "rules": ["R-4", "R-10", "R-17", "R-21"],
+        "description": "When the only governance.instructions item fails admission, assembly refuses with required_slot_missing although the query is there and everything fits.",
+        "budget": 4096,
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT, trust="unverified"), "untrusted_in_governance"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within 30 days.", relevance=0.9), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "refuse": "required_slot_missing",
+    },
+    {
+        "id": "budget-protected-variants",
+        "rules": ["R-16", "R-18", "R-21"],
+        "description": "Protected items are never compressed, even when they carry variants and a variant would make the payload fit: "
+                       "the instruction and the user fact the route raised to protected stay whole, and the knowledge item is compressed and then omitted instead.",
+        "budget": 45,
+        "policy": {"tier_upgrades": {"state.user": "protected"}},
+        "items": [
+            (item("policy:v12", "governance.instructions",
+                  "Follow verified refund policy, cite the evidence you use, and never promise a refund the tools have not confirmed.",
+                  variants=[variant("policy:v12~short", "Follow refund policy; cite evidence.")]), "admit"),
+            (item("ex:1", "governance.examples", "Example: refunds within thirty days are approved."), "admit"),
+            (item("user:plan", "state.user", "plan=pro since 2026-09-01, seats=4, billing=monthly, region=eu", scope={"tenant": "acme", "user": "u_91"},
+                  variants=[variant("user:plan~short", "plan=pro")]), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within thirty days of purchase when no prior refund was issued.", relevance=0.9,
+                  variants=[variant("kb:a~short", "Pro: full refund within 30 days.")]), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "actions": [("omit", "ex:1"), ("compress", "kb:a", "kb:a~short"), ("omit", "kb:a")],
+    },
+    {
+        "id": "conflict-surfaced-shed",
+        "rules": ["R-11", "R-16", "R-21"],
+        "description": "A surfaced fact group keeps both members through resolution, but budget pressure may still omit one: "
+                       "the lower-ranked member is traced as over_budget and the member that stays is still marked as conflicting.",
+        "budget": 40,
+        "policy": {"facts": {"plan.price": {"precedence": ["policy-corpus"], "on_unresolved": "surface"}}},
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("ex:1", "governance.examples", "Example: refunds within thirty days are approved."), "admit"),
+            (item("kb:price-1", "evidence.knowledge", "Pro costs 20 EUR a month.", relevance=0.9), "admit"),
+            (item("kb:price-2", "evidence.knowledge", "Pro costs 24 EUR a month, billed yearly.", relevance=0.6), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "groups": [{"id": "f-price", "kind": "fact", "fact": "plan.price", "items": ["kb:price-1", "kb:price-2"],
+                    "decided_by": "escalated", "resolution": "surfaced"}],
+        "actions": [("omit", "ex:1"), ("omit", "kb:price-2")],
     },
 ]
 

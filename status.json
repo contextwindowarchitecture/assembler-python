@@ -9,7 +9,9 @@
         "tests/test_admission.py::test_governance_items_cannot_be_untrusted",
         "tests/test_admission.py::test_other_slots_may_lower_to_untrusted",
         "tests/test_admission.py::test_prior_model_turns_must_be_untrusted",
-        "tests/test_conformance.py::test_conformance_case"
+        "tests/test_conformance.py::test_conformance_case",
+        "tests/test_admission.py::test_the_query_and_state_never_carry_untrusted",
+        "tests/test_admission.py::test_tool_results_memory_and_history_may_carry_untrusted"
       ]
     },
     {
@@ -108,7 +110,9 @@
         "tests/test_admission.py::test_memory_sources_must_name_their_turn",
         "tests/test_admission.py::test_expired_memory_a_producer_failed_to_suppress_is_still_excluded",
         "tests/test_conformance.py::test_conformance_case",
-        "tests/test_admission.py::test_producer_rows_from_an_unauthenticated_batch_reach_the_trace"
+        "tests/test_admission.py::test_producer_rows_from_an_unauthenticated_batch_reach_the_trace",
+        "tests/test_snapshot.py::test_a_reported_supersession_must_name_a_candidate_of_its_own_batch",
+        "tests/test_snapshot.py::test_a_reported_supersession_is_carried_into_the_trace_as_reported"
       ]
     },
     {
@@ -166,7 +170,8 @@
         "tests/test_admission.py::test_threshold_and_age_eligibility",
         "tests/test_admission.py::test_an_item_without_a_score_cannot_clear_a_threshold",
         "tests/test_snapshot.py::test_a_reported_duplicate_must_name_a_candidate_of_its_own_batch",
-        "tests/test_snapshot.py::test_a_reported_duplicate_is_carried_into_the_trace_as_reported"
+        "tests/test_snapshot.py::test_a_reported_duplicate_is_carried_into_the_trace_as_reported",
+        "tests/test_admission.py::test_a_retrieval_producer_emits_only_evidence_slots_whatever_the_route_lists"
       ]
     },
     {
@@ -175,7 +180,8 @@
       "evidence": [
         "tests/test_admission.py::test_memory_is_generated_or_untrusted_never_state",
         "tests/test_admission.py::test_expired_memory_a_producer_failed_to_suppress_is_still_excluded",
-        "tests/test_conformance.py::test_conformance_case"
+        "tests/test_conformance.py::test_conformance_case",
+        "tests/test_admission.py::test_a_memory_producer_emits_only_memory_whatever_the_route_lists"
       ]
     },
     {
@@ -189,7 +195,8 @@
         "tests/test_admission.py::test_only_a_route_verified_mcp_server_may_leave_output_unmarked",
         "tests/test_admission.py::test_producers_the_route_does_not_list_are_refused_before_structure",
         "tests/test_admission.py::test_a_producer_whose_kind_differs_from_the_route_is_refused",
-        "tests/test_conflicts.py::test_precedence_reads_the_authenticated_producer_never_the_item_source"
+        "tests/test_conflicts.py::test_precedence_reads_the_authenticated_producer_never_the_item_source",
+        "tests/test_admission.py::test_an_mcp_producer_emits_only_evidence_slots_whatever_the_route_lists"
       ]
     },
     {
@@ -269,7 +276,8 @@
         "tests/test_refusal.py::test_protected_items_over_their_slots_max_tokens_refuse_although_the_payload_fits",
         "tests/test_refusal.py::test_protected_items_exactly_at_their_slots_max_tokens_are_kept",
         "tests/test_rejections.py::test_each_rejection_case_is_rejected_before_assembly",
-        "tests/test_report.py::test_a_rejection_case_that_assembles_fails"
+        "tests/test_report.py::test_a_rejection_case_that_assembles_fails",
+        "tests/test_snapshot.py::test_numbers_outside_the_double_range_are_rejected_before_assembly"
       ]
     },
     {

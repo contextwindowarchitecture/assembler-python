@@ -118,7 +118,9 @@
     },
     "eligibility": {
       "type": "string",
-      "description": "Human-readable admission rule description. Never evaluate this string as code; the route owns the executable predicate."
+      "minLength": 1,
+      "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]",
+      "description": "Human-readable admission rule description. Never evaluate this string as code; the route owns the executable predicate. It is never blank, since the trace repeats it for every included occurrence (R-22)."
     },
     "token_budget": {
       "type": [

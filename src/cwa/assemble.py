@@ -94,7 +94,8 @@ def _trace(snapshot: Snapshot, admission: Admission, resolution: Resolution, sup
         "included": [],
         "compressed": [],
         "excluded": [
-            {"item_id": row.item_id, "reason": row.reason, "stage": row.stage, **({"duplicate_of": row.duplicate_of} if row.duplicate_of else {})}
+            {"item_id": row.item_id, "reason": row.reason, "stage": row.stage,
+             **({"duplicate_of": row.duplicate_of} if row.duplicate_of else {}), **({"superseded_by": row.superseded_by} if row.superseded_by else {})}
             for batch in snapshot.batches for row in batch.excluded
         ] + [{"item_id": e.item_id, "reason": e.reason, "stage": "assembler", **({"slot": e.slot} if e.slot else {})}
              for e in admission.excluded

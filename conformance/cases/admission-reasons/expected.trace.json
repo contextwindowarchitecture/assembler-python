@@ -9,8 +9,8 @@
     "reserved_output": 1200
   },
   "result": {
-    "input_tokens": 112,
-    "hash": "87d0382bd47f2b8f70517fa6d861bb23b87f6a245c8338ceb3fe174fff911253"
+    "input_tokens": 149,
+    "hash": "e4d155cd1c95bf4433e3da230f8029beb7ae20d59ecd01a643db27dc3639cc13"
   },
   "included": [
     {
@@ -71,6 +71,13 @@
     },
     {
       "slot": "evidence.tool_results",
+      "item_id": "kb:obs",
+      "tokens": 7,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "evidence.tool_results",
       "item_id": "obs:docs",
       "tokens": 4,
       "source_version": "1",
@@ -84,9 +91,30 @@
       "eligibility": "route-policy"
     },
     {
+      "slot": "evidence.tool_results",
+      "item_id": "obs:untrusted",
+      "tokens": 4,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
       "slot": "interaction.memory",
       "item_id": "m:ok",
       "tokens": 4,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "interaction.memory",
+      "item_id": "m:untrusted",
+      "tokens": 7,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "interaction.history",
+      "item_id": "turn:16",
+      "tokens": 7,
       "source_version": "1",
       "eligibility": "route-policy"
     },
@@ -120,6 +148,11 @@
       "stage": "producer"
     },
     {
+      "item_id": "m:revoked",
+      "reason": "revoked",
+      "stage": "producer"
+    },
+    {
       "item_id": "rogue:0",
       "reason": "below_threshold",
       "stage": "producer"
@@ -137,10 +170,28 @@
       "slot": "interaction.history"
     },
     {
+      "item_id": "turn:18u",
+      "reason": "authority_not_allowed",
+      "stage": "assembler",
+      "slot": "interaction.query"
+    },
+    {
       "item_id": "cap:refund-direct",
       "reason": "capability_not_allowed",
       "stage": "assembler",
       "slot": "governance.capabilities"
+    },
+    {
+      "item_id": "obs:unmarked",
+      "reason": "untrusted_content_unmarked",
+      "stage": "assembler",
+      "slot": "evidence.tool_results"
+    },
+    {
+      "item_id": "docs:policy",
+      "reason": "producer_slot_not_allowed",
+      "stage": "assembler",
+      "slot": "governance.instructions"
     },
     {
       "item_id": "legacy:1",
@@ -153,6 +204,30 @@
       "reason": "source_invalid",
       "stage": "assembler",
       "slot": "interaction.memory"
+    },
+    {
+      "item_id": "m:expired-late",
+      "reason": "expired",
+      "stage": "assembler",
+      "slot": "interaction.memory"
+    },
+    {
+      "item_id": "m:no-expires",
+      "reason": "missing_field:expires",
+      "stage": "assembler",
+      "slot": "interaction.memory"
+    },
+    {
+      "item_id": "m:revoked-late",
+      "reason": "revoked",
+      "stage": "assembler",
+      "slot": "interaction.memory"
+    },
+    {
+      "item_id": "m:turn",
+      "reason": "producer_slot_not_allowed",
+      "stage": "assembler",
+      "slot": "interaction.history"
     },
     {
       "item_id": "\u001c",
@@ -190,6 +265,12 @@
       "slot": "evidence.knowledge"
     },
     {
+      "item_id": "kb:blank-eligibility",
+      "reason": "invalid_structure",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
       "item_id": "kb:dup",
       "reason": "duplicate_item_id",
       "stage": "assembler",
@@ -212,6 +293,12 @@
       "reason": "missing_field:body",
       "stage": "assembler",
       "slot": "evidence.knowledge"
+    },
+    {
+      "item_id": "kb:example",
+      "reason": "producer_slot_not_allowed",
+      "stage": "assembler",
+      "slot": "governance.examples"
     },
     {
       "item_id": "kb:expired",
@@ -250,9 +337,21 @@
       "slot": "evidence.knowledge"
     },
     {
+      "item_id": "kb:no-relevance",
+      "reason": "missing_field:relevance",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
       "item_id": "kb:no-slot",
       "reason": "missing_field:slot",
       "stage": "assembler"
+    },
+    {
+      "item_id": "kb:obs-ref",
+      "reason": "authority_not_allowed",
+      "stage": "assembler",
+      "slot": "evidence.tool_results"
     },
     {
       "item_id": "kb:old",
@@ -303,6 +402,12 @@
       "slot": "evidence.knowledge"
     },
     {
+      "item_id": "kb:variant-twins",
+      "reason": "duplicate_variant_id",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
       "item_id": "kb:variants",
       "reason": "duplicate_variant_id",
       "stage": "assembler",
@@ -339,6 +444,12 @@
       "slot": "evidence.knowledge"
     },
     {
+      "item_id": "policy:injectable",
+      "reason": "untrusted_in_governance",
+      "stage": "assembler",
+      "slot": "governance.instructions"
+    },
+    {
       "item_id": "policy:plan",
       "reason": "producer_slot_not_allowed",
       "stage": "assembler",
@@ -369,6 +480,12 @@
       "slot": "state.task"
     },
     {
+      "item_id": "task:untrusted",
+      "reason": "authority_not_allowed",
+      "stage": "assembler",
+      "slot": "state.task"
+    },
+    {
       "item_id": "user:other",
       "reason": "out_of_scope",
       "stage": "assembler",
@@ -386,7 +503,7 @@
     "route_policy_version": "admission/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "f7b45c1bc48fbd824367a35f23726d8861870890a07fc57a556c89c8c2b10d0f"
+    "snapshot_digest": "c0412feeba4a5375980f3479d6305676f5238ce344f1315348c8b3154ff6b408"
   },
   "defaults_filled": [
     {

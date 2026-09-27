@@ -77,18 +77,30 @@ def _duplicate(item: Item, ctx: _Context) -> str | None:
     return "duplicate_item_id" if ctx.id_uses[item.id] > 1 else None
 
 
+_EVIDENCE = ("evidence.knowledge", "evidence.tool_results")
+# A producer's kind limits its slots, whatever the route lists: retrieval and mcp output is evidence (R-13, R-15) and
+# memory producers send only memory (R-14). A tool specification an mcp producer sends to governance.capabilities
+# falls to the capability check, which excludes it with capability_not_allowed.
+_KIND_SLOTS = {"retrieval": _EVIDENCE, "memory": ("interaction.memory",), "mcp": _EVIDENCE + ("governance.capabilities",)}
+# R-1: only these slots may carry untrusted instead of their own role. Not governance or knowledge, not state, which
+# the application writes (R-8), and not the query, which always carries user.
+_UNTRUSTED_ALLOWED = frozenset({"evidence.tool_results", "interaction.memory", "interaction.history"})
+
+
 def _slot_permission(item: Item, ctx: _Context) -> str | None:
     # State is application-written (R-8): only state producers, whatever else a route lists.
-    if item.slot not in ctx.granted["slots"] or (item.slot.startswith("state.") and ctx.producer.kind != "state"):
+    allowed = _KIND_SLOTS.get(ctx.producer.kind)
+    if (item.slot not in ctx.granted["slots"] or (item.slot.startswith("state.") and ctx.producer.kind != "state")
+            or (allowed is not None and item.slot not in allowed)):
         return "producer_slot_not_allowed"
     return None
 
 
 def _authority(item: Item, ctx: _Context) -> str | None:
-    # R-1: the slot's role, or untrusted outside governance and knowledge. Prior model turns in
-    # history are generated content and must be untrusted.
+    # R-1: the slot's role, or untrusted where the slot allows it. Prior model turns in history are
+    # generated content and must be untrusted.
     role = SLOT_DEFAULTS[item.slot]["authority"]
-    lowered = item.authority == "untrusted" and not item.slot.startswith("governance.") and item.slot != "evidence.knowledge"
+    lowered = item.authority == "untrusted" and item.slot in _UNTRUSTED_ALLOWED
     if item.authority != role and not lowered:
         return "authority_not_allowed"
     if item.slot == "interaction.history" and item.lineage == "generated" and item.authority != "untrusted":

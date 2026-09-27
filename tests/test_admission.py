@@ -111,6 +111,34 @@ def test_state_slots_only_accept_state_producers_even_if_the_route_lists_others(
     assert exclusions(fixture_snapshot) == [("user:plan", "producer_slot_not_allowed")]
 
 
+# R-13, R-14, R-15: a producer's kind limits its slots, whatever the route lists.
+
+def test_a_retrieval_producer_emits_only_evidence_slots_whatever_the_route_lists(fixture_snapshot):
+    fixture_snapshot["route_policy"]["producers"]["policy-corpus"]["slots"] += ["governance.examples", "evidence.tool_results"]
+    place(fixture_snapshot, "governance.examples", "evidence.tool_results")
+    add(fixture_snapshot, "policy-corpus",
+        knowledge(id="kb:example", slot="governance.examples", authority="governing", injection_risk="none"),
+        knowledge(id="kb:obs", slot="evidence.tool_results", authority="observation"))
+    assert exclusions(fixture_snapshot) == [("kb:example", "producer_slot_not_allowed")]
+    assert "kb:obs" in included(fixture_snapshot)
+
+
+def test_a_memory_producer_emits_only_memory_whatever_the_route_lists(fixture_snapshot):
+    fixture_snapshot["route_policy"]["producers"]["memory-svc"]["slots"].append("interaction.history")
+    place(fixture_snapshot, "interaction.history")
+    add(fixture_snapshot, "memory-svc", turn("m:turn", source="turn:16"))
+    assert exclusions(fixture_snapshot) == [("m:turn", "producer_slot_not_allowed")]
+
+
+def test_an_mcp_producer_emits_only_evidence_slots_whatever_the_route_lists(fixture_snapshot):
+    """A tool specification it sends to governance.capabilities falls to the capability check instead (with_tools below)."""
+    fixture_snapshot["route_policy"]["producers"]["docs-mcp"] = {"kind": "mcp", "slots": ["evidence.tool_results", "governance.instructions"], "verified": True}
+    place(fixture_snapshot, "evidence.tool_results")
+    add_batch(fixture_snapshot, "docs-mcp", "mcp", observation("obs:docs"), instruction(id="docs:policy", source="docs-mcp"))
+    assert exclusions(fixture_snapshot) == [("docs:policy", "producer_slot_not_allowed")]
+    assert "obs:docs" in included(fixture_snapshot)
+
+
 # R-2: an id must identify one item in the payload and the trace.
 
 def test_repeated_ids_exclude_every_copy(fixture_snapshot):
@@ -202,6 +230,25 @@ def test_prior_model_turns_must_be_untrusted(fixture_snapshot):
     add(fixture_snapshot, "conversation", turn("turn:17a", lineage="generated"), turn("turn:17b", lineage="generated", authority="untrusted"))
     assert exclusions(fixture_snapshot) == [("turn:17a", "authority_not_allowed")]
     assert "turn:17b" in included(fixture_snapshot)
+
+
+def test_the_query_and_state_never_carry_untrusted(fixture_snapshot):
+    """R-1: the live query always carries user, and state is application-written (R-8)."""
+    fixture_snapshot["route_policy"]["producers"]["state-svc"] = {"kind": "state", "slots": ["state.user"]}
+    place(fixture_snapshot, "state.user")
+    add_batch(fixture_snapshot, "state-svc", "state", state_user(authority="untrusted"))
+    add(fixture_snapshot, "conversation", turn("turn:19u", slot="interaction.query", authority="untrusted"))
+    assert exclusions(fixture_snapshot) == [("turn:19u", "authority_not_allowed"), ("user:plan", "authority_not_allowed")]
+
+
+def test_tool_results_memory_and_history_may_carry_untrusted(fixture_snapshot):
+    fixture_snapshot["route_policy"]["producers"]["crm-mcp"] = {"kind": "mcp", "slots": ["evidence.tool_results"]}
+    place(fixture_snapshot, "evidence.tool_results", "interaction.memory", "interaction.history")
+    add_batch(fixture_snapshot, "crm-mcp", "mcp", observation("obs:u", authority="untrusted"))
+    add(fixture_snapshot, "memory-svc", memory(authority="untrusted"))
+    add(fixture_snapshot, "conversation", turn("turn:16", authority="untrusted"))
+    assert exclusions(fixture_snapshot) == []
+    assert {"obs:u", "m:1", "turn:16"} <= set(included(fixture_snapshot))
 
 
 def tool(id: str, **fields) -> dict:

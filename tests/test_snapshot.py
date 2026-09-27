@@ -114,9 +114,9 @@ def test_producer_rows_order_by_producer_then_item_in_utf16_code_units(fixture_s
     """conformance/README.md, Ordering: U+1F600 is D83D DE00 in UTF-16, so it sorts before U+FF5A."""
     fixture_snapshot["batches"] += [
         {"producer": {"id": "wiki-\uff5a", "kind": "retrieval"}, "items": [], "excluded": [
-            {"item_id": "w:\uff5a", "reason": "stale", "stage": "producer"}, {"item_id": "w:\U0001f600", "reason": "stale", "stage": "producer"}]},
+            {"item_id": "w:\uff5a", "reason": "expired", "stage": "producer"}, {"item_id": "w:\U0001f600", "reason": "expired", "stage": "producer"}]},
         {"producer": {"id": "wiki-\U0001f600", "kind": "retrieval"}, "items": [], "excluded": [
-            {"item_id": "v:1", "reason": "stale", "stage": "producer"}]},
+            {"item_id": "v:1", "reason": "expired", "stage": "producer"}]},
     ]
     rows = [row["item_id"] for row in assemble(Snapshot.from_json(fixture_snapshot)).trace["excluded"] if row["stage"] == "producer"]
     assert rows == ["memory:expired", "v:1", "w:\U0001f600", "w:\uff5a"]
@@ -140,6 +140,14 @@ def test_a_surrogate_pair_is_one_character(fixture_snapshot):
     assert next(b for b in batches if b["producer"]["id"] == "policy-registry")["items"][0]["body"] == "a pair \U0001f600 is fine"
 
 
+@pytest.mark.parametrize("value", [float("inf"), float("-inf"), float("nan")])
+def test_numbers_outside_the_double_range_are_rejected_before_assembly(fixture_snapshot, value):
+    """conformance/README.md, Snapshot checks (R-17): JSON reads 1e400 as Infinity, which RFC 8785 cannot serialize (I-JSON)."""
+    fixture_snapshot["batches"][1]["items"][0]["relevance"] = value
+    with pytest.raises(SnapshotError, match="/batches/1/items/0/relevance is not a number a double can hold"):
+        Snapshot.from_json(fixture_snapshot)
+
+
 # R-13: a retriever's reported near-duplicate names a candidate it kept, from the same batch.
 
 def report(snapshot: dict, producer: str, **row) -> None:
@@ -158,3 +166,23 @@ def test_a_reported_duplicate_is_carried_into_the_trace_as_reported(fixture_snap
     report(fixture_snapshot, "policy-corpus", duplicate_of="refunds-eu:v17#p4")
     trace = assemble(Snapshot.from_json(fixture_snapshot)).trace
     assert {"item_id": "kb:paraphrase", "reason": "duplicate_content", "stage": "producer", "duplicate_of": "refunds-eu:v17#p4"} in trace["excluded"]
+
+
+# R-9: a producer's reported supersession names a candidate it kept, from the same batch.
+
+def supersession(snapshot: dict, producer: str, **row) -> None:
+    batch = next(b for b in snapshot["batches"] if b["producer"]["id"] == producer)
+    batch["excluded"].append({"item_id": "kb:stale", "reason": "superseded", "stage": "producer", **row})
+
+
+@pytest.mark.parametrize("kept", ["nobody", "turn:18"])
+def test_a_reported_supersession_must_name_a_candidate_of_its_own_batch(fixture_snapshot, kept):
+    supersession(fixture_snapshot, "policy-corpus", superseded_by=kept)
+    with pytest.raises(SnapshotError, match=f"kb:stale names {kept!r} as kept, which is not a candidate in policy-corpus's batch"):
+        Snapshot.from_json(fixture_snapshot)
+
+
+def test_a_reported_supersession_is_carried_into_the_trace_as_reported(fixture_snapshot):
+    supersession(fixture_snapshot, "policy-corpus", superseded_by="refunds-eu:v17#p4")
+    trace = assemble(Snapshot.from_json(fixture_snapshot)).trace
+    assert {"item_id": "kb:stale", "reason": "superseded", "stage": "producer", "superseded_by": "refunds-eu:v17#p4"} in trace["excluded"]

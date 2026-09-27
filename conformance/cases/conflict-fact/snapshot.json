@@ -178,6 +178,13 @@
           "policy-corpus"
         ],
         "on_unresolved": "surface"
+      },
+      "refund.method": {
+        "precedence": [
+          "crm-mcp"
+        ],
+        "freshness_tiebreak": true,
+        "on_unresolved": "surface"
       }
     }
   },
@@ -272,6 +279,38 @@
           "trust": "unverified",
           "freshness": "2026-09-22T11:59:00Z",
           "body": "refund request 8821: approved",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "governs",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content"
+        },
+        {
+          "id": "obs:method-a",
+          "slot": "evidence.tool_results",
+          "source": "src:obs:method-a",
+          "source_version": "1",
+          "authority": "observation",
+          "trust": "verified",
+          "freshness": "2026-09-22T10:00:00Z",
+          "body": "refund method: bank transfer",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "governs",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content"
+        },
+        {
+          "id": "obs:method-b",
+          "slot": "evidence.tool_results",
+          "source": "src:obs:method-b",
+          "source_version": "1",
+          "authority": "observation",
+          "trust": "untrusted",
+          "freshness": "2026-09-22T10:05:00Z",
+          "body": "refund method: original card",
           "token_budget": null,
           "variants": [],
           "conflict_policy": "governs",
@@ -616,6 +655,15 @@
       "items": [
         "kb:limit-old",
         "kb:limit"
+      ]
+    },
+    {
+      "id": "f-trust-blind",
+      "kind": "fact",
+      "fact": "refund.method",
+      "items": [
+        "obs:method-a",
+        "obs:method-b"
       ]
     }
   ]

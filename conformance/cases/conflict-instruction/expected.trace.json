@@ -9,8 +9,8 @@
     "reserved_output": 1024
   },
   "result": {
-    "input_tokens": 129,
-    "hash": "4af5d6fcc33bc0ab88f3d2f29bf385ab4cbe40e321631febcd3a2801c2ad23b7"
+    "input_tokens": 227,
+    "hash": "e0d6a047c19ef93538d53ebc817e5da95750e78e8df33ea75e775f2d76a0644e"
   },
   "included": [
     {
@@ -57,8 +57,50 @@
     },
     {
       "slot": "governance.examples",
+      "item_id": "ex:apology",
+      "tokens": 8,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "governance.examples",
+      "item_id": "ex:casual",
+      "tokens": 9,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "governance.examples",
+      "item_id": "ex:formal",
+      "tokens": 9,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "governance.examples",
+      "item_id": "ex:refund-no",
+      "tokens": 8,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "governance.examples",
+      "item_id": "ex:refund-yes",
+      "tokens": 8,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "governance.examples",
       "item_id": "ex:short",
       "tokens": 4,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "governance.examples",
+      "item_id": "ex:sign",
+      "tokens": 8,
       "source_version": "1",
       "eligibility": "route-policy"
     },
@@ -98,6 +140,27 @@
       "eligibility": "route-policy"
     },
     {
+      "slot": "interaction.history",
+      "item_id": "turn:11",
+      "tokens": 7,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "interaction.history",
+      "item_id": "turn:13",
+      "tokens": 6,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "interaction.history",
+      "item_id": "turn:9",
+      "tokens": 4,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
       "slot": "interaction.query",
       "item_id": "turn:18",
       "tokens": 9,
@@ -126,13 +189,35 @@
       "slot": "governance.examples"
     },
     {
+      "item_id": "ex:unsigned",
+      "reason": "conflict_deferred",
+      "stage": "assembler",
+      "slot": "governance.examples"
+    },
+    {
       "item_id": "turn:12",
+      "reason": "conflict_deferred",
+      "stage": "assembler",
+      "slot": "interaction.history"
+    },
+    {
+      "item_id": "turn:14",
       "reason": "conflict_deferred",
       "stage": "assembler",
       "slot": "interaction.history"
     }
   ],
   "conflicts": [
+    {
+      "group_id": "g-all-defer",
+      "kind": "instruction",
+      "items": [
+        "ex:refund-no",
+        "ex:refund-yes"
+      ],
+      "decided_by": "escalated",
+      "resolution": "surfaced"
+    },
     {
       "group_id": "g-authority",
       "kind": "instruction",
@@ -145,6 +230,27 @@
       "winner": "policy:v12"
     },
     {
+      "group_id": "g-escalate",
+      "kind": "instruction",
+      "items": [
+        "ex:casual",
+        "ex:formal"
+      ],
+      "decided_by": "escalated",
+      "resolution": "surfaced"
+    },
+    {
+      "group_id": "g-lone-escalate",
+      "kind": "instruction",
+      "items": [
+        "ex:apology",
+        "turn:9"
+      ],
+      "decided_by": "authority",
+      "resolution": "resolved",
+      "winner": "ex:apology"
+    },
+    {
       "group_id": "g-material",
       "kind": "instruction",
       "items": [
@@ -154,6 +260,18 @@
       "decided_by": "authority",
       "resolution": "resolved",
       "winner": "policy:tone"
+    },
+    {
+      "group_id": "g-mixed",
+      "kind": "instruction",
+      "items": [
+        "ex:sign",
+        "ex:unsigned",
+        "turn:11"
+      ],
+      "decided_by": "policy",
+      "resolution": "resolved",
+      "winner": "ex:sign"
     },
     {
       "group_id": "g-moot",
@@ -198,6 +316,17 @@
       "resolution": "surfaced"
     },
     {
+      "group_id": "g-trust-blind",
+      "kind": "instruction",
+      "items": [
+        "turn:13",
+        "turn:14"
+      ],
+      "decided_by": "policy",
+      "resolution": "resolved",
+      "winner": "turn:13"
+    },
+    {
       "group_id": "g-two-govern",
       "kind": "instruction",
       "items": [
@@ -229,7 +358,7 @@
     "route_policy_version": "conflict-instruction/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "a3efb88b785b4ff775eb1ffa0ac349507367375dd88831060e2372ee2f23dec6"
+    "snapshot_digest": "eb17c1911d40a43cdbf6d43f4682d69ce3c8efa5b18094e8a1e9c212c830d183"
   },
   "defaults_filled": []
 }

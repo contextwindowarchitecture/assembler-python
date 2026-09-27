@@ -22,15 +22,27 @@ Annual plans refund pro rata.
 <evidence.knowledge id="kb:sub-ms">
 Refunds return to the original card.
 </evidence.knowledge>
+<evidence.tool_results id="kb:obs">
+Observed: the refund window is 30 days.
+</evidence.tool_results>
 <evidence.tool_results id="obs:docs">
 Refund window: 30 days.
 </evidence.tool_results>
 <evidence.tool_results id="obs:order-42">
 order 42: pro plan, purchased 2026-09-01
 </evidence.tool_results>
+<evidence.tool_results id="obs:untrusted">
+order 44: pending review
+</evidence.tool_results>
 <interaction.memory id="m:ok">
 User prefers concise answers.
 </interaction.memory>
+<interaction.memory id="m:untrusted">
+User may be on a trial plan.
+</interaction.memory>
+<interaction.history id="turn:16">
+Here is the receipt I was sent.
+</interaction.history>
 <interaction.history id="turn:17">
 Can I get my money back?
 </interaction.history>

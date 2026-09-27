@@ -1,10 +1,24 @@
 """context.snapshot_digest as conformance/README.md, Snapshot digest defines it: normalize, then
 take the SHA-256 of the RFC 8785 serialization. Imported by the generators; run directly, it
 prints the digest of each case's snapshot.json."""
-import copy, hashlib, json, math, os, re, sys
+import copy, decimal, hashlib, json, math, os, re, sys
 
 NONBLANK = re.compile(r"[^\t\n\v\f\r    -     　﻿]")
 U16 = lambda s: s.encode("utf-16-be")
+
+
+def es_number(value):
+    """ECMAScript Number::toString, which RFC 8785 uses: repr gives the shortest round-trip digits,
+    and ECMAScript decides where the point goes. It writes 0.00001 where repr writes 1e-05."""
+    sign, raw, exponent = decimal.Decimal(repr(value)).as_tuple()
+    n = exponent + len(raw)  # value = 0.digits × 10^n
+    digits = "".join(map(str, raw)).rstrip("0")
+    k = len(digits)
+    text = (digits + "0" * (n - k) if k <= n <= 21
+            else digits[:n] + "." + digits[n:] if 0 < n <= 21
+            else "0." + "0" * -n + digits if -6 < n <= 0
+            else (digits[0] + ("." + digits[1:] if k > 1 else "") + f"e{'+' if n > 1 else '-'}{abs(n - 1)}"))
+    return ("-" if sign else "") + text
 
 
 def jcs(value):
@@ -12,16 +26,14 @@ def jcs(value):
     if value is None or isinstance(value, bool):
         return json.dumps(value)
     if isinstance(value, int):
-        return str(value)
+        if abs(value) <= 2 ** 53:
+            return str(value)
+        value = float(value)  # RFC 8785 numbers are doubles; beyond 2^53 an integer rounds as JavaScript rounds it
     if isinstance(value, float):
         assert math.isfinite(value)
         if value == int(value) and abs(value) < 1e21:
             return str(int(value))
-        text = repr(value)  # shortest round trip, as ECMAScript; exponents need its spelling
-        if "e" in text:
-            mantissa, exponent = text.split("e")
-            text = f"{mantissa}e{'+' if int(exponent) > 0 else '-'}{abs(int(exponent))}"
-        return text
+        return es_number(value)
     if isinstance(value, str):
         return json.dumps(value, ensure_ascii=False)
     if isinstance(value, list):

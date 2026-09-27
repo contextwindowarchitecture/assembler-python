@@ -22,8 +22,8 @@ CASES = [
     {
         "id": "diversity-cap",
         "rules": ["R-13", "R-15", "R-21", "R-22", "R-24", "R-26"],
-        "description": "A slot capped at two items per producer and source keeps each document's two highest-ranked passages, after deduplication so a "
-                       "duplicate never takes a place; another producer's passages from the same source are counted apart, a one-passage document is "
+        "description": "A slot capped at two items per producer and source keeps each document's two highest-ranked chunks, after deduplication so a "
+                       "duplicate never takes a place; another producer's chunks from the same source are counted apart, a one-chunk document is "
                        "untouched, and an uncapped slot keeps every item.",
         "policy": {"slots": {"evidence.knowledge": {**KNOWLEDGE, "max_per_source": 2, "dedupe": "exact"}}},
         "items": [
@@ -49,7 +49,7 @@ CASES = [
         "id": "diversity-exemptions",
         "rules": ["R-6", "R-11", "R-16", "R-21", "R-24", "R-25", "R-26"],
         "description": "The cap never excludes a protected item or one a conflict group names, and those take places first: a low-ranked fact-group winner "
-                       "leaves one place for its document's other passages, and a slot raised to protected keeps every item over its cap; rows follow "
+                       "leaves one place for its document's other chunks, and a slot raised to protected keeps every item over its cap; rows follow "
                        "the pipeline, conflicts, supersession, deduplication, then the cap.",
         "policy": {"tier_upgrades": {"state.user": "protected"},
                    "slots": {"evidence.knowledge": {**KNOWLEDGE, "max_per_source": 2, "dedupe": "exact"},
