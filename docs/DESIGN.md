@@ -50,15 +50,15 @@ The assembler turns an immutable **snapshot** into either `(payload bytes, trace
 Honest conformance starts with admitting that the assembler cannot observe some clauses.
 
 ```mermaid
-pie showData title "R-1..R-23 by what the assembler can verify"
-    "Assembler-verifiable (14)" : 14
+pie showData title "R-1..R-26 by what the assembler can verify"
+    "Assembler-verifiable (17)" : 17
     "Boundary-checked; producer/app owns the rest (8)" : 8
     "Application-only (1)" : 1
 ```
 
 | Scope | Requirements | What the assembler can do |
 |---|---|---|
-| **Assembler** | R-1, 2, 3, 4, 6, 7, 10, 12, 16, 17, 20, 21, 22, 23 | Fully implement and test. |
+| **Assembler** | R-1, 2, 3, 4, 6, 7, 10, 12, 16, 17, 20, 21, 22, 23, 24, 25, 26 | Fully implement and test. |
 | **Boundary** | R-8, 9, 11, 13, 14, 15, 18, 19 | Check the handoff: producer kind, `relevance` present, expiry, allow-list membership, profile evaluation gate. It cannot see whether a producer merged a blob (R-13), whether a variant introduced a new fact (R-18), or whether the app missed a conflict (R-11). |
 | **Application** | R-5 | Document the obligation. Nothing to test. |
 
