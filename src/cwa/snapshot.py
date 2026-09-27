@@ -30,13 +30,21 @@ def usable_id(candidate: Mapping[str, Any]) -> str | None:
     return value if isinstance(value, str) and not blank(value) else None
 
 
+def _in_double_range(value: int) -> bool:
+    try:
+        float(value)
+    except OverflowError:
+        return False
+    return True
+
+
 def _not_i_json(value: Any, path: str = "") -> list[str]:
     """Paths of strings, keys included, holding a surrogate, and of numbers a double cannot hold (I-JSON, RFC 7493).
     After a JSON round trip every pair is one character, so any surrogate left is unpaired; JSON reads 1e400 as
     Infinity. RFC 8785 can serialize neither, so the snapshot has no digest (R-17)."""
     if isinstance(value, str):
         return [f"{path or '/'} holds an unpaired surrogate"] if any("\ud800" <= c <= "\udfff" for c in value) else []
-    if isinstance(value, float) and not math.isfinite(value):
+    if isinstance(value, float) and not math.isfinite(value) or type(value) is int and not _in_double_range(value):
         return [f"{path or '/'} is not a number a double can hold"]
     if isinstance(value, list):
         return [p for i, v in enumerate(value) for p in _not_i_json(v, f"{path}/{i}")]

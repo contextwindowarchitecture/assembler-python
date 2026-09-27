@@ -26,7 +26,9 @@ def _encode(value: Any) -> str:
     if value is False:
         return "false"
     if isinstance(value, int):
-        return str(value)
+        if abs(value) <= 2**53:
+            return str(value)
+        value = _double(value)  # RFC 8785 numbers are doubles: beyond 2^53 an integer rounds as JavaScript rounds it
     if isinstance(value, float):
         return _number(value)
     if isinstance(value, str):
@@ -37,6 +39,14 @@ def _encode(value: Any) -> str:
         keys = sorted(value, key=utf16)
         return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + _encode(value[k]) for k in keys) + "}"
     raise TypeError(f"not JSON-serializable: {type(value).__name__}")
+
+
+def _double(value: int) -> float:
+    """The double nearest an integer, as JavaScript reads the literal; none when it is beyond the double range."""
+    try:
+        return float(value)
+    except OverflowError:
+        raise ValueError(f"{value} is outside the IEEE 754 double range") from None
 
 
 def _number(value: float) -> str:

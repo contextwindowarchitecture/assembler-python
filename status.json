@@ -385,7 +385,9 @@
         "tests/test_properties.py::test_input_order_never_changes_the_outcome",
         "tests/test_properties.py::test_a_stored_snapshot_replays_to_the_same_outcome",
         "tests/test_admission.py::test_copies_of_an_id_order_by_their_rfc_8785_bytes",
-        "tests/test_admission.py::test_producer_rows_sharing_an_item_id_order_by_their_rfc_8785_bytes"
+        "tests/test_admission.py::test_producer_rows_sharing_an_item_id_order_by_their_rfc_8785_bytes",
+        "tests/test_canonical.py::test_integers_beyond_2_53_round_as_doubles",
+        "tests/test_canonical.py::test_an_integer_beyond_the_double_range_has_no_serialization"
       ]
     },
     {

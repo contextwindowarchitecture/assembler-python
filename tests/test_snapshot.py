@@ -140,9 +140,10 @@ def test_a_surrogate_pair_is_one_character(fixture_snapshot):
     assert next(b for b in batches if b["producer"]["id"] == "policy-registry")["items"][0]["body"] == "a pair \U0001f600 is fine"
 
 
-@pytest.mark.parametrize("value", [float("inf"), float("-inf"), float("nan")])
+@pytest.mark.parametrize("value", [float("inf"), float("-inf"), float("nan"), 10**400])
 def test_numbers_outside_the_double_range_are_rejected_before_assembly(fixture_snapshot, value):
-    """conformance/README.md, Snapshot checks (R-17): JSON reads 1e400 as Infinity, which RFC 8785 cannot serialize (I-JSON)."""
+    """conformance/README.md, Snapshot checks (R-17): JSON reads 1e400 as Infinity, and a 401-digit integer is beyond the double
+    range too; RFC 8785 can serialize neither (I-JSON)."""
     fixture_snapshot["batches"][1]["items"][0]["relevance"] = value
     with pytest.raises(SnapshotError, match="/batches/1/items/0/relevance is not a number a double can hold"):
         Snapshot.from_json(fixture_snapshot)
