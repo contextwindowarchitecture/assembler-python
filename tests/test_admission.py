@@ -520,3 +520,16 @@ def test_memory_is_generated_or_untrusted_never_state(fixture_snapshot, authorit
     place(fixture_snapshot, "interaction.memory")
     add(fixture_snapshot, "memory-svc", memory(authority=authority))
     assert exclusions(fixture_snapshot) == ([("m:1", reason)] if reason else [])
+
+
+# R-2: every number in a snapshot is a double, read as JavaScript reads it before any comparison
+# (conformance/README.md, Numbers).
+
+def test_integers_beyond_2_53_compare_as_the_doubles_they_round_to(fixture_snapshot):
+    fixture_snapshot["route_policy"].setdefault("slots", {}).setdefault("evidence.knowledge", {})["min_relevance"] = 2**53 + 1
+    add(fixture_snapshot, "policy-corpus", knowledge(id="kb:tie", relevance=2**53), knowledge(id="kb:below", relevance=2**53 - 1))
+    # 2^53 + 1 rounds to 2^53, so the threshold equals kb:tie's score and kb:tie passes; 2^53 - 1 is exact and below it.
+    # The fixture's own chunk, scored 0.9, is below it too.
+    rows = exclusions(fixture_snapshot)
+    assert ("kb:below", "below_threshold") in rows and ("kb:tie", "below_threshold") not in rows
+    assert "kb:tie" in included(fixture_snapshot)

@@ -5,7 +5,7 @@
     "language": "python"
   },
   "contract": {
-    "website_commit": "c3562e9069cff866248971b34cfd467f4668aad8",
+    "website_commit": "591f7eb2ee904acf79aa1a4f846253dd785a4423",
     "dirty": false
   },
   "cases": [
@@ -507,6 +507,17 @@
         "R-21",
         "R-22",
         "R-25"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "threshold-beyond-2-53",
+      "rules": [
+        "R-2",
+        "R-13",
+        "R-16",
+        "R-21",
+        "R-22"
       ],
       "outcome": "passed"
     },

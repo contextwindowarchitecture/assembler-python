@@ -1,11 +1,11 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "c3562e9069cff866248971b34cfd467f4668aad8",
+    "commit": "591f7eb2ee904acf79aa1a4f846253dd785a4423",
     "dirty": false
   },
   "files": {
-    "conformance/README.md": "b3a2636c8b9cf0079ae58bdb98803d0bff5c81b4c63270e712b446e0ef7a77a4",
+    "conformance/README.md": "3792b1c99741f1106094a40b08f0d1e8b7b8cfb4d5755b82701e5a2c3ebb6021",
     "conformance/cases/admission-reasons/case.json": "51f506b50fb36f72e8824848527f14e51616a4d350fe41ca6056f65299434e56",
     "conformance/cases/admission-reasons/expected.payload.txt": "e4d155cd1c95bf4433e3da230f8029beb7ae20d59ecd01a643db27dc3639cc13",
     "conformance/cases/admission-reasons/expected.trace.json": "434326becaa39058a5c3a99de9ebb7f8ef61cdc773a48cfc0fa2d68296f5f5c9",
@@ -187,6 +187,10 @@
     "conformance/cases/supersede-observations/expected.payload.txt": "a31bb7d54a30a6be95e9ee595743df1b4ce28e945c1edb03af25a1075104e078",
     "conformance/cases/supersede-observations/expected.trace.json": "2acfa9ad5b2c6ae9ba481ea44fd562d1852d8406db60f7acd8e7a0ce814875cc",
     "conformance/cases/supersede-observations/snapshot.json": "9773c03e01579e40738498762802857e6297a2ad3207e45c57f1235fc89848e5",
+    "conformance/cases/threshold-beyond-2-53/case.json": "6bd6d114d002d93c8f4f907894c4cca530102ba5c1dda7c0b841d3980c3f122c",
+    "conformance/cases/threshold-beyond-2-53/expected.payload.txt": "c3f7565ef202df8072fb358bf5b4c11b149c97c493a0e4d73dfa8743b338d397",
+    "conformance/cases/threshold-beyond-2-53/expected.trace.json": "d0e4c0a3621638d2fd45c91299ef881a0fb14087021b21ad340082b5d51bb4a6",
+    "conformance/cases/threshold-beyond-2-53/snapshot.json": "9501b99a9746a523a7ef750a30ec7692dab5c408aa22fe3b3854f0d7f9b77b68",
     "conformance/cases/tokenizer-estimate-utf8/case.json": "1c4f62db261c837ae3ddb713b8bd8073bd07a57cc2b777044599965020d78477",
     "conformance/cases/tokenizer-estimate-utf8/expected.payload.txt": "ab80692164867aa12cabec2f37ebaa26d614276dbfb9728e6e4070bfbebed920",
     "conformance/cases/tokenizer-estimate-utf8/expected.trace.json": "9740ecdca02aa0d7ec5aa433d909a24aca7953e682a0ea786973c581d8b60867",
@@ -198,6 +202,7 @@
     "conformance/generators/dedupe.py": "2c67027bebbd8d51fb6a0127b32f95f88bc8350cd64e883ce208d693d0412d10",
     "conformance/generators/digest.py": "a032a7411cf5f6242f9861666eb1ffea17978a88ab792a5ef6d5332063234419",
     "conformance/generators/diversity.py": "224f324967cbd2e74dffd249650aa175fe91b83bb64d9e5cb64b979c82762d81",
+    "conformance/generators/doubles.py": "43622199db8f9d6709832daea9a56f9a3174cd87c14552e1f13e8d40b9b94fbc",
     "conformance/generators/fitting.py": "b65e0778f99f2e9f1a5cf17e9e6258c10a087ca9cad0084af93d97d1fed31aa5",
     "conformance/generators/messages.py": "a59f596de5c930e5d30bd2f21ee5ef8c49a24ffdd5b57aaa77c79e98b3d006ea",
     "conformance/generators/registry.py": "09ba73de7b72424ff9123b122898f5e808b3d837fd25e73ed796ce3a76e5c832",
@@ -252,7 +257,7 @@
     "conformance/rejections/unpaired-surrogate/snapshot.json": "7c51da5421bc9e62ab7e5ac52820a12eab98a42264ea6a21083b2ccf45d875d4",
     "src/cwa/contract/data/assembler-scope.json": "f81bb22307d5f5683273609897c6d0075960976a44f3bae75015edcbb365833b",
     "src/cwa/contract/data/reasons.json": "7f0c4e4aee19387c6c70436d09c7f8e43824172275037bab02d980b0d4933baf",
-    "src/cwa/contract/data/requirements.json": "5ad68eaee79faf9192dccf12e14152efa236c017f64840bee5ae436e9d77ff9d",
+    "src/cwa/contract/data/requirements.json": "e165f4b88d5e318d451b43632dc9a4ad12d99bfe629ccab22b1f0bd85f19dee7",
     "src/cwa/contract/data/schema/conflict_group.schema.json": "06b6df97c84474371194b7f8758c3264d61c96b4a50ca1e865bff3e811365b89",
     "src/cwa/contract/data/schema/conformance_report.schema.json": "20953f6e47d7d7151c8f02eeb60a01d5fec04532a82b4e8336e6fb6faf8cecf8",
     "src/cwa/contract/data/schema/context_item.schema.json": "cadae6735468eaeecf80c1ee557d940fa4deca3d0bf8d7c0e8a29ce6502dfbf7",

@@ -53,6 +53,19 @@ def _not_i_json(value: Any, path: str = "") -> list[str]:
     return []
 
 
+def _as_doubles(value: Any) -> Any:
+    """Every number as the nearest IEEE 754 double, as JavaScript reads it (R-2; conformance/README.md, Numbers).
+    Python keeps integers exact, so an integer beyond 2^53 becomes the double it rounds to, and every comparison then
+    agrees with the other languages and with the digest, which already serializes numbers as doubles."""
+    if type(value) is int and abs(value) > 2**53:
+        return float(value)
+    if isinstance(value, list):
+        return [_as_doubles(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _as_doubles(v) for k, v in value.items()}
+    return value
+
+
 def _item_order(item: Any) -> tuple[int, bytes, bytes]:
     """Items with a usable id by id, then by content; the rest after them, in their supplied order."""
     item_id = usable_id(item)
@@ -155,7 +168,7 @@ class Snapshot:
         data: dict[str, Any] = json.loads(json.dumps(document))
         if problems := contract.errors("snapshot", data) + _not_i_json(data):
             raise SnapshotError(problems)
-        data = _normalize(data)
+        data = _normalize(_as_doubles(data))
 
         problems = []
         tokenizer, renderer = tokenizers.get(data["tokenizer"]), renderers.get(data["renderer"])

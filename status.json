@@ -30,7 +30,8 @@
         "tests/test_strings.py::test_ecmascript_whitespace_is_blank",
         "tests/test_strings.py::test_characters_python_or_unicode_call_space_are_not_blank",
         "tests/test_instants.py::test_only_the_portable_profile_parses",
-        "tests/test_admission.py::test_a_variant_missing_one_of_its_fields_is_invalid_structure"
+        "tests/test_admission.py::test_a_variant_missing_one_of_its_fields_is_invalid_structure",
+        "tests/test_admission.py::test_integers_beyond_2_53_compare_as_the_doubles_they_round_to"
       ]
     },
     {
