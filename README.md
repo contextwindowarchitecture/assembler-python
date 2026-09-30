@@ -19,7 +19,7 @@ snapshot.digest() # SHA-256 of the RFC 8785 form, the replay key
 assemble(snapshot, clock=time.perf_counter).trace["timings"]   # stage timings, only from a clock you lend
 ```
 
-Count with your own tokenizer by passing it in. Any object with an `id` and a `count(text)` satisfies `cwa.Tokenizer`. It joins the built-in ones for that call only, and cannot reuse a built-in id. Load its data (an encoding file, a vocabulary) before freezing: `assemble()` reads nothing else. If it estimates, reserve headroom with `budget.margin_percent`. [examples/tiktoken_tokenizer.py](examples/tiktoken_tokenizer.py) is an exact adapter for OpenAI encodings, kept outside the package:
+Count with your own tokenizer by passing it in. Any object with an `id` and a `count(text)` satisfies `cwa.Tokenizer`. It joins the built-in ones for that call only. It cannot take the id of a tokenizer the conformance README publishes, which today are the two built-in ones, since a trace that names a published tokenizer must mean its published count (R-16). `Snapshot.from_json` and `Snapshot.freeze` raise `ValueError` for one before reading the snapshot, so assembly never starts: there is no payload and no trace. Load its data (an encoding file, a vocabulary) before freezing: `assemble()` reads nothing else. If it estimates, reserve headroom with `budget.margin_percent`. [examples/tiktoken_tokenizer.py](examples/tiktoken_tokenizer.py) is an exact adapter for OpenAI encodings, kept outside the package:
 
 ```python
 from cwa import Snapshot, assemble

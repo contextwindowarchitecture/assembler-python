@@ -259,7 +259,8 @@
         "tests/test_fitting.py::test_caps_compare_unscaled_counts",
         "tests/test_tokenize.py::test_estimate_utf8_counts_utf8_bytes_divided_by_four_rounded_up",
         "tests/test_admission.py::test_in_a_slot_the_route_raised_an_item_may_lower_its_own_tier",
-        "tests/test_messages.py::test_a_mark_counts_in_input_tokens_but_not_in_its_members_tokens"
+        "tests/test_messages.py::test_a_mark_counts_in_input_tokens_but_not_in_its_members_tokens",
+        "tests/test_tokenize.py::test_a_caller_cannot_redefine_a_built_in_tokenizer"
       ]
     },
     {
