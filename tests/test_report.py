@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from cwa import contract
-from cwa.conformance import report, run_case, run_rejection
+from cwa.conformance import comparable, report, run_case, run_rejection
 from cwa.strings import utf16
 from conftest import CASES, REJECTIONS, ROOT, read_json
 
@@ -51,6 +51,34 @@ def test_a_snapshot_the_assembler_rejects_fails(case):
     edit(case / "snapshot.json", lambda s: s.update(assembly_time="yesterday"))
     outcome = run_case(case)
     assert outcome["outcome"] == "failed" and "assembly_time" in outcome["detail"]
+
+
+# conformance/README.md, Running a case, step 4: recovery.detail is free text for people that no
+# requirement defines, so it is removed before traces are compared; the rest of recovery is not.
+
+@pytest.fixture
+def refusal(tmp_path) -> Path:
+    """A private copy of a case that refuses with a recovery action (R-12)."""
+    return Path(shutil.copytree(CASES / "evidence-request-context", tmp_path / "evidence-request-context"))
+
+
+def test_an_expected_recovery_detail_is_not_compared(refusal):
+    edit(refusal / "expected.trace.json", lambda t: t["recovery"].update(detail="Ask which order the refund is for."))
+    assert run_case(refusal)["outcome"] == "passed"
+
+
+def test_a_changed_recovery_action_still_fails(refusal):
+    edit(refusal / "expected.trace.json", lambda t: t["recovery"].update(action="retrieve_narrower", detail="Anything."))
+    assert run_case(refusal) == {"id": "evidence-request-context", "rules": read_json(refusal / "case.json")["rules"],
+                                 "outcome": "failed", "detail": "trace differs at /recovery/action"}
+
+
+def test_comparable_drops_recovery_detail_from_either_trace_and_leaves_the_trace_intact():
+    trace = {"trace_id": "t", "timings": {"admission_ms": 1}, "refused": {"refused": True, "reason": "evidence_required"},
+             "recovery": {"action": "request_context", "detail": "Why."}}
+    assert comparable(trace) == {"refused": {"refused": True, "reason": "evidence_required"}, "recovery": {"action": "request_context"}}
+    assert trace["recovery"] == {"action": "request_context", "detail": "Why."}
+    assert comparable({"recovery": None}) == {"recovery": None}
 
 
 @pytest.mark.parametrize("field", ["tokenizer", "renderer"])

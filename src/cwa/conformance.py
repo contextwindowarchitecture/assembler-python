@@ -17,12 +17,18 @@ from .snapshot import Snapshot, SnapshotError
 from .strings import utf16
 from .tokenize import REGISTRY as TOKENIZERS
 
-# Trace fields that may differ between runs (R-23); everything else is compared.
+# Trace fields that may differ between runs (R-23), and recovery.detail, free text for people that no
+# requirement defines (conformance/README.md, Running a case, step 4); everything else is compared.
 IGNORED = ("trace_id", "timings")
+IGNORED_IN_RECOVERY = ("detail",)
 
 
 def comparable(trace: Mapping[str, Any]) -> dict[str, Any]:
-    return {key: value for key, value in trace.items() if key not in IGNORED}
+    """A copy of the trace without the fields conformance never compares; the trace is left as it is."""
+    kept = {key: value for key, value in trace.items() if key not in IGNORED}
+    if isinstance(recovery := kept.get("recovery"), Mapping):
+        kept["recovery"] = {key: value for key, value in recovery.items() if key not in IGNORED_IN_RECOVERY}
+    return kept
 
 
 def _first_difference(actual: Any, expected: Any, path: str = "") -> str | None:
