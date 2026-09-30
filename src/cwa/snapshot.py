@@ -157,18 +157,22 @@ class Snapshot:
 
     @classmethod
     def from_json(cls, document: Mapping[str, Any], *, tokenizers: Mapping[str, Tokenizer] = {},
-                  renderers: Mapping[str, Renderer] = RENDERERS) -> Snapshot:
+                  renderers: Mapping[str, Renderer] = {}) -> Snapshot:
         """Validate a snapshot.schema.json document and freeze it. The caller's object is copied, never kept.
 
         tokenizers adds the caller's tokenizers, each under its own id, to the built-in ones for this call only. A
         built-in id cannot be redefined, since conformance/README.md fixes what it counts (R-16), and a key must be
-        its tokenizer's id, since the trace names the tokenizer by that id."""
+        its tokenizer's id, since the trace names the tokenizer by that id. renderers adds the caller's renderers
+        the same way, and a built-in renderer id cannot be redefined either, since the README fixes what it renders."""
         if redefined := sorted(set(tokenizers) & set(TOKENIZERS)):
             raise ValueError(f"tokenizer {', '.join(redefined)} is built in; give yours another id")
         if misnamed := sorted(key for key, tokenizer in tokenizers.items() if tokenizer.id != key):
             raise ValueError("; ".join(f"the tokenizer under {key!r} calls itself {tokenizers[key].id!r}"
                                        for key in misnamed) + "; pass each tokenizer under its own id")
         tokenizers = {**TOKENIZERS, **tokenizers}
+        if redefined := sorted(set(renderers) & set(RENDERERS)):
+            raise ValueError(f"renderer {', '.join(redefined)} is built in; give yours another id")
+        renderers = {**RENDERERS, **renderers}
         data: dict[str, Any] = json.loads(json.dumps(document))
         if problems := contract.errors("snapshot", data) + _not_i_json(data):
             raise SnapshotError(problems)
@@ -218,7 +222,7 @@ class Snapshot:
         )
 
     @classmethod
-    def freeze(cls, *, tokenizers: Mapping[str, Tokenizer] = {}, renderers: Mapping[str, Renderer] = RENDERERS,
+    def freeze(cls, *, tokenizers: Mapping[str, Tokenizer] = {}, renderers: Mapping[str, Renderer] = {},
                **fields: Any) -> Snapshot:
         """Keyword form of from_json; field names and values follow snapshot.schema.json."""
         return cls.from_json(fields, tokenizers=tokenizers, renderers=renderers)
