@@ -48,13 +48,13 @@ def test_a_caller_tokenizer_counts_the_payload_and_names_itself_in_the_trace(fix
 
 
 def test_caller_tokenizers_join_the_built_in_ones_and_leave_no_trace_behind(fixture_snapshot):
-    from cwa import Snapshot, SnapshotError
+    from cwa import Snapshot, UnsupportedComponentError
 
     extra = {Characters.id: Characters()}
     assert Snapshot.from_json(fixture_snapshot, tokenizers=extra).tokenizer.id == "fixture-whitespace/v1"
     fixture_snapshot["tokenizer"] = Characters.id
     assert Snapshot.from_json(fixture_snapshot, tokenizers=extra).tokenizer.id == Characters.id
-    with pytest.raises(SnapshotError, match="unknown tokenizer 'caller-characters/v1'"):
+    with pytest.raises(UnsupportedComponentError, match="does not provide the tokenizer 'caller-characters/v1'"):
         Snapshot.from_json(fixture_snapshot)  # no registry the first call could have changed
 
 

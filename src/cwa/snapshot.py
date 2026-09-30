@@ -43,6 +43,18 @@ class SnapshotError(ValueError):
         self.problems = problems
 
 
+class UnsupportedComponentError(LookupError):
+    """The snapshot names a tokenizer or renderer this implementation does not provide. Not a rejection, since that is
+    no problem with the snapshot (conformance/README.md, Snapshot checks), so not a SnapshotError: it is raised only
+    once the snapshot passes every check that can run without the component. Raised before assembly, never
+    mid-assembly, so there is no payload and no trace."""
+
+    def __init__(self, component: str, id: str):
+        super().__init__(f"this implementation does not provide the {component} {id!r}")
+        self.component = component
+        self.id = id
+
+
 def usable_id(candidate: Mapping[str, Any]) -> str | None:
     """The candidate's id if it is a non-blank string (R-2)."""
     value = candidate.get("id")
@@ -179,6 +191,10 @@ class Snapshot:
                   renderers: Mapping[str, Renderer] = {}) -> Snapshot:
         """Validate a snapshot.schema.json document and freeze it. The caller's object is copied, never kept.
 
+        A snapshot that fails its schemas or a snapshot check is rejected with SnapshotError (R-17). One that passes
+        every check it can but names a tokenizer or renderer this implementation does not provide raises
+        UnsupportedComponentError instead, which is not a rejection.
+
         tokenizers and renderers add the caller's own, each under its own id, to the built-in ones for this call
         only. A built-in id cannot be redefined, since conformance/README.md fixes what it counts or renders (R-16),
         and a key must be its object's id, since the trace names the tokenizer and renderer by that id."""
@@ -189,26 +205,29 @@ class Snapshot:
             raise SnapshotError(problems)
         data = _normalize(_as_doubles(data))
 
-        problems = []
-        tokenizer, renderer = tokenizers.get(data["tokenizer"]), renderers.get(data["renderer"])
-        if tokenizer is None:
-            problems.append(f"unknown tokenizer {data['tokenizer']!r}")
-        if renderer is None:
-            problems.append(f"unknown renderer {data['renderer']!r}")
         p = data["profile"]
         profile = Profile(p["spec"], p["id"], p["version"], p["route"], p["model_family"], p["route_policy_version"],
                           tuple(Placement(e["slot"], e["wrap"]) for e in p["placement"]), copy.deepcopy(p["evaluation"]))
-        if renderer is not None:
-            problems += renderer.profile_errors(profile)
         policy = data["route_policy"]
-        problems += _profile_errors(profile, policy)
+        problems = _profile_errors(profile, policy)
         producer_ids = [b["producer"]["id"] for b in data["batches"]]
         if duplicates := sorted({i for i in producer_ids if producer_ids.count(i) > 1}):
             problems.append(f"producer ids appear in more than one batch: {', '.join(duplicates)}")
         problems += _conflict_errors(data) + _report_errors(data)
+        # A tokenizer or renderer this implementation does not provide is no problem with the snapshot, so it never
+        # makes a rejection (conformance/README.md, Snapshot checks). Every check above runs before a renderer is
+        # needed; the renderer's own, whether it can realize the profile, cannot run without it, and no check needs a
+        # tokenizer. So a missing renderer stops only a snapshot the checks above pass, and a missing tokenizer only
+        # one that passes every check.
+        renderer = renderers.get(data["renderer"])
+        if renderer is not None:
+            problems += renderer.profile_errors(profile)
         if problems:
             raise SnapshotError(problems)
-        assert tokenizer is not None and renderer is not None  # an unknown one is a problem above
+        if renderer is None:
+            raise UnsupportedComponentError("renderer", data["renderer"])
+        if (tokenizer := tokenizers.get(data["tokenizer"])) is None:
+            raise UnsupportedComponentError("tokenizer", data["tokenizer"])
 
         grant = data.get("capabilities")
         return cls(

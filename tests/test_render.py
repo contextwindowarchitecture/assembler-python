@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from conftest import published
-from cwa import Snapshot, SnapshotError, assemble
+from cwa import Snapshot, SnapshotError, UnsupportedComponentError, assemble
 from cwa.render import REGISTRY, Rendered
 from cwa.tokenize.fixture_whitespace import FixtureWhitespace
 
@@ -67,7 +67,7 @@ def test_caller_renderers_join_the_built_in_ones_and_leave_no_trace_behind(fixtu
     assert Snapshot.from_json(fixture_snapshot, renderers=extra).renderer.id == "fixture-xml/v1"
     fixture_snapshot["renderer"] = "caller-lines/v1"
     assert Snapshot.from_json(fixture_snapshot, renderers=extra).renderer.id == "caller-lines/v1"
-    with pytest.raises(SnapshotError, match="unknown renderer 'caller-lines/v1'"):
+    with pytest.raises(UnsupportedComponentError, match="does not provide the renderer 'caller-lines/v1'"):
         Snapshot.from_json(fixture_snapshot)  # no registry the first call could have changed
 
 

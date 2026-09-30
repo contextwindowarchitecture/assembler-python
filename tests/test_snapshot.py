@@ -1,6 +1,7 @@
 import pytest
 
-from cwa import Snapshot, SnapshotError, assemble
+import cwa
+from cwa import Snapshot, SnapshotError, UnsupportedComponentError, assemble
 
 
 @pytest.mark.parametrize("bad", ["yesterday", "2026-02-30T12:00:00Z", "2026-09-22T12:00:00"])
@@ -11,8 +12,6 @@ def test_timestamps_are_format_checked(fixture_snapshot, bad):
 
 
 @pytest.mark.parametrize("mutate, message", [
-    (lambda s: s.update(tokenizer="gpt-guess/v0"), "unknown tokenizer"),
-    (lambda s: s.update(renderer="nope/v1"), "unknown renderer"),
     (lambda s: s["profile"]["placement"][0].update(wrap="system"), "not an xml:<name> wrap"),
     (lambda s: s["route_policy"].update(version="fixture/v2"), "profile expects route policy"),
     (lambda s: s["batches"][1]["producer"].update(id="policy-registry"), "more than one batch"),
@@ -187,3 +186,78 @@ def test_a_reported_supersession_is_carried_into_the_trace_as_reported(fixture_s
     supersession(fixture_snapshot, "policy-corpus", superseded_by="refunds-eu:v17#p4")
     trace = assemble(Snapshot.from_json(fixture_snapshot)).trace
     assert {"item_id": "kb:stale", "reason": "superseded", "stage": "producer", "superseded_by": "refunds-eu:v17#p4"} in trace["excluded"]
+
+
+# conformance/README.md, Snapshot checks (R-17): a tokenizer or renderer this implementation does not provide is not a
+# problem with the snapshot, so the snapshot is not rejected for it. Every check but the renderer's runs before a
+# renderer is needed, and no check needs a tokenizer (Reporting results), so a snapshot that fails one of those is
+# rejected as it would be with components this implementation provides. Only a snapshot that passes every check it can
+# run stops on what it lacks, with UnsupportedComponentError.
+
+UNPROVIDED = "elsewhere/v9"
+
+
+def test_an_unprovided_component_is_its_own_error_and_not_a_rejection():
+    """Exported beside SnapshotError, and an `except SnapshotError` never catches it: the snapshot may be valid."""
+    assert {"SnapshotError", "UnsupportedComponentError"} <= set(cwa.__all__)
+    assert issubclass(UnsupportedComponentError, LookupError)
+    assert not issubclass(UnsupportedComponentError, SnapshotError)
+
+
+@pytest.mark.parametrize("entry", ["from_json", "freeze"])
+@pytest.mark.parametrize("component", ["tokenizer", "renderer"])
+def test_a_snapshot_naming_a_component_this_implementation_does_not_provide_stops_without_a_rejection(
+        fixture_snapshot, component, entry):
+    """The snapshot passes every check, so nothing is wrong with it; the error names what this implementation lacks.
+    It is raised before a Snapshot exists, so assembly never starts."""
+    fixture_snapshot[component] = UNPROVIDED
+    load = {"from_json": lambda: Snapshot.from_json(fixture_snapshot), "freeze": lambda: Snapshot.freeze(**fixture_snapshot)}
+    with pytest.raises(UnsupportedComponentError, match=f"does not provide the {component} '{UNPROVIDED}'") as raised:
+        load[entry]()
+    assert (raised.value.component, raised.value.id) == (component, UNPROVIDED)
+
+
+@pytest.mark.parametrize("names", [
+    {"renderer": UNPROVIDED},
+    {"renderer": UNPROVIDED, "tokenizer": "elsewhere/v8"},
+], ids=["renderer", "renderer-and-tokenizer"])
+def test_the_renderers_own_check_needs_the_renderer_so_an_unprovided_one_is_unsupported(fixture_snapshot, names):
+    """Whether the renderer can realize the profile is its own check, which cannot run without it, so this profile,
+    which fixture-xml/v1 cannot realize, is not rejected. The renderer is needed at that check, before any tokenizer,
+    since no check needs one: a snapshot lacking both names the renderer."""
+    fixture_snapshot["profile"]["placement"][0]["wrap"] = "system"
+    fixture_snapshot.update(names)
+    with pytest.raises(UnsupportedComponentError) as raised:
+        Snapshot.from_json(fixture_snapshot)
+    assert (raised.value.component, raised.value.id) == ("renderer", UNPROVIDED)
+
+
+def _problems(document: dict) -> list[str]:
+    with pytest.raises(SnapshotError) as raised:
+        Snapshot.from_json(document)
+    return raised.value.problems
+
+
+# One broken check each: none needs the renderer, and the last is the renderer's own, which needs no tokenizer.
+BROKEN = {
+    "schema": lambda s: s.update(assembly_time="yesterday"),
+    "i-json": lambda s: s["batches"][1]["items"][0].update(relevance=10**400),
+    "one-batch-per-producer": lambda s: s["batches"][1]["producer"].update(id="policy-registry"),
+    "conflict-groups": lambda s: s.update(conflicts=[group("g1", "policy:v12", "nobody")]),
+    "producer-exclusions": lambda s: report(s, "policy-corpus", duplicate_of="nobody"),
+    "profile-route": lambda s: s["profile"].update(route="other-route"),
+    "profile-placements": _unplace("interaction.query"),
+    "renderer-realizes-profile": lambda s: s["profile"]["placement"][0].update(wrap="system"),
+}
+
+
+@pytest.mark.parametrize("component, check", [
+    *[(component, check) for component in ("tokenizer", "renderer") for check in BROKEN if check != "renderer-realizes-profile"],
+    ("tokenizer", "renderer-realizes-profile"),
+])
+def test_a_snapshot_that_fails_a_check_is_rejected_whatever_component_it_names(fixture_snapshot, component, check):
+    """Rejected with the same problems it has with the components this implementation provides, and no others."""
+    BROKEN[check](fixture_snapshot)
+    provided = _problems(fixture_snapshot)
+    fixture_snapshot[component] = UNPROVIDED
+    assert _problems(fixture_snapshot) == provided

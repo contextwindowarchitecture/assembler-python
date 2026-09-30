@@ -290,7 +290,10 @@
         "tests/test_rejections.py::test_each_rejection_case_is_rejected_before_assembly",
         "tests/test_report.py::test_a_rejection_case_that_assembles_fails",
         "tests/test_report.py::test_only_a_renderer_it_lacks_keeps_a_rejection_case_from_running",
-        "tests/test_snapshot.py::test_numbers_outside_the_double_range_are_rejected_before_assembly"
+        "tests/test_snapshot.py::test_numbers_outside_the_double_range_are_rejected_before_assembly",
+        "tests/test_snapshot.py::test_a_snapshot_naming_a_component_this_implementation_does_not_provide_stops_without_a_rejection",
+        "tests/test_snapshot.py::test_the_renderers_own_check_needs_the_renderer_so_an_unprovided_one_is_unsupported",
+        "tests/test_snapshot.py::test_a_snapshot_that_fails_a_check_is_rejected_whatever_component_it_names"
       ]
     },
     {

@@ -735,6 +735,55 @@ Test-first, `tests/test_report.py` makes the implementation lack each required c
 
 Result: 58 of 58 cases pass and 24 of 24 rejection cases are rejected, as before.
 
+**Snapshot fix (2026-09-30): a component this assembler does not provide is not a rejection.** Since M12 (website `03e56b8`), the README's Snapshot checks has said that a tokenizer or renderer the implementation does not provide is not a problem with the snapshot. Since `cd5cd05`, vendored since `4f32396`, it also says that the snapshot is not rejected for it. `Snapshot.from_json`, and so `Snapshot.freeze`, still listed `unknown tokenizer …` and `unknown renderer …` among the problems of a `SnapshotError`, which is a rejection. The runner never showed the difference, since it decides such a case before `from_json` runs, so the report did not change. An application would have seen it: its `except SnapshotError` took a snapshot this assembler cannot assemble for one built wrong.
+
+`from_json` now raises `cwa.UnsupportedComponentError`, exported beside `SnapshotError`. It is a `LookupError`, so it is neither a `SnapshotError` nor a `ValueError`: resolving an id failed, and neither the snapshot nor the caller's arguments are wrong. Its `component` is `"tokenizer"` or `"renderer"`, and its `id` is the id the snapshot names. It is raised at the point the README gives. Every check but the renderer's own runs before a renderer is needed, and no check needs a tokenizer (Reporting results). So a snapshot that fails one of those checks is still rejected, with the same problems it has when it names components this assembler provides, and only a snapshot that passes them stops on a missing component. The caller's own components are checked first, as before (R-16):
+
+```mermaid
+flowchart TD
+  C["tokenizers= and renderers="] --> P{"A published id, or a key<br/>that is not its object's id?"}
+  P -- yes --> V["ValueError before the snapshot is read (R-16)"]
+  P -- no --> S{"Schemas and I-JSON pass?"}
+  S -- no --> SE["SnapshotError: rejected (R-17)"]
+  S -- yes --> K["Profile, one batch per producer, conflict groups,<br/>producer exclusions; and the renderer's own<br/>check when this assembler provides the renderer"]
+  K --> Q{"Any problem?"}
+  Q -- yes --> SE
+  Q -- no --> R{"Renderer provided?"}
+  R -- no --> UR["UnsupportedComponentError: renderer"]
+  R -- yes --> T{"Tokenizer provided?"}
+  T -- no --> UT["UnsupportedComponentError: tokenizer"]
+  T -- yes --> OK["Snapshot"]
+```
+
+The renderer's own check, whether it can realize the profile, cannot run without the renderer. So a snapshot naming a renderer this assembler lacks is not rejected for that check either: it stops with the renderer's error. A snapshot lacking both components names the renderer, since the renderer is needed at its check and the tokenizer at none. The README does not name that case outright; the order follows from the one it gives.
+
+Test-first, in `tests/test_snapshot.py`:
+
+- `test_a_snapshot_naming_a_component_this_implementation_does_not_provide_stops_without_a_rejection` expects the new error, naming each component, through both entry points.
+- `test_the_renderers_own_check_needs_the_renderer_so_an_unprovided_one_is_unsupported` expects it for a profile `fixture-xml/v1` could not realize, naming the renderer even when the tokenizer is missing too.
+- `test_a_snapshot_that_fails_a_check_is_rejected_whatever_component_it_names` breaks one check at a time, from the schemas to the renderer's own, and expects the same problems with an unprovided component as with the built-in one.
+- `test_an_unprovided_component_is_its_own_error_and_not_a_rejection` pins the export and the base class.
+
+Until the class existed, the module failed to import it. Once it existed, the first three tests failed on `SnapshotError`, except the rows for the schemas and I-JSON. Those rows passed from the start, since those checks already ran before the lookup, and they now guard the order. The two tests in `tests/test_tokenize.py` and `tests/test_render.py` that expected `unknown tokenizer` and `unknown renderer` now expect the new error. The two rows for them left `test_unassemblable_snapshots_are_rejected_before_assembly`. These mutations were each caught:
+
+- resolving both components as soon as the document is read
+- a missing renderer stopping before the other checks' problems
+- a missing tokenizer stopping before the renderer's check
+- naming the tokenizer when both are missing
+- rejecting a missing renderer again
+- making the error a `SnapshotError`
+- swapping its fields
+- dropping its name from `cwa.__all__`
+
+The runner could now learn of a missing component from the error instead of deciding before `from_json` runs, but that would not be a refactor. Tried, it reported the same 58 and 24. Three rows of `test_only_a_renderer_it_lacks_keeps_a_rejection_case_from_running` changed, though, because the route check runs before a renderer is needed:
+
+- `profile-route-mismatch` naming an optional renderer this assembler lacks became `rejected` instead of `skipped`.
+- Naming either required renderer it lacks, the same case became `rejected` instead of `failed`.
+
+The README's Reporting results reads like the error: a rejection case is skipped only when the check it breaks is that renderer's, and no other rejection case is skipped. The runner is unchanged here, and the difference is left for a decision. `status.json` cites the first three tests for R-17.
+
+Result: 58 of 58 cases pass and 24 of 24 rejection cases are rejected, as before.
+
 
 **M13 status (2026-09-27): done. Second implementation.** The TypeScript assembler (`@contextwindowarchitecture/assembler`, repository assembler-typescript) is built from the vendored contract alone, under a standing rule never to read this assembler, and passes every published case: 52 of 52, and 22 of 22 rejection cases, at website `591f7eb` (its commit `a7d6b82`). The website imports its report beside this one and shows both in the matrix. The alignment review that closed the gate also showed what a second implementation is for: two behaviours the spec left open, on which the two disagreed while both passed every case (the contract updates above, D-22 and D-23), are now each written into the spec with a case that pins them. Every release gate (M11–M14) is met; the release itself (D-18) is the maintainer's call.
 
