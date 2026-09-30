@@ -1,4 +1,5 @@
-"""Renderers turn placed occurrences into the exact payload bytes that are hashed (R-21)."""
+"""Renderers turn placed occurrences into the exact payload bytes that are hashed (R-21). The built-in ones are
+conformance/README.md's; callers pass their own to Snapshot.from_json or Snapshot.freeze (R-16)."""
 from __future__ import annotations
 
 from dataclasses import dataclass
