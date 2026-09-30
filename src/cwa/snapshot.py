@@ -163,7 +163,8 @@ class Snapshot:
         tokenizers adds the caller's tokenizers, each under its own id, to the built-in ones for this call only. A
         built-in id cannot be redefined, since conformance/README.md fixes what it counts (R-16), and a key must be
         its tokenizer's id, since the trace names the tokenizer by that id. renderers adds the caller's renderers
-        the same way, and a built-in renderer id cannot be redefined either, since the README fixes what it renders."""
+        the same way: a built-in renderer id cannot be redefined either, since the README fixes what it renders, and
+        a key must be its renderer's id."""
         if redefined := sorted(set(tokenizers) & set(TOKENIZERS)):
             raise ValueError(f"tokenizer {', '.join(redefined)} is built in; give yours another id")
         if misnamed := sorted(key for key, tokenizer in tokenizers.items() if tokenizer.id != key):
@@ -172,6 +173,9 @@ class Snapshot:
         tokenizers = {**TOKENIZERS, **tokenizers}
         if redefined := sorted(set(renderers) & set(RENDERERS)):
             raise ValueError(f"renderer {', '.join(redefined)} is built in; give yours another id")
+        if misnamed := sorted(key for key, renderer in renderers.items() if renderer.id != key):
+            raise ValueError("; ".join(f"the renderer under {key!r} calls itself {renderers[key].id!r}"
+                                       for key in misnamed) + "; pass each renderer under its own id")
         renderers = {**RENDERERS, **renderers}
         data: dict[str, Any] = json.loads(json.dumps(document))
         if problems := contract.errors("snapshot", data) + _not_i_json(data):

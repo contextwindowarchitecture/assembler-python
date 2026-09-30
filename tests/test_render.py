@@ -98,3 +98,17 @@ def test_a_caller_cannot_redefine_a_built_in_renderer(fixture_snapshot, built_in
     with pytest.raises(ValueError, match=f"renderer {built_in} is built in") as raised:
         load(renderers={built_in: Lines(built_in)})
     assert raised.type is ValueError
+
+
+@pytest.mark.parametrize("entry", ["from_json", "freeze"])
+@pytest.mark.parametrize("own_id", [*PUBLISHED, "caller-other/v1"])
+def test_a_caller_renderer_is_accepted_only_under_its_own_id(fixture_snapshot, own_id, entry):
+    """R-16: the trace names the renderer by its own id. Under another key, one that calls itself a published
+    renderer would put that id in the trace beside the caller's rendering, and any other would name a renderer the
+    snapshot does not declare. Either entry point raises before a Snapshot exists: no payload and no trace."""
+    fixture_snapshot["renderer"] = "caller/v1"
+    load = {"from_json": lambda **kw: Snapshot.from_json(fixture_snapshot, **kw),
+            "freeze": lambda **kw: Snapshot.freeze(**fixture_snapshot, **kw)}[entry]
+    with pytest.raises(ValueError, match=f"renderer under 'caller/v1' calls itself '{own_id}'") as raised:
+        load(renderers={"caller/v1": Lines(own_id)})
+    assert raised.type is ValueError

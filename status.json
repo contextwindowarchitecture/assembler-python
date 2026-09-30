@@ -205,7 +205,7 @@
     },
     {
       "id": "R-16",
-      "status": "in progress",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_admission.py::test_items_cannot_downgrade_a_protected_slot",
         "tests/test_admission.py::test_items_cannot_protect_themselves",
@@ -265,7 +265,8 @@
         "tests/test_tokenize.py::test_a_caller_tokenizer_is_accepted_only_under_its_own_id",
         "tests/test_render.py::test_caller_renderers_join_the_built_in_ones_and_leave_no_trace_behind",
         "tests/test_render.py::test_the_built_in_renderers_are_the_published_ones",
-        "tests/test_render.py::test_a_caller_cannot_redefine_a_built_in_renderer"
+        "tests/test_render.py::test_a_caller_cannot_redefine_a_built_in_renderer",
+        "tests/test_render.py::test_a_caller_renderer_is_accepted_only_under_its_own_id"
       ]
     },
     {

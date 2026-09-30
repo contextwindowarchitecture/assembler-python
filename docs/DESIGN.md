@@ -707,6 +707,19 @@ flowchart LR
 
 First, test-first, `renderers=` works as `tokenizers=` does: the caller's renderers join the built-in ones for that call only, and a caller's renderer under a built-in id makes `Snapshot.from_json`, and so `Snapshot.freeze`, raise `ValueError` before it reads the snapshot, so no `Snapshot` exists to assemble. It is a plain `ValueError`, not a `SnapshotError`, since the snapshot itself is fine. No caller in `src/`, `tests/`, `examples/` or `scripts/` passed `renderers=`, so none relied on replacing the registry. In `tests/test_render.py`, `test_caller_renderers_join_the_built_in_ones_and_leave_no_trace_behind` failed first, since a caller's renderer left `fixture-xml/v1` unknown, and `test_a_caller_cannot_redefine_a_built_in_renderer`, which takes its ids from the README's Tokenizers and renderers section, the bullets that render, failed through both entry points, for each published id. `test_the_built_in_renderers_are_the_published_ones` compares that list with the built-in ids, as the tokenizers' test does, since the check compares with those. Mutations were each caught: `freeze` dropping the caller's renderers, a check covering only `fixture-xml/v1`, no check, a caller's renderers replacing the registry again, and a README listing a third renderer.
 
+Then the hole the tokenizers had: the trace names a renderer by the object's own `id`, so a renderer passed as `{"caller/v1": r}` with `r.id == "fixture-xml/v1"` was accepted, and a snapshot declaring `caller/v1` produced a trace naming `fixture-xml/v1` beside the caller's rendering. Test-first, a key must be its renderer's `id`, or `from_json` raises `ValueError` before it reads the snapshot, which also stops a trace naming a caller's renderer the snapshot does not declare. `tests/test_render.py::test_a_caller_renderer_is_accepted_only_under_its_own_id` failed first, through both entry points, for each published id and for another caller id. Mutations were each caught: dropping the check, checking only ids that are built in, and checking only ids that are not. `Snapshot.from_json` now checks a caller's tokenizers and renderers the same way, before it reads the snapshot:
+
+```mermaid
+flowchart LR
+  A["tokenizers= or renderers="] --> P{"A key is<br/>a published id?"}
+  P -- yes --> S["ValueError before the snapshot is read:<br/>no Snapshot, no payload, no trace"]
+  P -- no --> K{"Each key is<br/>its object's id?"}
+  K -- no --> S
+  K -- yes --> J["Join the built-in ones<br/>for this call"] --> R["Resolve the snapshot's<br/>tokenizer and renderer"]
+```
+
+Result: 58 of 58 cases pass and 24 of 24 rejection cases are rejected, and R-16 is boundary-checked again, so every checkable requirement is claimed: 11 implemented and 14 boundary-checked.
+
 
 **M13 status (2026-09-27): done. Second implementation.** The TypeScript assembler (`@contextwindowarchitecture/assembler`, repository assembler-typescript) is built from the vendored contract alone, under a standing rule never to read this assembler, and passes every published case: 52 of 52, and 22 of 22 rejection cases, at website `591f7eb` (its commit `a7d6b82`). The website imports its report beside this one and shows both in the matrix. The alignment review that closed the gate also showed what a second implementation is for: two behaviours the spec left open, on which the two disagreed while both passed every case (the contract updates above, D-22 and D-23), are now each written into the spec with a case that pins them. Every release gate (M11–M14) is met; the release itself (D-18) is the maintainer's call.
 
