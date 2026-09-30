@@ -1,9 +1,22 @@
 """Tokenizers (conformance/README.md, Tokenizers and renderers): what the declared tokenizer counts (R-16)."""
 from __future__ import annotations
 
+import re
+
 import pytest
 
+from conftest import ROOT
 from cwa.tokenize import REGISTRY
+
+
+def published_tokenizers() -> list[str]:
+    """The tokenizer ids conformance/README.md publishes: the bullets of Tokenizers and renderers that count."""
+    readme = (ROOT / "conformance" / "README.md").read_text(encoding="utf-8")
+    section = readme.split("\n## Tokenizers and renderers\n", 1)[1].split("\n## ", 1)[0]
+    return re.findall(r"^- `([^`]+)` counts ", section, flags=re.MULTILINE)
+
+
+PUBLISHED = published_tokenizers()
 
 
 @pytest.mark.parametrize("text, count", [
@@ -55,10 +68,20 @@ def test_caller_tokenizers_join_the_built_in_ones_and_leave_no_trace_behind(fixt
         Snapshot.from_json(fixture_snapshot)  # no registry the first call could have changed
 
 
-@pytest.mark.parametrize("built_in", ["fixture-whitespace/v1", "estimate-utf8/v1"])
-def test_a_caller_cannot_redefine_a_built_in_tokenizer(fixture_snapshot, built_in):
-    """A published id must count as conformance/README.md defines it, whoever supplies the object."""
+def test_the_built_in_tokenizers_are_the_published_ones():
+    """R-16 stops on a caller's tokenizer under a published id, and the check below compares with the built-in
+    ids, so they must be exactly the ones conformance/README.md lists. A tokenizer published later fails this."""
+    assert set(PUBLISHED) == set(REGISTRY)
+
+
+@pytest.mark.parametrize("entry", ["from_json", "freeze"])
+@pytest.mark.parametrize("built_in", PUBLISHED)
+def test_a_caller_cannot_redefine_a_built_in_tokenizer(fixture_snapshot, built_in, entry):
+    """R-16: a published id must count as conformance/README.md defines it, whoever supplies the object. Either
+    entry point raises before a Snapshot exists, so assembly never starts: no payload and no trace."""
     from cwa import Snapshot
 
+    load = {"from_json": lambda **kw: Snapshot.from_json(fixture_snapshot, **kw),
+            "freeze": lambda **kw: Snapshot.freeze(**fixture_snapshot, **kw)}[entry]
     with pytest.raises(ValueError, match=f"{built_in} is built in"):
-        Snapshot.from_json(fixture_snapshot, tokenizers={built_in: Characters()})
+        load(tokenizers={built_in: Characters()})
