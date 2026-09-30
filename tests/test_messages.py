@@ -40,6 +40,26 @@ def ir(snapshot: dict) -> dict:
     return json.loads(assemble(Snapshot.from_json(snapshot)).payload)
 
 
+def grant(snapshot: dict, tools: dict[str, str]) -> dict:
+    """The route's capability policy grants these tool specifications, by id (R-15)."""
+    snapshot["route_policy"]["producers"]["cap-policy"] = {"kind": "capability_policy", "slots": ["governance.capabilities"]}
+    snapshot["capabilities"] = {"policy_producer": "cap-policy", "allow_list_version": "v3", "allowed_ids": sorted(tools)}
+    snapshot["batches"].append({"producer": {"id": "cap-policy", "kind": "capability_policy"}, "excluded": [], "items": [
+        {"id": id, "slot": "governance.capabilities", "source": "cap-policy", "source_version": "3", "authority": "governing",
+         "trust": "verified", "freshness": "2026-09-22T11:00:00Z", "body": body} for id, body in tools.items()]})
+    return snapshot
+
+
+def surfaced(snapshot: dict, group: str, members: list[str]) -> dict:
+    """Governing peers that all govern escalate, and the route surfaces the group (R-6, R-11)."""
+    snapshot["route_policy"]["on_unresolved_instruction"] = "surface"
+    snapshot["conflicts"] = [{"id": group, "kind": "instruction", "items": members}]
+    return snapshot
+
+
+WITH_TOOLS = CHAT[:1] + [("governance.capabilities", "tools")] + CHAT[1:]
+
+
 @pytest.mark.parametrize("placement, message", [
     ([("governance.instructions", "system"), ("evidence.knowledge", "system"), ("interaction.query", "xml:query")],
      "placement[1] puts evidence.knowledge in system; only governance slots take a platform role"),
@@ -91,14 +111,48 @@ def test_system_text_is_the_raw_governing_body_while_message_bodies_stay_escaped
 
 
 def test_the_granted_tools_take_the_tools_channel(fixture_snapshot):
-    fixture_snapshot["route_policy"]["producers"]["cap-policy"] = {"kind": "capability_policy", "slots": ["governance.capabilities"]}
-    fixture_snapshot["capabilities"] = {"policy_producer": "cap-policy", "allow_list_version": "v3", "allowed_ids": ["cap:refund"]}
     tool = '{"name": "issue_refund"}'
-    fixture_snapshot["batches"].append({"producer": {"id": "cap-policy", "kind": "capability_policy"}, "excluded": [], "items": [
-        {"id": "cap:refund", "slot": "governance.capabilities", "source": "cap-policy", "source_version": "3", "authority": "governing",
-         "trust": "verified", "freshness": "2026-09-22T11:00:00Z", "body": tool}]})
-    payload = ir(messages(fixture_snapshot, CHAT[:1] + [("governance.capabilities", "tools")] + CHAT[1:]))
+    payload = ir(messages(grant(fixture_snapshot, {"cap:refund": tool}), WITH_TOOLS))
     assert payload["tools"] == [{"id": "cap:refund", "text": tool}]
+
+
+# A surfaced conflict member is marked in its entry's text, since an application hands the model
+# each system and tools text and nothing else; the conflict key alone never reaches the model
+# (R-11; conformance/README.md, Tokenizers and renderers).
+
+def test_surfaced_members_in_system_are_marked_inside_their_text(fixture_snapshot):
+    policies = items(fixture_snapshot, "policy-registry")
+    policies.append({**policies[0], "id": "policy:v13", "body": "Never quote <internal> notes & ids."})
+    group = 'g"1&<'
+    payload = ir(messages(surfaced(fixture_snapshot, group, ["policy:v12", "policy:v13"])))
+    mark = '<conflict group="g&quot;1&amp;&lt;">'
+    assert payload["system"] == [
+        {"id": "policy:v12", "conflict": group, "text": f"{mark}\n{policies[0]['body']}\n</conflict>"},
+        {"id": "policy:v13", "conflict": group, "text": f"{mark}\nNever quote <internal> notes & ids.\n</conflict>"},
+    ]
+
+
+def test_surfaced_tools_are_marked_inside_their_text(fixture_snapshot):
+    tools = {"cap:refund": '{"name": "issue_refund"}', "cap:void": '{"name": "void_order"}'}
+    snapshot = surfaced(grant(fixture_snapshot, tools), "g-tools", sorted(tools))
+    payload = ir(messages(snapshot, WITH_TOOLS))
+    assert payload["tools"] == [
+        {"id": id, "conflict": "g-tools", "text": f'<conflict group="g-tools">\n{body}\n</conflict>'} for id, body in sorted(tools.items())]
+    assert payload["system"] == [{"id": "policy:v12", "text": items(fixture_snapshot, "policy-registry")[0]["body"]}]
+
+
+def test_a_mark_counts_in_input_tokens_but_not_in_its_members_tokens(fixture_snapshot):
+    """R-16, R-21: like an xml: wrapper, the <conflict> wrapper counts only in result.input_tokens;
+    each member's included[].tokens counts its body alone."""
+    policies = items(fixture_snapshot, "policy-registry")
+    policies.append({**policies[0], "id": "policy:v13", "body": "Never mention internal document ids."})
+    result = assemble(Snapshot.from_json(messages(surfaced(fixture_snapshot, "g-1", ["policy:v12", "policy:v13"]))))
+    count, bodies = FixtureWhitespace().count, {policy["id"]: policy["body"] for policy in policies}
+    rows = {row["item_id"]: row["tokens"] for row in result.trace["included"]}
+    assert {id: rows[id] for id in bodies} == {id: count(body) for id, body in bodies.items()}
+    wrapper = count('<conflict group="g-1">\n</conflict>')
+    content = json.loads(result.payload)["messages"][0]["content"]
+    assert result.trace["result"]["input_tokens"] == sum(count(body) + wrapper for body in bodies.values()) + count(content)
 
 
 def test_the_payload_is_canonical_json_and_its_size_is_the_sum_of_its_texts(fixture_snapshot):

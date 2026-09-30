@@ -426,8 +426,7 @@
         "R-11",
         "R-21"
       ],
-      "outcome": "failed",
-      "detail": "payload bytes differ"
+      "outcome": "passed"
     },
     {
       "id": "messages-repeated-slot",

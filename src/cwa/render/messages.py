@@ -45,10 +45,14 @@ class Messages:
         for occurrence in occurrences:
             item = occurrence.item
             if occurrence.wrap in _CHANNELS:
-                # Only verified governance with no injection risk reaches these slots (R-10).
+                # Only verified governance with no injection risk reaches these slots (R-10). The model
+                # sees only an entry's text, so a surfaced member's mark goes inside it (R-11).
                 body = item.body
-                mark = {"conflict": occurrence.conflict} if occurrence.conflict else {}
-                channels[occurrence.wrap].append({"id": item.id, "text": body, **mark})
+                entry = {"id": item.id, "text": body}
+                if occurrence.conflict:
+                    group = occurrence.conflict
+                    entry = {**entry, "conflict": group, "text": f'<conflict group="{escape_attribute(group)}">\n{body}\n</conflict>'}
+                channels[occurrence.wrap].append(entry)
             else:
                 body, tag = escape_body(item.body), occurrence.wrap.removeprefix("xml:")
                 attributes = f' id="{escape_attribute(item.id)}"'
