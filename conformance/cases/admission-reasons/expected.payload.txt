@@ -13,6 +13,9 @@ seats=4
 <state.task id="task:8821">
 refund_request: verify_eligibility=done
 </state.task>
+<state.task id="task:at-limit">
+notify_customer=pending
+</state.task>
 <evidence.knowledge id="kb:ok">
 Pro plans refund in full within 30 days of purchase.
 </evidence.knowledge>

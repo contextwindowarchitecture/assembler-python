@@ -84,7 +84,8 @@ def build(case):
               "producers": {p: {"kind": k, "slots": slots_of[p]} for p, k in kinds.items()},
               "slots": {"evidence.knowledge": {"min_relevance": 0.5, "required_scope": ["tenant"]}}}
     policy.update(copy.deepcopy(case.get("policy", {})))
-    profile = {"spec": "cwa/draft", "id": "conflict-fixture", "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": policy["version"],
+    # R-20: one profile id and version name one profile, so each case's profile carries the case's own id.
+    profile = {"spec": "cwa/draft", "id": name, "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": policy["version"],
                "placement": [{"slot": s, "wrap": "xml:" + s} for s in PLACEMENT],
                "evaluation": {"status": "unevaluated", "suite": None, "date": None, "result": None, "artifact": None}}
     batches = {}
@@ -409,7 +410,7 @@ CASES = [
     },
     {
         "id": "conflict-request-context",
-        "rules": ["R-11", "R-12", "R-17", "R-21"],
+        "rules": ["R-11", "R-17", "R-21"],
         "description": "The only unresolved group asks for more context, so assembly refuses with conflict_unresolved and recovery.action request_context.",
         "policy": {"facts": {"refund.window": {"precedence": [CORPUS, WIKI], "on_unresolved": "request_context"}}},
         "items": [
@@ -422,6 +423,22 @@ CASES = [
         "groups": [
             {"id": "f-window", "kind": "fact", "fact": "refund.window", "items": ["kb:window-1", "kb:window-2", "wiki:window"],
              "decided_by": "escalated", "resolution": "context_requested"},
+        ],
+        "refuse": "conflict_unresolved", "recovery": "request_context",
+    },
+    {
+        "id": "conflict-instruction-request-context",
+        "rules": ["R-6", "R-11", "R-17", "R-21"],
+        "description": "Two governing instructions both govern, so their group escalates, and the route's on_unresolved_instruction asks for "
+                       "more context: assembly refuses with conflict_unresolved and recovery.action request_context.",
+        "policy": {"on_unresolved_instruction": "request_context"},
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), REG, "admit"),
+            (item("policy:nocite", "governance.instructions", "Never mention internal document ids."), REG, "admit"),
+            (item("turn:18", "interaction.query", QUERY), CONV, "admit"),
+        ],
+        "groups": [
+            {"id": "g-cite", "kind": "instruction", "items": ["policy:v12", "policy:nocite"], "decided_by": "escalated", "resolution": "context_requested"},
         ],
         "refuse": "conflict_unresolved", "recovery": "request_context",
     },

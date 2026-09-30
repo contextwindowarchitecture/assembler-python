@@ -1,7 +1,7 @@
 {
   "trace_id": "placement-unplaced-slot",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "placement-unplaced-slot",
     "version": 1
   },
   "budget": {
@@ -86,7 +86,7 @@
     "route_policy_version": "placement-unplaced-slot/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "988ce190ac14a0c20b223cd32b0b82fa5331043c8dbbd3d8e6593d4369768dac"
+    "snapshot_digest": "8f763d055c07b506bc060756507aab613c5a5b27a77ba4cc4d7536e9874d14e5"
   },
   "defaults_filled": []
 }

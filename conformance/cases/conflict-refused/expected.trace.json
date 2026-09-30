@@ -1,7 +1,7 @@
 {
   "trace_id": "conflict-refused",
   "profile": {
-    "id": "conflict-fixture",
+    "id": "conflict-refused",
     "version": 1
   },
   "budget": {
@@ -62,7 +62,7 @@
     "route_policy_version": "conflict-refused/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "413e4c1cbaa7e9d98cc7a3d4388cfcc7f70a2747e8c856d16c3c32227fd4a5c8"
+    "snapshot_digest": "03ae8585f565f376f621a46093a2accb4f55cf56233588dd178477845585a350"
   },
   "defaults_filled": []
 }

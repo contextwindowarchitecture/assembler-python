@@ -1,7 +1,7 @@
 {
   "trace_id": "dedupe-producer-reported",
   "profile": {
-    "id": "conflict-fixture",
+    "id": "dedupe-producer-reported",
     "version": 1
   },
   "budget": {
@@ -69,7 +69,7 @@
     "route_policy_version": "dedupe-producer-reported/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "e40518086eaa845370193ee9260a52706111ea0aa124b1837a6ef9a2e5534408"
+    "snapshot_digest": "b08813c892e18fe248a38e9407d4877dcff4fcd070a70f03a842a446255099aa"
   },
   "defaults_filled": []
 }

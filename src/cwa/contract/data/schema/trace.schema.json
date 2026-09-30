@@ -209,13 +209,13 @@
             "type": "string",
             "minLength": 1,
             "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]",
-            "description": "For duplicate_content only: the id of the item kept in its place (R-24)."
+            "description": "For duplicate_content only: the id of the item kept in its place, by the slot's dedupe on an assembler row (R-24) or by the producer on a producer row (R-13)."
           },
           "superseded_by": {
             "type": "string",
             "minLength": 1,
             "pattern": "[^\\t\\n\\v\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]",
-            "description": "For superseded only: the id of the latest item kept for the same producer and source (R-25)."
+            "description": "For superseded only: on an assembler row, the id of the latest item kept for the same producer and source (R-25); on a producer row, the candidate the producer's report names (R-9)."
           },
           "slot": {
             "type": "string",
@@ -335,7 +335,7 @@
               "refused",
               "moot"
             ],
-            "description": "resolved when authority or policy decided the group; surfaced, context_requested or refused when it escalated, following the route's on_unresolved action; moot when fewer than two members were admitted (R-11)."
+            "description": "resolved when authority, policy or a freshness tie-break decided the group; surfaced, context_requested or refused when it escalated, following the route's on_unresolved action; moot when fewer than two members were admitted (R-11)."
           },
           "decided_by": {
             "type": "string",
@@ -578,7 +578,8 @@
           ]
         },
         "detail": {
-          "type": "string"
+          "type": "string",
+          "description": "Free text for people about the recovery. No requirement defines it, and conformance never compares it (conformance/README.md, Running a case)."
         }
       },
       "required": [

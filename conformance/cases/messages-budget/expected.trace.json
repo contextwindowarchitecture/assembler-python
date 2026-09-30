@@ -1,7 +1,7 @@
 {
   "trace_id": "messages-budget",
   "profile": {
-    "id": "messages-fixture",
+    "id": "messages-budget",
     "version": 1
   },
   "budget": {
@@ -75,7 +75,7 @@
     "route_policy_version": "messages-budget/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "cwa-messages/v1",
-    "snapshot_digest": "a9852d2d570657eb7003f1f11cfa3dbaa9e0ff187d0dd002160a975875dd04f4"
+    "snapshot_digest": "2dd08321d873741f6bee389659ca544d6f518bb80a10cfaa2ba9a3a1d80b178f"
   },
   "defaults_filled": []
 }

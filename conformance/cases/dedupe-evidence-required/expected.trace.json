@@ -1,7 +1,7 @@
 {
   "trace_id": "dedupe-evidence-required",
   "profile": {
-    "id": "conflict-fixture",
+    "id": "dedupe-evidence-required",
     "version": 1
   },
   "budget": {
@@ -31,7 +31,7 @@
     "route_policy_version": "dedupe-evidence-required/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "8b09cd007632e171d80bf0d32f42fda826031d4a2c56ef2e5c61958276b7b425"
+    "snapshot_digest": "fcd79fdf4d0ff23a4b3187011b6814b3098c5184228a7a453b9c73f61123e66d"
   },
   "defaults_filled": [],
   "recovery": {

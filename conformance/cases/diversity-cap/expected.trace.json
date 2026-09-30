@@ -1,7 +1,7 @@
 {
   "trace_id": "diversity-cap",
   "profile": {
-    "id": "conflict-fixture",
+    "id": "diversity-cap",
     "version": 1
   },
   "budget": {
@@ -117,7 +117,7 @@
     "route_policy_version": "diversity-cap/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "d87b84b24a8445f4b5da661372f17dc87a819c0f503843863fc3bfc679d6fff5"
+    "snapshot_digest": "a56986bdbca68bc1d3d913755053ea2ed8101538279e63745d6b5b5bc7a09b1d"
   },
   "defaults_filled": []
 }

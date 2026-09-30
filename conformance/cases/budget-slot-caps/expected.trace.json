@@ -1,7 +1,7 @@
 {
   "trace_id": "budget-slot-caps",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "budget-slot-caps",
     "version": 1
   },
   "budget": {
@@ -112,7 +112,7 @@
     "route_policy_version": "budget-slot-caps/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "8853f93742afc19107a312d7499207eed14ae6ca2593c3085d869bcf0704389c"
+    "snapshot_digest": "41821200b7e7bac3b21aa345eb231309c8b2ff6899ba642c8a4397d2b779729b"
   },
   "defaults_filled": []
 }

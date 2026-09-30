@@ -1,7 +1,7 @@
 {
   "trace_id": "evidence-precompute-summary",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "evidence-precompute-summary",
     "version": 1
   },
   "budget": {
@@ -36,7 +36,7 @@
     "route_policy_version": "evidence-precompute-summary/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "b794a5017eb6afaaf727133696e18441f1a779618aa1f239edf20c5166f0a4d2"
+    "snapshot_digest": "87b48893e78fe10ba3a71d2b0bef1f968f42cc8c0e7a1722a733a7ffc8b90fd2"
   },
   "defaults_filled": [],
   "recovery": {

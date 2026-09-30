@@ -1,7 +1,7 @@
 {
   "trace_id": "conflict-fact",
   "profile": {
-    "id": "conflict-fixture",
+    "id": "conflict-fact",
     "version": 1
   },
   "budget": {
@@ -241,7 +241,7 @@
     "route_policy_version": "conflict-fact/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "c4d74c0951e37ad5275772cac0014ff89613103b08b3451704896c4033430534"
+    "snapshot_digest": "28e3d24764b1437c6fc32e8951353326c5ec17d6a75ff9c6ba2ca0370e64031b"
   },
   "defaults_filled": []
 }

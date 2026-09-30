@@ -3,7 +3,6 @@
   "scope": {
     "tenant": "acme",
     "user": "u_91",
-    "session": "s_7",
     "task": "refund_request"
   },
   "budget": {
@@ -1170,6 +1169,27 @@
           "relevance": 0.91
         },
         {
+          "id": "kb:session",
+          "slot": "evidence.knowledge",
+          "source": "src:kb:session",
+          "source_version": "1",
+          "authority": "reference_only",
+          "trust": "unverified",
+          "freshness": "2026-09-12T15:30:00Z",
+          "body": "Notes from another session.",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "defers",
+          "lineage": "verbatim",
+          "eligibility": "route-policy",
+          "injection_risk": "untrusted_content",
+          "relevance": 0.91,
+          "scope": {
+            "tenant": "acme",
+            "session": "s_7"
+          }
+        },
+        {
           "id": "kb:low",
           "slot": "evidence.knowledge",
           "source": "src:kb:low",
@@ -1620,6 +1640,38 @@
           "trust": "unverified",
           "freshness": "2026-09-22T11:58:00Z",
           "body": "refund_request: verify_eligibility=pending",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "governs",
+          "lineage": "extracted",
+          "eligibility": "route-policy",
+          "injection_risk": "none"
+        },
+        {
+          "id": "task:at-limit",
+          "slot": "state.task",
+          "source": "src:task:at-limit",
+          "source_version": "1",
+          "authority": "state",
+          "trust": "unverified",
+          "freshness": "2026-09-22T11:59:00Z",
+          "body": "notify_customer=pending",
+          "token_budget": null,
+          "variants": [],
+          "conflict_policy": "governs",
+          "lineage": "extracted",
+          "eligibility": "route-policy",
+          "injection_risk": "none"
+        },
+        {
+          "id": "task:past-limit",
+          "slot": "state.task",
+          "source": "src:task:past-limit",
+          "source_version": "1",
+          "authority": "state",
+          "trust": "unverified",
+          "freshness": "2026-09-22T11:58:59Z",
+          "body": "notify_customer=done",
           "token_budget": null,
           "variants": [],
           "conflict_policy": "governs",

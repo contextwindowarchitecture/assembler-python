@@ -1,7 +1,7 @@
 {
   "trace_id": "budget-slot-floor-refused",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "budget-slot-floor-refused",
     "version": 1
   },
   "budget": {
@@ -36,7 +36,7 @@
     "route_policy_version": "budget-slot-floor-refused/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "232adb18de769d0b2e417f93b4bea6f9bbf331e683a31a71f620f60080c4d8cc"
+    "snapshot_digest": "465578b4ab4fdc1bac23ba8eb9adfe6f60dfb769afc617bda64f51a94fa54963"
   },
   "defaults_filled": []
 }

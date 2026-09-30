@@ -1,7 +1,7 @@
 {
   "trace_id": "conflict-surfaced-shed",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "conflict-surfaced-shed",
     "version": 1
   },
   "budget": {
@@ -72,7 +72,7 @@
     "route_policy_version": "conflict-surfaced-shed/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "f4ba7e03c76c9832430ae88722ab58854ebf4c4c7bbe5a1f879825c2c36d7f3a"
+    "snapshot_digest": "9bc14c5d2d66f711d73c66a1bc98abd0609b8cf4500b70213d3706ea1dbdedc6"
   },
   "defaults_filled": []
 }

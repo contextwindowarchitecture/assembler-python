@@ -1,7 +1,7 @@
 {
   "trace_id": "budget-droppable-order",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "budget-droppable-order",
     "version": 1
   },
   "budget": {
@@ -68,7 +68,7 @@
     "route_policy_version": "budget-droppable-order/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "a59ebaeb4f9f8f7629edd21d640215938fac1d007a15176c32d864a7a591cdb9"
+    "snapshot_digest": "bd6031820531de8dd83cd6468e80cfc1904f49879e58469c5e184e4643014f87"
   },
   "defaults_filled": []
 }

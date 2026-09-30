@@ -1,7 +1,7 @@
 {
   "trace_id": "messages-render",
   "profile": {
-    "id": "messages-fixture",
+    "id": "messages-render",
     "version": 1
   },
   "budget": {
@@ -9,8 +9,8 @@
     "reserved_output": 1024
   },
   "result": {
-    "input_tokens": 71,
-    "hash": "381383c084fa16087b4c6180785dced309b5cceb79daada5e872bedfd3de8fd4"
+    "input_tokens": 77,
+    "hash": "d811e085cbe59f90cd30a502feb0a4d3d5e76f6e97e23c330edbcdb1fb19ce81"
   },
   "included": [
     {
@@ -114,7 +114,7 @@
     "route_policy_version": "messages-render/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "cwa-messages/v1",
-    "snapshot_digest": "640dab0314624c10d17017bf670a9c4a5ae8cb703638343ea77f520931b0e564"
+    "snapshot_digest": "f0d6de00a118bab14c3acd31f1be12fc42c43529f0c64e61436ccd631d115e78"
   },
   "defaults_filled": []
 }

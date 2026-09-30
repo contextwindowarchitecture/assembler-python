@@ -1,7 +1,7 @@
 {
   "trace_id": "conflict-request-context",
   "profile": {
-    "id": "conflict-fixture",
+    "id": "conflict-request-context",
     "version": 1
   },
   "budget": {
@@ -35,7 +35,7 @@
     "route_policy_version": "conflict-request-context/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "3c5bc05b5e251354852634c516102a88afab55bea7d3c5c5f6a56ef3bbac5bce"
+    "snapshot_digest": "0ae5b42e96660576481d4d9b54332b246ddad232329b13d737d552263ed82987"
   },
   "defaults_filled": [],
   "recovery": {

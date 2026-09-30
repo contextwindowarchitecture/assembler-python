@@ -1,7 +1,7 @@
 {
   "trace_id": "required-instructions-missing",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "required-instructions-missing",
     "version": 1
   },
   "budget": {
@@ -30,7 +30,7 @@
     "route_policy_version": "required-instructions-missing/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "d818837cbf55983ce6215fd1f8163140d553395e5b3c4e4002d0943b8b532560"
+    "snapshot_digest": "b2ecf2cf1afec02c6ad57a79b012885fa58f971c296fa416585fa52e43703844"
   },
   "defaults_filled": []
 }

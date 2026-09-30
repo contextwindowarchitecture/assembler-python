@@ -1,7 +1,7 @@
 {
   "trace_id": "budget-route-tiers",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "budget-route-tiers",
     "version": 1
   },
   "budget": {
@@ -93,7 +93,7 @@
     "route_policy_version": "budget-route-tiers/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "c44de8e882994caf0ead41c4108642f1553f56295d168072c920d0f40f11e5ab"
+    "snapshot_digest": "71e72f5c5e3de83ad34ba044395f81173aba079482bbcc964b5ec777aeb999aa"
   },
   "defaults_filled": []
 }

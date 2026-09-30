@@ -1,7 +1,7 @@
 {
   "trace_id": "supersede-evidence-required",
   "profile": {
-    "id": "conflict-fixture",
+    "id": "supersede-evidence-required",
     "version": 1
   },
   "budget": {
@@ -31,7 +31,7 @@
     "route_policy_version": "supersede-evidence-required/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "d87111fb7ec52ae9a876d49999d6da68e3d517325ae0176b49e943e13045c30a"
+    "snapshot_digest": "c58efd455e7c29938f2d5b01126127cceac3a61c5a7cc08747625200ac53d160"
   },
   "defaults_filled": [],
   "recovery": {

@@ -1,7 +1,7 @@
 {
   "trace_id": "evidence-retrieve-narrower",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "evidence-retrieve-narrower",
     "version": 1
   },
   "budget": {
@@ -36,7 +36,7 @@
     "route_policy_version": "evidence-retrieve-narrower/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "11cab9c1eed66f8ccd1a2c9ab43c17091b77a213f297baa1bd30673f9c09358c"
+    "snapshot_digest": "9aa2f3da5b3d15787c549157322711a047e589c6a3feab787087344ad12e8465"
   },
   "defaults_filled": [],
   "recovery": {

@@ -52,7 +52,7 @@
     },
     {
       "id": "R-4",
-      "status": "implemented",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_refusal.py::test_every_assembly_needs_instructions_and_a_query",
         "tests/test_refusal.py::test_a_parser_route_also_needs_an_output_contract",
@@ -82,7 +82,7 @@
     },
     {
       "id": "R-7",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_render.py::test_untrusted_bodies_cannot_break_out_of_their_wrapper",
         "tests/test_conflicts.py::test_members_that_cannot_instruct_stay_as_material",
@@ -118,7 +118,7 @@
     },
     {
       "id": "R-10",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_admission.py::test_governance_requires_verified_unmarked_content",
         "tests/test_admission.py::test_retrieved_and_user_content_must_stay_marked",
@@ -131,7 +131,7 @@
     },
     {
       "id": "R-11",
-      "status": "boundary-checked",
+      "status": "in progress",
       "evidence": [
         "tests/test_snapshot.py::test_conflict_groups_must_agree_with_the_snapshot",
         "tests/test_conflicts.py::test_a_group_with_fewer_than_two_admitted_members_is_moot",
@@ -149,7 +149,7 @@
     },
     {
       "id": "R-12",
-      "status": "implemented",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_refusal.py::test_no_admitted_evidence_asks_for_context",
         "tests/test_refusal.py::test_routes_that_do_not_require_evidence_answer_without_it",
@@ -203,7 +203,7 @@
     },
     {
       "id": "R-16",
-      "status": "implemented",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_admission.py::test_items_cannot_downgrade_a_protected_slot",
         "tests/test_admission.py::test_items_cannot_protect_themselves",
@@ -308,7 +308,7 @@
     },
     {
       "id": "R-20",
-      "status": "implemented",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_snapshot.py::test_profiles_that_cannot_carry_the_route_are_rejected_before_assembly",
         "tests/test_snapshot.py::test_a_parser_route_accepts_a_profile_that_places_the_output_contract",
@@ -329,7 +329,7 @@
     },
     {
       "id": "R-21",
-      "status": "implemented",
+      "status": "in progress",
       "evidence": [
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason",
@@ -370,7 +370,7 @@
     },
     {
       "id": "R-23",
-      "status": "implemented",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_golden.py::test_assembly_is_repeatable",
         "tests/test_conformance.py::test_input_order_never_changes_the_outcome",

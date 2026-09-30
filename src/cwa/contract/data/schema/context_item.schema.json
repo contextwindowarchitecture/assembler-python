@@ -212,7 +212,7 @@
     },
     "relevance": {
       "type": "number",
-      "description": "Finite rerank score; the scale and threshold belong to versioned route policy."
+      "description": "Finite rerank score; the scale and threshold belong to versioned route policy. Required in evidence.knowledge (R-13)."
     },
     "revoked_by": {
       "type": "string",
@@ -264,7 +264,7 @@
         "properties": {
           "relevance": {
             "type": "number",
-            "description": "Finite rerank score; the scale and threshold belong to versioned route policy."
+            "description": "Finite rerank score; the scale and threshold belong to versioned route policy. Required in evidence.knowledge (R-13)."
           }
         }
       }

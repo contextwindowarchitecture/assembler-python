@@ -1,7 +1,7 @@
 {
   "trace_id": "supersede-observations",
   "profile": {
-    "id": "conflict-fixture",
+    "id": "supersede-observations",
     "version": 1
   },
   "budget": {
@@ -119,7 +119,7 @@
     "route_policy_version": "supersede-observations/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "aa1efcb1ec0e6cff992d75d73ad277a7294ad101974e44ad36b4c44a71b63161"
+    "snapshot_digest": "da7fde10ab3617ce85aa0a2667778f4c62823242f5ff1989558bd45b592bb897"
   },
   "defaults_filled": []
 }

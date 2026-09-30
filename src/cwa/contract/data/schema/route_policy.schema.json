@@ -67,6 +67,7 @@
           },
           "slots": {
             "type": "array",
+            "description": "Slots this producer may send. An item in any other slot is excluded with producer_slot_not_allowed (R-15). The producer's kind limits its slots further, whatever this list holds (R-8, R-13, R-14, R-15).",
             "items": {
               "$ref": "context_item.schema.json#/properties/slot"
             },
@@ -144,7 +145,7 @@
       "propertyNames": {
         "$ref": "context_item.schema.json#/properties/slot"
       },
-      "description": "Tiers this route raises above the slot default. Only raising is meaningful; items cannot raise their own (R-16).",
+      "description": "Tiers this route raises above the slot default; items cannot raise their own (R-16). A value at or below the default changes nothing: the effective tier is the higher of the two.",
       "additionalProperties": {
         "type": "string",
         "enum": [
@@ -156,7 +157,7 @@
     "fitting_order": {
       "type": "array",
       "uniqueItems": true,
-      "description": "The order in which compressible items are reduced under budget pressure, once every droppable item is gone (R-16). Item token_budget caps and slot max_tokens caps apply before it, whether or not the payload fits. Each step compresses (selects supplied variants for) or omits one slot's compressible items, lowest-ranked first, until the payload fits. Steps the route does not list follow in the default order: compress each slot, then omit each slot, both in shedding order. With no steps, variants always come before omission.",
+      "description": "The order in which compressible items are reduced: under budget pressure, once every droppable item a slot floor does not hold is gone, and, for the steps that name a slot, while that slot's max_tokens cap is enforced (R-16). Item token_budget caps apply first, whether or not the payload fits. Each step compresses (selects supplied variants for) or omits one slot's compressible items, lowest-ranked first, until the payload fits or the slot is within its cap; under budget pressure a slot floor can withhold a reduction (conformance/README.md, Fitting). Steps the route does not list follow in the default order: compress each slot, then omit each slot, both in shedding order. With no steps, variants always come before omission.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -299,7 +300,7 @@
       "properties": {
         "min_relevance": {
           "type": "number",
-          "description": "Items scoring below this rerank threshold are excluded as below_threshold (R-13). An item with no relevance cannot clear a threshold and is excluded the same way. A score equal to the threshold passes."
+          "description": "Items scoring below this rerank threshold are excluded as below_threshold (R-13). An item with no relevance cannot clear a threshold and is excluded the same way, except in evidence.knowledge, where relevance is required and an item without it is missing_field:relevance (R-13). A score equal to the threshold passes."
         },
         "max_age_seconds": {
           "type": "integer",
@@ -347,7 +348,7 @@
         "min_included": {
           "type": "integer",
           "minimum": 1,
-          "description": "Evidence slots only, on a route with requires_evidence: assembly refuses with evidence_required when fitting leaves fewer items than this in the slot (R-12)."
+          "description": "Evidence slots only, on a route with requires_evidence: assembly refuses with evidence_required when fitting leaves fewer items than this in the slot (R-12). An item the profile places twice counts once."
         },
         "max_tokens": {
           "type": "integer",
@@ -369,7 +370,7 @@
           "enum": [
             "exact"
           ],
-          "description": "exact: after conflict resolution, exclude each item whose body equals a kept item's body in this slot once whitespace runs are collapsed and the ends trimmed, with reason duplicate_content (R-24). Protected items and items a conflict group names are never excluded. Absent, the slot keeps equal bodies."
+          "description": "exact: after conflict resolution and any supersession (R-25), exclude each item whose body equals a kept item's body in this slot once whitespace runs are collapsed and the ends trimmed, with reason duplicate_content (R-24). Protected items and items a conflict group names are never excluded. Absent, the slot keeps equal bodies."
         },
         "max_per_source": {
           "type": "integer",

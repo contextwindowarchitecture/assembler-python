@@ -1,7 +1,7 @@
 {
   "trace_id": "diversity-exemptions",
   "profile": {
-    "id": "conflict-fixture",
+    "id": "diversity-exemptions",
     "version": 1
   },
   "budget": {
@@ -115,7 +115,7 @@
     "route_policy_version": "diversity-exemptions/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "53e4a33da9fa66a1eb73e9b0c6a79796d9f9c539f1b7d601832dc4709f895b01"
+    "snapshot_digest": "d8f0284827cff062a01f422bc56224274842ee892ee64591f0a22d1f22f6a59b"
   },
   "defaults_filled": []
 }

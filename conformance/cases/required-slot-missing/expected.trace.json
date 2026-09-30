@@ -1,7 +1,7 @@
 {
   "trace_id": "required-slot-missing",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "required-slot-missing",
     "version": 1
   },
   "budget": {
@@ -30,7 +30,7 @@
     "route_policy_version": "required-slot-missing/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "7587bd8a1ec52b36ecba2facf20accc15c6e30b6f724fd0c4a990ea1b3c332ad"
+    "snapshot_digest": "89464390a5732ea2bc086e42cc7bbbd1e5a0615c0554c71a0923428babde281b"
   },
   "defaults_filled": []
 }

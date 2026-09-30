@@ -1,7 +1,7 @@
 {
   "trace_id": "evidence-cap-omitted",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "evidence-cap-omitted",
     "version": 1
   },
   "budget": {
@@ -30,7 +30,7 @@
     "route_policy_version": "evidence-cap-omitted/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "4507b62a1b5ae09ab4ac26d391c2c0cfd09a69caf598bb22c8acc8632bdc5e0f"
+    "snapshot_digest": "83d85d2f61e53a07ff255bb46ea30dcbc67af9fa39027f9885c946a260508e18"
   },
   "defaults_filled": [],
   "recovery": {

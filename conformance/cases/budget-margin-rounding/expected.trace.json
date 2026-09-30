@@ -1,7 +1,7 @@
 {
   "trace_id": "budget-margin-rounding",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "budget-margin-rounding",
     "version": 1
   },
   "budget": {
@@ -56,7 +56,7 @@
     "route_policy_version": "budget-margin-rounding/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "fb61e724bb6397d83a3edd30ab17bd53a0b7a1090228d43da6c734e35a96544b"
+    "snapshot_digest": "89961f42377535f5450e8482f691d6833ada8f7813016ca81d004f725cb68fa6"
   },
   "defaults_filled": []
 }

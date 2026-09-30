@@ -1,7 +1,7 @@
 {
   "trace_id": "evidence-request-context",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "evidence-request-context",
     "version": 1
   },
   "budget": {
@@ -36,7 +36,7 @@
     "route_policy_version": "evidence-request-context/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "cb1942c8d0f222e95bd868ba5ddd7d8b85987769968e04f7cb609702fbc1223f"
+    "snapshot_digest": "0ce08e1e8e4c5ad3384cd7cb158464d9fb2db9e33af20fd891bf3f1b1357c26c"
   },
   "defaults_filled": [],
   "recovery": {

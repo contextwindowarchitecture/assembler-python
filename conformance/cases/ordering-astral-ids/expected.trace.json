@@ -1,7 +1,7 @@
 {
   "trace_id": "ordering-astral-ids",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "ordering-astral-ids",
     "version": 1
   },
   "budget": {
@@ -81,7 +81,7 @@
     "route_policy_version": "ordering-astral-ids/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "9264bb7d71e284430aa3a73f674d9f0d14a5c821b7e52765816a989cdd093bdf"
+    "snapshot_digest": "39beb5cd4352956eea88651be24588d05d37977d813961f7607649280368ddb0"
   },
   "defaults_filled": [
     {

@@ -1,7 +1,7 @@
 {
   "trace_id": "budget-slot-floor",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "budget-slot-floor",
     "version": 1
   },
   "budget": {
@@ -85,7 +85,7 @@
     "route_policy_version": "budget-slot-floor/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "39fdf3926a556ee03fb6eee9b365f34a11b9c51f37409106b9bf24a3ba94ea94"
+    "snapshot_digest": "b78bb5ce50b66d3a8d7246598dc4b0392f03e7009fb9fa7d0afb718577f0ed6e"
   },
   "defaults_filled": []
 }

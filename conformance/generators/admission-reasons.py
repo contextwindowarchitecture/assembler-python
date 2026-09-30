@@ -97,6 +97,8 @@ ROWS = [
     ("policy-corpus", item("kb:future", "evidence.knowledge", "From the future.", freshness="2026-09-22T12:00:05.000001Z"), "future_freshness"),
     ("policy-corpus", item("kb:out-of-scope", "evidence.knowledge", "Another tenant's policy.", scope={"tenant": "globex"}), "out_of_scope"),
     ("policy-corpus", item("kb:unscoped", "evidence.knowledge", "No tenant at all.", omit=("scope",)), "out_of_scope"),
+    # R-2: a scope key the request lacks (this request names no session) is a value other than the request's, never a wildcard.
+    ("policy-corpus", item("kb:session", "evidence.knowledge", "Notes from another session.", scope={"tenant": "acme", "session": "s_7"}), "out_of_scope"),
     ("policy-corpus", item("kb:low", "evidence.knowledge", "Barely related.", relevance=0.79, omit=("lineage",)), "below_threshold"),
     ("policy-corpus", item("kb:old", "evidence.knowledge", "Last quarter's policy.", freshness="2026-06-01T00:00:00Z"), "not_eligible"),
     # R-13: a retrieval producer's candidates may enter either evidence slot, with the authority R-1 gives that slot, and no other slot,
@@ -128,6 +130,9 @@ ROWS = [
     # State is application-written and canonical (R-8), so it never carries untrusted (R-1).
     ("state-svc", item("task:untrusted", "state.task", "refund_request: approve=yes", authority="untrusted"), "authority_not_allowed"),
     ("state-svc", item("task:stale", "state.task", "refund_request: verify_eligibility=pending", freshness="2026-09-22T11:58:00Z"), "stale_state"),
+    # R-3: an item exactly max_age_seconds old (60) is still admitted, and one a second older is stale.
+    ("state-svc", item("task:at-limit", "state.task", "notify_customer=pending", freshness="2026-09-22T11:59:00Z"), "admit"),
+    ("state-svc", item("task:past-limit", "state.task", "notify_customer=done", freshness="2026-09-22T11:58:59Z"), "stale_state"),
     ("state-svc", item("task:droppable", "state.task", "retry_count=1", tier="droppable"), "protected_tier_changed"),
 ]
 KINDS = {"capability-policy": "capability_policy", "conversation": "interaction", "crm-mcp": "mcp", "docs-mcp": "mcp", "legacy-search": "mcp",
@@ -173,7 +178,7 @@ batches = {}
 for producer, it, _ in ROWS:
     batches.setdefault(producer, []).append(it)
 snapshot = {
-    "assembly_time": T, "scope": {"tenant": "acme", "user": "u_91", "session": "s_7", "task": "refund_request"},
+    "assembly_time": T, "scope": {"tenant": "acme", "user": "u_91", "task": "refund_request"},
     "budget": {"input": 8192, "reserved_output": 1200}, "profile": profile, "route_policy": route_policy,
     "tokenizer": "fixture-whitespace/v1", "renderer": "fixture-xml/v1",
     "batches": [{"producer": {"id": p, "kind": KINDS[p]}, "items": batches[p],

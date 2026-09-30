@@ -1,7 +1,7 @@
 {
   "trace_id": "tokenizer-estimate-utf8",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "tokenizer-estimate-utf8",
     "version": 1
   },
   "budget": {
@@ -63,7 +63,7 @@
     "route_policy_version": "tokenizer-estimate-utf8/v1",
     "tokenizer": "estimate-utf8/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "d04f19e4d377210f0686e2d4e2d01d330e45492229cf7d8c69516beddc4833cf"
+    "snapshot_digest": "24629386ef1a94f6cb9659d83c862847135ebdf3069b234d797ccb764676ebc0"
   },
   "defaults_filled": []
 }

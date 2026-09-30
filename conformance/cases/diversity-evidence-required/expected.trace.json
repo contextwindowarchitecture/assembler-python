@@ -1,7 +1,7 @@
 {
   "trace_id": "diversity-evidence-required",
   "profile": {
-    "id": "conflict-fixture",
+    "id": "diversity-evidence-required",
     "version": 1
   },
   "budget": {
@@ -30,7 +30,7 @@
     "route_policy_version": "diversity-evidence-required/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "f316ee8ebccaf39d79e41265de14438d564773eea90e4f490d992626788c1ec4"
+    "snapshot_digest": "b89939722582077d8f7d8ce6f1c8a5ccf3cc14653d437ce8b07d23b37c332da2"
   },
   "defaults_filled": [],
   "recovery": {

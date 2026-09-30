@@ -1,7 +1,7 @@
 {
   "trace_id": "render-attribute-escaping",
   "profile": {
-    "id": "conflict-fixture",
+    "id": "render-attribute-escaping",
     "version": 1
   },
   "budget": {
@@ -66,7 +66,7 @@
     "route_policy_version": "render-attribute-escaping/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "1d346eadd2575f52696da09bb19b62f3198542a35713ca4cbe0ea8d00bfdbbfc"
+    "snapshot_digest": "54a0e2d4824463db45a45398cc6e791d116d2ec0e55744402cf57679922400e0"
   },
   "defaults_filled": []
 }

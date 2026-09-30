@@ -1,7 +1,7 @@
 {
   "trace_id": "supersede-exemptions",
   "profile": {
-    "id": "conflict-fixture",
+    "id": "supersede-exemptions",
     "version": 1
   },
   "budget": {
@@ -109,7 +109,7 @@
     "route_policy_version": "supersede-exemptions/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "0f07eb4627072168f7aaede643bccb67a39515517908ee088d0e9f498caa0a1f"
+    "snapshot_digest": "3c4bb7f41fbdf29649532a503e07fed6ee7c755c7bfd3a42f248f7a6462e1782"
   },
   "defaults_filled": []
 }

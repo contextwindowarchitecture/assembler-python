@@ -12,7 +12,7 @@ U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (con
 sys.dont_write_bytecode = True  # importing fitting must not leave a __pycache__ for implementations to vendor
 from digest import snapshot_digest  # noqa: E402
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from fitting import DEFAULTS, POLICY, SCOPE, T, count, esc  # noqa: E402
+from fitting import DEFAULTS, POLICY, SCOPE, T, TOKENIZERS, count, esc, variant  # noqa: E402
 
 WEB = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 RENDERER = "cwa-messages/v1"
@@ -52,15 +52,18 @@ def attr(value):
     return esc(value).replace('"', "&quot;")
 
 
-def render(placement, kept, marks):
-    """kept: {id: item}. Returns payload bytes, the renderer's token count and included rows."""
-    system, tools, parts, included = [], [], [], []
+def render(placement, kept, marks, count=count, originals={}):
+    """kept: {id: item}; originals: {id: (original body, variant)} for items a cap compressed. Returns payload bytes,
+    the renderer's token count, included rows and compressed rows."""
+    system, tools, parts, included, compressed = [], [], [], [], []
     for slot, wrap in placement:
         for it in sorted((v for v in kept.values() if v["slot"] == slot), key=lambda v: U16(v["id"])):
             conflict = {"conflict": marks[it["id"]]} if it["id"] in marks else {}
             if wrap in ("system", "tools"):
                 body = it["body"]
-                (system if wrap == "system" else tools).append({"id": it["id"], "text": body, **conflict})
+                # The handoff passes only text, so a surfaced member's mark goes in its text (R-11).
+                text = f'<conflict group="{attr(conflict["conflict"])}">\n{body}\n</conflict>' if conflict else body
+                (system if wrap == "system" else tools).append({"id": it["id"], "text": text, **conflict})
             else:
                 body = esc(it["body"])
                 attrs = f' id="{attr(it["id"])}"'
@@ -71,9 +74,13 @@ def render(placement, kept, marks):
                 parts.append(f"<{wrap[4:]}{attrs}>\n{body}\n</{wrap[4:]}>\n")
             included.append({"slot": slot, "item_id": it["id"], "tokens": count(body), "source_version": it["source_version"],
                              "eligibility": it.get("eligibility", DEFAULTS[it["slot"]]["eligibility"])})
+            if it["id"] in originals:  # one row per included occurrence, each counted as that occurrence renders (R-18)
+                original, chosen = originals[it["id"]]
+                compressed.append({"slot": slot, "item_id": it["id"], "from": count(original if wrap in ("system", "tools") else esc(original)),
+                                   "to": count(body), "method": chosen["method"], "variant_id": chosen["id"]})
     content = "".join(parts)
     payload = canonical({"messages": [{"role": "user", "content": content}], "system": system, "tools": tools})
-    return payload, sum(count(e["text"]) for e in system + tools) + count(content), included
+    return payload, sum(count(e["text"]) for e in system + tools) + count(content), included, compressed
 
 
 def build(case):
@@ -95,15 +102,17 @@ def build(case):
                 policy["slots"].setdefault(slot, {}).update(rules)
         else:
             policy[key] = value
-    profile = {"spec": "cwa/draft", "id": "messages-fixture", "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": policy["version"],
+    # R-20: one profile id and version name one profile, so each case's profile carries the case's own id.
+    profile = {"spec": "cwa/draft", "id": name, "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": policy["version"],
                "placement": [{"slot": s, "wrap": w} for s, w in placement],
                "evaluation": {"status": "unevaluated", "suite": None, "date": None, "result": None, "artifact": None}}
     batches = {}
     for it, _ in rows:
         batches.setdefault(PRODUCER[it["slot"]], []).append(it)
     groups = case.get("groups", [])
+    tokenizer = case.get("tokenizer", "fixture-whitespace/v1")
     snapshot = {"assembly_time": T, "scope": SCOPE, "budget": {"input": budget, "reserved_output": 1024}, "profile": profile,
-                "route_policy": policy, "tokenizer": "fixture-whitespace/v1", "renderer": RENDERER,
+                "route_policy": policy, "tokenizer": tokenizer, "renderer": RENDERER,
                 "batches": [{"producer": {"id": p, "kind": PRODUCERS[p][0]}, "items": batches[p], "excluded": []} for p in sorted(batches, key=U16)],
                 "conflicts": [{"id": g["id"], "kind": "instruction", "items": g["items"]} for g in groups]}
     if any(it["slot"] == "governance.capabilities" for it, _ in rows):
@@ -115,22 +124,37 @@ def build(case):
     marks = {i: g["id"] for g in groups for i in g["items"]}
     assert set(marks) <= set(kept), f"{name}: a surfaced member is not admitted"
 
-    fits = lambda state: render(placement, state, marks)[1] <= budget
+    # Step 2 of Fitting: a compressible item over its token_budget takes the variant with the most tokens within it, the
+    # earlier on ties. Where a cap compares a body, its size is the largest of its occurrences' renderings.
+    cnt = TOKENIZERS[tokenizer]
+    rank = {"droppable": 0, "compressible": 1, "protected": 2}
+    tier = lambda it: it.get("tier") or max(DEFAULTS[it["slot"]]["tier"], policy.get("tier_upgrades", {}).get(it["slot"], "droppable"), key=rank.get)
+    size = lambda it, body: max(cnt(body if w in ("system", "tools") else esc(body)) for s, w in placement if s == it["slot"])
+    originals = {}
+    for action, item_id, variant_id in case.get("caps", []):
+        it = kept[item_id]
+        assert action == "compress" and tier(it) == "compressible" and size(it, it["body"]) > it["token_budget"], f"{name}: {item_id} is no compressible item over its cap"
+        chosen = max((v for v in it["variants"] if size(it, v["body"]) <= it["token_budget"]), key=lambda v: size(it, v["body"]))
+        assert chosen["id"] == variant_id, f"{name}: the cap picks {chosen['id']}"
+        originals[item_id], kept[item_id] = (it["body"], chosen), {**it, "body": chosen["body"]}
+    assert all(i in originals or it["token_budget"] is None or size(it, it["body"]) <= it["token_budget"] for i, it in kept.items()), f"{name}: an item over its cap is not in caps"
+
+    fits = lambda state: render(placement, state, marks, cnt)[1] <= budget
     actions = case.get("omit", [])
     assert fits(kept) == (not actions), f"{name}: the items {'fit' if fits(kept) else 'do not fit'} before budget pressure"
     for n, item_id in enumerate(actions):
         excluded.append({"item_id": item_id, "reason": "over_budget", "stage": "assembler", "slot": kept.pop(item_id)["slot"]})
         assert fits(kept) == (n == len(actions) - 1), f"{name}: omitting {item_id} leaves the payload {'fitting' if fits(kept) else 'over budget'}"
 
-    payload, input_tokens, included = render(placement, kept, marks)
+    payload, input_tokens, included, compressed = render(placement, kept, marks, cnt, originals)
     trace = {
         "trace_id": name, "profile": {"id": profile["id"], "version": 1}, "budget": snapshot["budget"],
         "result": {"input_tokens": input_tokens, "hash": hashlib.sha256(payload).hexdigest()},
-        "included": included, "compressed": [], "excluded": excluded,
+        "included": included, "compressed": compressed, "excluded": excluded,
         "conflicts": [{"group_id": g["id"], "kind": "instruction", "items": sorted(g["items"], key=U16), "decided_by": "escalated", "resolution": "surfaced"}
                       for g in sorted(groups, key=lambda g: U16(g["id"]))],
         "refused": {"bool": False, "reason": None},
-        "context": {"spec": "cwa/draft", "assembly_time": T, "route_policy_version": policy["version"], "tokenizer": "fixture-whitespace/v1", "renderer": RENDERER, "snapshot_digest": snapshot_digest(snapshot)},
+        "context": {"spec": "cwa/draft", "assembly_time": T, "route_policy_version": policy["version"], "tokenizer": tokenizer, "renderer": RENDERER, "snapshot_digest": snapshot_digest(snapshot)},
         "defaults_filled": [],
     }
     out = os.path.join(WEB, "conformance/cases", name)
@@ -153,7 +177,8 @@ CASES = [
         "rules": ["R-7", "R-10", "R-11", "R-21"],
         "description": "cwa-messages/v1 puts governing instructions in system and the granted tool in tools, unescaped; everything else, "
                        "including every prior turn marked with its speaker, renders escaped inside the one user message, so no history turn "
-                       "becomes a platform message and an injected closing tag stays material. Surfaced members are marked in system.",
+                       "becomes a platform message and an injected closing tag stays material. Surfaced members in system are marked in their text, "
+                       "which is all the model receives.",
         "budget": 4096,
         "placement": CHAT,
         "policy": {"on_unresolved_instruction": "surface"},
@@ -190,6 +215,26 @@ CASES = [
             (item("turn:18", "interaction.query", QUERY), "admit"),
         ],
         "omit": ["user:plan", "turn:14"],
+    },
+    {
+        "id": "messages-repeated-slot",
+        "rules": ["R-7", "R-16", "R-18", "R-21"],
+        "description": "The profile places governance.examples as system and again as xml:examples, which cwa-messages/v1 renders unescaped "
+                       "and escaped. Under estimate-utf8/v1 the example's escaped rendering exceeds its token_budget though the unescaped one "
+                       "does not, and a cap bounds a body however it renders, so the example takes its variant in both occurrences, with one "
+                       "compressed row for each, counted as that occurrence renders.",
+        "tokenizer": "estimate-utf8/v1",
+        "budget": 4096,
+        "placement": [("governance.instructions", "system"), ("governance.examples", "system"), ("governance.examples", "xml:examples"),
+                      ("interaction.query", "xml:query")],
+        "policy": {"tier_upgrades": {"governance.examples": "compressible"}},
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("ex:qa", "governance.examples", "Example: Q&A on refunds & returns & exchanges & store credit & fees & disputes & chargebacks.",
+                  token_budget=28, variants=[variant("ex:qa~short", "Example: Q&A on refunds & returns.")]), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "caps": [("compress", "ex:qa", "ex:qa~short")],
     },
 ]
 

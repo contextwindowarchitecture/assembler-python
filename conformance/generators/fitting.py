@@ -98,7 +98,8 @@ def build(case):
                 policy["slots"].setdefault(slot, {}).update(rules)
         else:
             policy[key] = value
-    profile = {"spec": "cwa/draft", "id": "fitting-fixture", "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": policy["version"],
+    # R-20: one profile id and version name one profile, so each case's profile carries the case's own id.
+    profile = {"spec": "cwa/draft", "id": name, "version": 1, "route": "support-chat", "model_family": None, "route_policy_version": policy["version"],
                "placement": [{"slot": s, "wrap": "xml:" + s} for s in placement],
                "evaluation": {"status": "unevaluated", "suite": None, "date": None, "result": None, "artifact": None}}
     batches = {}
@@ -549,6 +550,53 @@ CASES = [
             (item("turn:18", "interaction.query", QUERY), "admit"),
         ],
         "refuse": "protected_content_over_budget",
+    },
+    {
+        "id": "budget-tier-lowering-ignored",
+        "rules": ["R-16", "R-17", "R-21"],
+        "description": "The route's tier_upgrades names compressible for state.task, whose default is protected. A value at or below "
+                       "the default changes nothing, so the task stays protected; the protected items alone exceed budget.input, and "
+                       "assembly refuses rather than omitting the task.",
+        "budget": 25,
+        "policy": {"tier_upgrades": {"state.task": "compressible"}},
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("task:8821", "state.task", "refund_request: verify_eligibility=done, collect_reason=pending, issue_refund=pending"), "admit"),
+            (item("ex:1", "governance.examples", "Example: refunds within thirty days are approved."), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "refuse": "protected_content_over_budget",
+    },
+    {
+        "id": "budget-repeated-compress",
+        "rules": ["R-16", "R-18", "R-21"],
+        "description": "The profile places evidence.knowledge twice. Fitting decides per item, so compressing the chunk replaces both "
+                       "occurrences at once: one occurrence alone would already fit (54 of 55), but the chunk's two occurrences take the variant "
+                       "together (44), and included[] and compressed[] each hold one row per occurrence.",
+        "budget": 55,
+        "placement": ["governance.instructions", "evidence.knowledge", "interaction.query", "evidence.knowledge"],
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within 30 days of purchase, to the original payment method, with no fee.",
+                  relevance=0.9, variants=[variant("kb:a~short", "Pro plans refund in full within 30 days.")]), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "actions": [("compress", "kb:a", "kb:a~short")],
+    },
+    {
+        "id": "evidence-min-included-items",
+        "rules": ["R-12", "R-17", "R-21"],
+        "description": "The profile places evidence.knowledge twice and the route asks for at least two knowledge items. One chunk is admitted "
+                       "and would render twice, but min_included counts items, not occurrences, so the route refuses with recovery request_context.",
+        "budget": 4096,
+        "placement": ["governance.instructions", "evidence.knowledge", "interaction.query", "evidence.knowledge"],
+        "policy": {"requires_evidence": True, "slots": {"evidence.knowledge": {"min_included": 2}}},
+        "items": [
+            (item("policy:v12", "governance.instructions", POLICY_TEXT), "admit"),
+            (item("kb:a", "evidence.knowledge", "Pro plans refund in full within 30 days.", relevance=0.9), "admit"),
+            (item("turn:18", "interaction.query", QUERY), "admit"),
+        ],
+        "refuse": "evidence_required", "recovery": "request_context",
     },
     {
         "id": "evidence-request-context",

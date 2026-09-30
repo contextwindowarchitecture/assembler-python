@@ -69,6 +69,12 @@ def first_error(v, doc):
 def well_formed(value):
     if isinstance(value, float):
         return math.isfinite(value)
+    if isinstance(value, int) and not isinstance(value, bool):
+        # Python reads an integer literal exactly, however long; as a double it must still be finite (I-JSON).
+        try:
+            return math.isfinite(float(value))
+        except OverflowError:
+            return False
     if isinstance(value, str):
         try:
             value.encode("utf-8")

@@ -9,8 +9,8 @@
     "reserved_output": 1200
   },
   "result": {
-    "input_tokens": 149,
-    "hash": "e4d155cd1c95bf4433e3da230f8029beb7ae20d59ecd01a643db27dc3639cc13"
+    "input_tokens": 153,
+    "hash": "06179cbc8206a76ab393bfab41e5b5eb4f3f0e7c15842b720fa45a1b34a7d695"
   },
   "included": [
     {
@@ -45,6 +45,13 @@
       "slot": "state.task",
       "item_id": "task:8821",
       "tokens": 2,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "state.task",
+      "item_id": "task:at-limit",
+      "tokens": 1,
       "source_version": "1",
       "eligibility": "route-policy"
     },
@@ -378,6 +385,12 @@
       "slot": "evidence.knowledge"
     },
     {
+      "item_id": "kb:session",
+      "reason": "out_of_scope",
+      "stage": "assembler",
+      "slot": "evidence.knowledge"
+    },
+    {
       "item_id": "kb:space-date",
       "reason": "invalid_structure",
       "stage": "assembler",
@@ -474,6 +487,12 @@
       "slot": "state.task"
     },
     {
+      "item_id": "task:past-limit",
+      "reason": "stale_state",
+      "stage": "assembler",
+      "slot": "state.task"
+    },
+    {
       "item_id": "task:stale",
       "reason": "stale_state",
       "stage": "assembler",
@@ -503,7 +522,7 @@
     "route_policy_version": "admission/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "c0412feeba4a5375980f3479d6305676f5238ce344f1315348c8b3154ff6b408"
+    "snapshot_digest": "120fa0bd5e78eac87a5e7c8064c2998cae00a5638d6219b2bf80e56dcdd0a213"
   },
   "defaults_filled": [
     {

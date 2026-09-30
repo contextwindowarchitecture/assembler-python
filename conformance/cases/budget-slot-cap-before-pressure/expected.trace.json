@@ -1,7 +1,7 @@
 {
   "trace_id": "budget-slot-cap-before-pressure",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "budget-slot-cap-before-pressure",
     "version": 1
   },
   "budget": {
@@ -71,7 +71,7 @@
     "route_policy_version": "budget-slot-cap-before-pressure/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "324cd8360a4e648612b60c4b85610e9c30632c35389a33d8a9f1df7a07f6766c"
+    "snapshot_digest": "38fffec9d0b2744182aad5d8ae9290b60aa5bcfcfdcb76c85d5005fe955e57f2"
   },
   "defaults_filled": []
 }

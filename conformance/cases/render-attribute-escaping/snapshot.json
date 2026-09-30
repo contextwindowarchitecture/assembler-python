@@ -12,7 +12,7 @@
   },
   "profile": {
     "spec": "cwa/draft",
-    "id": "conflict-fixture",
+    "id": "render-attribute-escaping",
     "version": 1,
     "route": "support-chat",
     "model_family": null,

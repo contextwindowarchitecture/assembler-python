@@ -1,7 +1,7 @@
 {
   "trace_id": "budget-variant-choice",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "budget-variant-choice",
     "version": 1
   },
   "budget": {
@@ -86,7 +86,7 @@
     "route_policy_version": "budget-variant-choice/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "1137e09b1d0e7018701834d7f5149b0e9ebc66236302f7b37a73f90808b6da84"
+    "snapshot_digest": "5d8a5cf2057780676b65d8c6188eb4a9cceaec1326982875a1b515f6c009324a"
   },
   "defaults_filled": []
 }

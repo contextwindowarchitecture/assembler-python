@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://contextwindowarchitecture.io/schema/snapshot.schema.json",
   "title": "CWA assembly snapshot",
-  "description": "Everything that can affect an assembly, frozen before assembly begins (R-23). Conformance cases use this shape so implementations in any language replay the same input. Batch items are raw producer output: admission validates each one and records an invalid item as an exclusion rather than rejecting the snapshot (R-2).",
+  "description": "Everything that can affect an assembly, frozen before assembly begins (R-23). Conformance cases use this shape so implementations in any language replay the same input. Batch items are raw producer output: admission validates each one and records an invalid item as an exclusion rather than rejecting the snapshot (R-2). An entry that is not a JSON object is not an item, and rejects the snapshot (R-17).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -109,7 +109,7 @@
             "items": {
               "type": "object"
             },
-            "description": "Candidate items exactly as the producer emitted them. Validated per item at admission against context_item.schema.json."
+            "description": "Candidate items exactly as the producer emitted them. Validated per item at admission against context_item.schema.json; only an entry that is not an object fails this schema (R-2, R-17)."
           },
           "excluded": {
             "$ref": "producer_batch.schema.json#/properties/excluded"

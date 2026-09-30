@@ -2,7 +2,6 @@
   "id": "conflict-request-context",
   "rules": [
     "R-11",
-    "R-12",
     "R-17",
     "R-21"
   ],

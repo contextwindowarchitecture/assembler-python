@@ -16,8 +16,8 @@
   },
   {
     "id": "R-4",
-    "scope": "assembler",
-    "note": "Refuses with required_slot_missing."
+    "scope": "boundary",
+    "note": "Refuses with required_slot_missing. Declaring parser: true on every route whose response a parser consumes is the application's."
   },
   {
     "id": "R-5",
@@ -46,8 +46,8 @@
   },
   {
     "id": "R-10",
-    "scope": "assembler",
-    "note": "Checks the marker in the five slots that require it, keeps unverified or marked items out of governance, and renders every body whole; delimiting material pasted into a body is the application's job."
+    "scope": "boundary",
+    "note": "Checks the marker in the five slots that require it, keeps unverified or marked items out of governance, and renders every body whole. Marking user-controlled and fetched content is the producer's duty, and delimiting material pasted into a body is the application's job."
   },
   {
     "id": "R-11",
@@ -56,8 +56,8 @@
   },
   {
     "id": "R-12",
-    "scope": "assembler",
-    "note": "Refuses with evidence_required and a recovery action."
+    "scope": "boundary",
+    "note": "Refuses with evidence_required and a recovery action. Retrieving and summarizing before the snapshot is frozen, and freezing a new one for any retry, are the application's."
   },
   {
     "id": "R-13",
@@ -76,8 +76,8 @@
   },
   {
     "id": "R-16",
-    "scope": "assembler",
-    "note": "Counts rendered tokens and sheds in tier order."
+    "scope": "boundary",
+    "note": "Counts rendered tokens and sheds in tier order. Setting budget.input from the model's context limit, with a tokenizer that counts or estimates the model's tokens, is the application's."
   },
   {
     "id": "R-17",
@@ -96,8 +96,8 @@
   },
   {
     "id": "R-20",
-    "scope": "assembler",
-    "note": "Pins profile content by hash, rejects a profile that doesn't place a required slot, and refuses the assembly when admitted protected content has no placement."
+    "scope": "boundary",
+    "note": "Pins profile content by hash, rejects a profile that doesn't place a required slot, and refuses the assembly when admitted protected content has no placement. Raising the version for every change is the application's."
   },
   {
     "id": "R-21",
@@ -111,8 +111,8 @@
   },
   {
     "id": "R-23",
-    "scope": "assembler",
-    "note": "Snapshot replay across processes, hash seeds, time zones and locales, with ordering, blank strings, timestamps and the digest pinned for every language."
+    "scope": "boundary",
+    "note": "Snapshot replay across processes, hash seeds, time zones and locales, with ordering, blank strings, timestamps and the digest pinned for every language. Making every external read and model call before the snapshot is frozen is the application's."
   },
   {
     "id": "R-24",

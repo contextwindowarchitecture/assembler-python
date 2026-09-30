@@ -1,7 +1,7 @@
 {
   "trace_id": "budget-margin",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "budget-margin",
     "version": 1
   },
   "budget": {
@@ -70,7 +70,7 @@
     "route_policy_version": "budget-margin/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "9fb70361cbb34e234d39bbe5e414a5d853dbd7bc3a6be08e1f4381fe9b0cf2be"
+    "snapshot_digest": "5727671adb84a648736df0c0f63df8d798be1e7dc2fc2f03b62286e0dd13030b"
   },
   "defaults_filled": []
 }

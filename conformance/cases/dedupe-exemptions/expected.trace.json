@@ -1,7 +1,7 @@
 {
   "trace_id": "dedupe-exemptions",
   "profile": {
-    "id": "conflict-fixture",
+    "id": "dedupe-exemptions",
     "version": 1
   },
   "budget": {
@@ -118,7 +118,7 @@
     "route_policy_version": "dedupe-exemptions/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "9c1288a80d00379dffe2846ff38960fa93de19dd169a685982c6e419d0c00558"
+    "snapshot_digest": "127512bf0efdcaac33ef068fd5177546b195acefb80f9db4b88a52442dd210a2"
   },
   "defaults_filled": []
 }

@@ -1,7 +1,7 @@
 {
   "trace_id": "budget-slot-floor-under-cap",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "budget-slot-floor-under-cap",
     "version": 1
   },
   "budget": {
@@ -83,7 +83,7 @@
     "route_policy_version": "budget-slot-floor-under-cap/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "05090c9af9bf97895028a1679649e822a4788b78c7b62ed4a181c3f710ee0a2c"
+    "snapshot_digest": "53fd33810b105bfcd087b219d949a0a194443d09b35a15384e3779867e911170"
   },
   "defaults_filled": []
 }

@@ -1,7 +1,7 @@
 {
   "trace_id": "protected-over-cap",
   "profile": {
-    "id": "fitting-fixture",
+    "id": "protected-over-cap",
     "version": 1
   },
   "budget": {
@@ -23,7 +23,7 @@
     "route_policy_version": "protected-over-cap/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "50f9c851ce862b761a61fdb6346a25aed8004a8312d5571eba4a26b3757de9fa"
+    "snapshot_digest": "86d2dce2ce0b1dc80dba4bd5a56827b4d8d96804829656292b1db2706936a3ae"
   },
   "defaults_filled": []
 }
