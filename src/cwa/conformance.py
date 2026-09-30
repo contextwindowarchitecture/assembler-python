@@ -21,6 +21,10 @@ from .tokenize import REGISTRY as TOKENIZERS
 # requirement defines (conformance/README.md, Running a case, step 4); everything else is compared.
 IGNORED = ("trace_id", "timings")
 IGNORED_IN_RECOVERY = ("detail",)
+# The tokenizers and renderers every implementation provides (conformance/README.md, Tokenizers and renderers); any
+# other one is optional. They are the built-in ones, which tests/test_tokenize.py and tests/test_render.py pin to the
+# README's bullets, copied so the set stays the required one whatever a registry holds when a case runs.
+REQUIRED = {"tokenizer": frozenset(TOKENIZERS), "renderer": frozenset(RENDERERS)}
 
 
 def comparable(trace: Mapping[str, Any]) -> dict[str, Any]:
@@ -48,21 +52,28 @@ def _first_difference(actual: Any, expected: Any, path: str = "") -> str | None:
     return None if actual == expected else path or "/"
 
 
-def _skipped(document: Any) -> dict[str, str] | None:
-    """A case whose tokenizer or renderer this implementation does not provide is skipped, not judged."""
-    for field, registry in (("tokenizer", TOKENIZERS), ("renderer", RENDERERS)):
-        if isinstance(document, dict) and isinstance(document.get(field), str) and document[field] not in registry:
-            return {"outcome": "skipped", "detail": f"no {field} {document[field]}"}
+def _unprovided(document: Any, fields: tuple[str, ...]) -> dict[str, str] | None:
+    """The outcome of a case naming, in one of `fields`, a tokenizer or renderer this implementation does not provide,
+    decided before it runs (conformance/README.md, Reporting results): skipped for an optional one, and failed for a
+    required one, since every implementation provides those. None when it provides each one the case names."""
+    provided = {"tokenizer": TOKENIZERS, "renderer": RENDERERS}
+    for field in fields:
+        name = document.get(field) if isinstance(document, dict) else None
+        if isinstance(name, str) and name not in provided[field]:
+            if name in REQUIRED[field]:
+                return {"outcome": "failed", "detail": f"no {field} {name}, which every implementation provides"}
+            return {"outcome": "skipped", "detail": f"no {field} {name}"}
     return None
 
 
 def run_case(directory: Path) -> dict[str, Any]:
-    """One report entry: passed, failed with what differed, or skipped for a missing tokenizer or renderer."""
+    """One report entry: passed, failed with what differed, or skipped for an optional tokenizer or renderer this
+    implementation does not provide. A required one it lacks fails the case."""
     meta = json.loads((directory / "case.json").read_text(encoding="utf-8"))
     entry = {"id": meta["id"], "rules": meta["rules"]}
     document = json.loads((directory / "snapshot.json").read_text(encoding="utf-8"))
-    if skipped := _skipped(document):
-        return {**entry, **skipped}
+    if unprovided := _unprovided(document, ("tokenizer", "renderer")):
+        return {**entry, **unprovided}
     try:
         result = assemble(Snapshot.from_json(document))
     except SnapshotError as error:
@@ -82,12 +93,14 @@ def run_case(directory: Path) -> dict[str, Any]:
 
 
 def run_rejection(directory: Path) -> dict[str, Any]:
-    """One rejections entry: rejected before assembly, failed with what happened instead, or skipped (R-17)."""
+    """One rejections entry: rejected before assembly, failed with what happened instead, or skipped for an optional
+    renderer this implementation does not provide (R-17). No snapshot check needs a tokenizer, so only the renderer
+    can keep the case from running, and a required one it lacks fails the case."""
     meta = json.loads((directory / "case.json").read_text(encoding="utf-8"))
     entry = {"id": meta["id"], "rules": meta["rules"]}
     document = json.loads((directory / "snapshot.json").read_text(encoding="utf-8"))
-    if skipped := _skipped(document):
-        return {**entry, **skipped}
+    if unprovided := _unprovided(document, ("renderer",)):
+        return {**entry, **unprovided}
     try:
         result = assemble(Snapshot.from_json(document))
     except SnapshotError:

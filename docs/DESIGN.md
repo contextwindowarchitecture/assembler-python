@@ -720,6 +720,21 @@ flowchart LR
 
 Result: 58 of 58 cases pass and 24 of 24 rejection cases are rejected, and R-16 is boundary-checked again, so every checkable requirement is claimed: 11 implemented and 14 boundary-checked.
 
+**Runner fix (2026-09-30): required tokenizers and renderers are never skipped.** The README's Reporting results, since website `cd5cd05` and vendored since `4f32396`, requires every implementation to provide the four tokenizers and renderers its Tokenizers and renderers section lists. A case that uses only those is never skipped: an implementation that lacks one reports it `failed`. A rejection case is skipped only for an optional renderer the implementation lacks, since no snapshot check needs a tokenizer, and never for a required one. The runner had not followed. `cwa.conformance` skipped any case, and any rejection case, naming a tokenizer or renderer missing from its registry, required or not, so a build without `estimate-utf8/v1` would have reported that tokenizer's cases skipped rather than failed. This assembler provides all four, so no published case reaches the difference, and the report did not change. The runner now decides before a case runs:
+
+```mermaid
+flowchart LR
+  C["Case: its tokenizer and renderer<br/>Rejection case: its renderer only"] --> L{"One this implementation<br/>does not provide?"}
+  L -- no --> R["Run the case"]
+  L -- yes --> Q{"Listed in the README's<br/>Tokenizers and renderers?"}
+  Q -- "yes, required" --> F["failed: detail names it"]
+  Q -- "no, optional" --> S["skipped: detail names it"]
+```
+
+Test-first, `tests/test_report.py` makes the implementation lack each required component in turn, removing it from its built-in registry for that test only. `test_a_case_needing_a_required_tokenizer_or_renderer_it_lacks_fails` expects `failed` with a detail naming it, while an unknown one still skips a case. `test_only_a_renderer_it_lacks_keeps_a_rejection_case_from_running` expects a rejection case skipped for an optional renderer and failed for a required one, and a rejection case lacking any tokenizer, optional or required, to run and be rejected for the check it breaks. Both read the required ids from the README's bullets, through a helper `tests/conftest.py` now shares with the tokenizer and renderer tests. `cwa.conformance.REQUIRED` copies the built-in registries at import, which those tests pin to the same bullets, and `status.json` cites the two tests for R-21 and R-17. Mutations were each caught: a required set read from the registries as a case runs, a rejection case skipped for a tokenizer, a rejection case never skipped, a required component left for the assembler to reject, which reported `snapshot rejected: unknown tokenizer …` and marked a rejection case `rejected` for a renderer it could not load, and renderers or tokenizers dropped from the required set.
+
+Result: 58 of 58 cases pass and 24 of 24 rejection cases are rejected, as before.
+
 
 **M13 status (2026-09-27): done. Second implementation.** The TypeScript assembler (`@contextwindowarchitecture/assembler`, repository assembler-typescript) is built from the vendored contract alone, under a standing rule never to read this assembler, and passes every published case: 52 of 52, and 22 of 22 rejection cases, at website `591f7eb` (its commit `a7d6b82`). The website imports its report beside this one and shows both in the matrix. The alignment review that closed the gate also showed what a second implementation is for: two behaviours the spec left open, on which the two disagreed while both passed every case (the contract updates above, D-22 and D-23), are now each written into the spec with a case that pins them. Every release gate (M11–M14) is met; the release itself (D-18) is the maintainer's call.
 

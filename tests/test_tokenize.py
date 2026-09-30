@@ -1,22 +1,12 @@
 """Tokenizers (conformance/README.md, Tokenizers and renderers): what the declared tokenizer counts (R-16)."""
 from __future__ import annotations
 
-import re
-
 import pytest
 
-from conftest import ROOT
+from conftest import published
 from cwa.tokenize import REGISTRY
 
-
-def published_tokenizers() -> list[str]:
-    """The tokenizer ids conformance/README.md publishes: the bullets of Tokenizers and renderers that count."""
-    readme = (ROOT / "conformance" / "README.md").read_text(encoding="utf-8")
-    section = readme.split("\n## Tokenizers and renderers\n", 1)[1].split("\n## ", 1)[0]
-    return re.findall(r"^- `([^`]+)` counts ", section, flags=re.MULTILINE)
-
-
-PUBLISHED = published_tokenizers()
+PUBLISHED = published("counts")
 
 
 @pytest.mark.parametrize("text, count", [

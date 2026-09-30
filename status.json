@@ -289,6 +289,7 @@
         "tests/test_refusal.py::test_protected_items_exactly_at_their_slots_max_tokens_are_kept",
         "tests/test_rejections.py::test_each_rejection_case_is_rejected_before_assembly",
         "tests/test_report.py::test_a_rejection_case_that_assembles_fails",
+        "tests/test_report.py::test_only_a_renderer_it_lacks_keeps_a_rejection_case_from_running",
         "tests/test_snapshot.py::test_numbers_outside_the_double_range_are_rejected_before_assembly"
       ]
     },
@@ -357,6 +358,7 @@
         "tests/test_snapshot.py::test_producer_rows_order_by_producer_then_item_in_utf16_code_units",
         "tests/test_report.py::test_a_trace_that_differs_fails_and_names_the_field",
         "tests/test_report.py::test_the_report_covers_every_case_in_id_order_and_names_the_vendored_commit",
+        "tests/test_report.py::test_a_case_needing_a_required_tokenizer_or_renderer_it_lacks_fails",
         "tests/test_golden.py::test_fixture_payload_hash_and_tokens",
         "tests/test_properties.py::test_included_tokens_fit_within_the_payload_and_the_payload_within_the_budget",
         "tests/test_properties.py::test_a_refusal_has_no_payload_and_a_payload_carries_its_hash",

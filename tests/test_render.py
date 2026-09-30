@@ -2,24 +2,14 @@
 and a renderer the caller supplies can never pass for a published one (R-16)."""
 from __future__ import annotations
 
-import re
-
 import pytest
 
-from conftest import ROOT
+from conftest import published
 from cwa import Snapshot, SnapshotError, assemble
 from cwa.render import REGISTRY, Rendered
 from cwa.tokenize.fixture_whitespace import FixtureWhitespace
 
-
-def published_renderers() -> list[str]:
-    """The renderer ids conformance/README.md publishes: the bullets of Tokenizers and renderers that render."""
-    readme = (ROOT / "conformance" / "README.md").read_text(encoding="utf-8")
-    section = readme.split("\n## Tokenizers and renderers\n", 1)[1].split("\n## ", 1)[0]
-    return re.findall(r"^- `([^`]+)` renders ", section, flags=re.MULTILINE)
-
-
-PUBLISHED = published_renderers()
+PUBLISHED = published("renders")
 
 
 def test_untrusted_bodies_cannot_break_out_of_their_wrapper(fixture_snapshot):

@@ -56,7 +56,7 @@ uv run python scripts/bench.py                                # time assemble() 
 
 [CHANGELOG.md](CHANGELOG.md) is generated from the commit history with git-cliff; regenerate it at a release with `uvx git-cliff --tag vX.Y.Z -o CHANGELOG.md`. CI (`.github/workflows/ci.yml`) runs the suite on Python 3.11, 3.12, 3.13 and 3.14, and checks the vendored contract against the website commit `contract.lock.json` pins.
 
-The package ships `py.typed`, and the suite runs mypy over `src/cwa`, so its annotations stay usable by your type checker. [conformance-report.json](conformance-report.json) records each published case's outcome, and each rejection case's, in the website's `conformance_report.schema.json` format; a test fails when it is stale.
+The package ships `py.typed`, and the suite runs mypy over `src/cwa`, so its annotations stay usable by your type checker. [conformance-report.json](conformance-report.json) records each published case's outcome, and each rejection case's, in the website's `conformance_report.schema.json` format; a test fails when it is stale. The runner skips a case only for an optional tokenizer or renderer this assembler lacks, and a rejection case only for an optional renderer, since no snapshot check needs a tokenizer. Lacking one of the four the conformance README requires fails the case instead; this assembler provides all four.
 
 ## The contract is vendored
 

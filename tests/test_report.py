@@ -9,10 +9,14 @@ import pytest
 
 from cwa import contract
 from cwa.conformance import comparable, report, run_case, run_rejection
+from cwa.render import REGISTRY as RENDERERS
 from cwa.strings import utf16
-from conftest import CASES, REJECTIONS, ROOT, read_json
+from cwa.tokenize import REGISTRY as TOKENIZERS
+from conftest import CASES, REJECTIONS, ROOT, published, read_json
 
 LOCK = read_json(ROOT / "contract.lock.json")
+# Every implementation provides these (conformance/README.md, Tokenizers and renderers); any other one is optional.
+REQUIRED = [("tokenizer", name) for name in published("counts")] + [("renderer", name) for name in published("renders")]
 
 
 @pytest.fixture
@@ -81,11 +85,26 @@ def test_comparable_drops_recovery_detail_from_either_trace_and_leaves_the_trace
     assert comparable({"recovery": None}) == {"recovery": None}
 
 
+def lacking(monkeypatch, field: str, name: str) -> None:
+    """This implementation made to lack a tokenizer or renderer it builds in, until the test ends."""
+    monkeypatch.delitem({"tokenizer": TOKENIZERS, "renderer": RENDERERS}[field], name)
+
+
 @pytest.mark.parametrize("field", ["tokenizer", "renderer"])
-def test_a_case_needing_a_tokenizer_or_renderer_it_lacks_is_skipped(case, field):
+def test_a_case_needing_an_optional_tokenizer_or_renderer_it_lacks_is_skipped(case, field):
     edit(case / "snapshot.json", lambda s: s.update({field: "elsewhere/v9"}))
     assert run_case(case) == {"id": "fixture-three-slot", "rules": read_json(case / "case.json")["rules"], "outcome": "skipped",
                               "detail": f"no {field} elsewhere/v9"}
+
+
+@pytest.mark.parametrize("field, name", REQUIRED)
+def test_a_case_needing_a_required_tokenizer_or_renderer_it_lacks_fails(case, monkeypatch, field, name):
+    """A case that uses only required ones is never skipped: an implementation that lacks one has failed it, and the
+    detail names what it lacks. Nothing published reaches this, since this assembler provides all four."""
+    edit(case / "snapshot.json", lambda s: s.update({field: name}))
+    lacking(monkeypatch, field, name)
+    assert run_case(case) == {"id": "fixture-three-slot", "rules": read_json(case / "case.json")["rules"], "outcome": "failed",
+                              "detail": f"no {field} {name}, which every implementation provides"}
 
 
 @pytest.fixture
@@ -119,9 +138,21 @@ def test_a_rejection_case_that_crashes_fails(rejection, monkeypatch):
     assert run_rejection(rejection)["detail"] == "RuntimeError: boom"
 
 
-def test_a_rejection_case_needing_a_tokenizer_it_lacks_is_skipped(rejection):
-    edit(rejection / "snapshot.json", lambda s: s.update(tokenizer="elsewhere/v9"))
-    assert run_rejection(rejection)["outcome"] == "skipped"
+@pytest.mark.parametrize("field, name, outcome", [
+    ("renderer", "elsewhere/v9", {"outcome": "skipped", "detail": "no renderer elsewhere/v9"}),
+    *[(field, name, {"outcome": "failed", "detail": f"no renderer {name}, which every implementation provides"})
+      for field, name in REQUIRED if field == "renderer"],
+    ("tokenizer", "elsewhere/v9", {"outcome": "rejected"}),
+    *[(field, name, {"outcome": "rejected"}) for field, name in REQUIRED if field == "tokenizer"],
+])
+def test_only_a_renderer_it_lacks_keeps_a_rejection_case_from_running(rejection, monkeypatch, field, name, outcome):
+    """R-17: a rejection case is skipped only for an optional renderer the implementation lacks, and one that lacks a
+    required renderer has failed it. No snapshot check needs a tokenizer, so a tokenizer it lacks, optional or
+    required, skips nothing: the case runs, and this one is rejected for the check it breaks."""
+    edit(rejection / "snapshot.json", lambda s: s.update({field: name}))
+    if name in {"tokenizer": TOKENIZERS, "renderer": RENDERERS}[field]:
+        lacking(monkeypatch, field, name)
+    assert run_rejection(rejection) == {"id": "profile-route-mismatch", "rules": ["R-17", "R-20"], **outcome}
 
 
 def test_the_report_covers_every_case_in_id_order_and_names_the_vendored_commit():
