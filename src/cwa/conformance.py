@@ -13,7 +13,7 @@ from typing import Any, Mapping
 
 from . import assemble
 from .render import REGISTRY as RENDERERS
-from .snapshot import Snapshot, SnapshotError
+from .snapshot import Snapshot, SnapshotError, UnsupportedComponentError
 from .strings import utf16
 from .tokenize import REGISTRY as TOKENIZERS
 
@@ -52,27 +52,29 @@ def _first_difference(actual: Any, expected: Any, path: str = "") -> str | None:
     return None if actual == expected else path or "/"
 
 
-def _unprovided(document: Any, fields: tuple[str, ...]) -> dict[str, str] | None:
-    """The outcome of a case naming, in one of `fields`, a tokenizer or renderer this implementation does not provide,
-    decided before it runs (conformance/README.md, Reporting results): skipped for an optional one, and failed for a
-    required one, since every implementation provides those. None when it provides each one the case names."""
-    provided = {"tokenizer": TOKENIZERS, "renderer": RENDERERS}
-    for field in fields:
-        name = document.get(field) if isinstance(document, dict) else None
-        if isinstance(name, str) and name not in provided[field]:
-            if name in REQUIRED[field]:
-                return {"outcome": "failed", "detail": f"no {field} {name}, which every implementation provides"}
-            return {"outcome": "skipped", "detail": f"no {field} {name}"}
+def _unprovided(lacking: list[tuple[str, str]]) -> dict[str, str] | None:
+    """The outcome for the tokenizers and renderers, as (field, id), that a case uses and this implementation does not
+    provide (conformance/README.md, Reporting results): skipped when any is optional, whichever it would check first,
+    and failed when every one is required, since every implementation provides those. None when it lacks none."""
+    if optional := [(field, name) for field, name in lacking if name not in REQUIRED[field]]:
+        return {"outcome": "skipped", "detail": " and ".join(f"no {field} {name}" for field, name in optional)}
+    if lacking:
+        named = " and ".join(f"no {field} {name}" for field, name in lacking)
+        return {"outcome": "failed", "detail": f"{named}, which every implementation provides"}
     return None
 
 
 def run_case(directory: Path) -> dict[str, Any]:
     """One report entry: passed, failed with what differed, or skipped for an optional tokenizer or renderer this
-    implementation does not provide. A required one it lacks fails the case."""
+    implementation does not provide. A case lacking only required ones has failed. Decided from every component the
+    case names before it runs, since a snapshot stops on the first one it lacks."""
     meta = json.loads((directory / "case.json").read_text(encoding="utf-8"))
     entry = {"id": meta["id"], "rules": meta["rules"]}
     document = json.loads((directory / "snapshot.json").read_text(encoding="utf-8"))
-    if unprovided := _unprovided(document, ("tokenizer", "renderer")):
+    provided = {"tokenizer": TOKENIZERS, "renderer": RENDERERS}
+    lacking = [(field, name) for field in ("tokenizer", "renderer")
+               if isinstance(document, dict) and isinstance(name := document.get(field), str) and name not in provided[field]]
+    if unprovided := _unprovided(lacking):
         return {**entry, **unprovided}
     try:
         result = assemble(Snapshot.from_json(document))
@@ -93,18 +95,25 @@ def run_case(directory: Path) -> dict[str, Any]:
 
 
 def run_rejection(directory: Path) -> dict[str, Any]:
-    """One rejections entry: rejected before assembly, failed with what happened instead, or skipped for an optional
-    renderer this implementation does not provide (R-17). No snapshot check needs a tokenizer, so only the renderer
-    can keep the case from running, and a required one it lacks fails the case."""
+    """One rejections entry: rejected before assembly, failed with what happened instead, or skipped (R-17).
+
+    Every check but the renderer's own runs before a renderer is needed, and no check needs a tokenizer, so the
+    snapshot itself says whether a missing component matters. It is rejected for any other check it breaks, whatever
+    it names. Stopping for a renderer this implementation lacks leaves the renderer's check as the one the case breaks:
+    skipped when that renderer is optional, failed when it is required. Stopping for a tokenizer means it passed every
+    check, so it has failed."""
     meta = json.loads((directory / "case.json").read_text(encoding="utf-8"))
     entry = {"id": meta["id"], "rules": meta["rules"]}
     document = json.loads((directory / "snapshot.json").read_text(encoding="utf-8"))
-    if unprovided := _unprovided(document, ("renderer",)):
-        return {**entry, **unprovided}
     try:
         result = assemble(Snapshot.from_json(document))
     except SnapshotError:
         return {**entry, "outcome": "rejected"}
+    except UnsupportedComponentError as error:
+        if error.component == "renderer" and (unprovided := _unprovided([(error.component, error.id)])):
+            return {**entry, **unprovided}
+        return {**entry, "outcome": "failed",
+                "detail": f"passed every check instead of rejecting the snapshot, then found no {error.component} {error.id}"}
     except Exception as error:  # a crash is not a rejection
         return {**entry, "outcome": "failed", "detail": f"{type(error).__name__}: {error}"}
     did = "assembled a payload" if not result.refused else f"refused with {result.trace['refused']['reason']}"

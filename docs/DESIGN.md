@@ -775,14 +775,54 @@ Until the class existed, the module failed to import it. Once it existed, the fi
 - swapping its fields
 - dropping its name from `cwa.__all__`
 
-The runner could now learn of a missing component from the error instead of deciding before `from_json` runs, but that would not be a refactor. Tried, it reported the same 58 and 24. Three rows of `test_only_a_renderer_it_lacks_keeps_a_rejection_case_from_running` changed, though, because the route check runs before a renderer is needed:
-
-- `profile-route-mismatch` naming an optional renderer this assembler lacks became `rejected` instead of `skipped`.
-- Naming either required renderer it lacks, the same case became `rejected` instead of `failed`.
-
-The README's Reporting results reads like the error: a rejection case is skipped only when the check it breaks is that renderer's, and no other rejection case is skipped. The runner is unchanged here, and the difference is left for a decision. `status.json` cites the first three tests for R-17.
+`status.json` cites the first three tests for R-17. The runner still decided a missing component before `from_json` ran, and relying on the error instead changed outcomes, so it was fixed separately (the next entry).
 
 Result: 58 of 58 cases pass and 24 of 24 rejection cases are rejected, as before.
+
+**Runner fix (2026-09-30): rejection cases run, and a case skips for any optional component it lacks.** The README's Reporting results decides two things the runner from `be19a8d` got wrong, both brought to light by the snapshot fix above:
+
+- A rejection case is skipped only when the implementation lacks an optional renderer and the check the case breaks is that renderer's. Every other check runs before a renderer is needed, and no check needs a tokenizer, so no other rejection case is skipped. The runner skipped any rejection case whose renderer it lacked, and failed one whose required renderer it lacked, whatever check the case broke.
+- A case is skipped when it uses an optional component the implementation lacks, and only a case whose every missing component is required has failed. The runner checked the tokenizer first, so a case lacking a required tokenizer and an optional renderer failed.
+
+No published case reaches either difference, since this assembler provides all four required components. A rejection case now always runs through `Snapshot.from_json`, whose check order says whether a missing component matters. A case still decides before it runs, from every component it names, since a snapshot stops on the first one it lacks:
+
+```mermaid
+flowchart TD
+  subgraph cases["Case"]
+    C1["The components it names<br/>that this implementation lacks"] --> C2{"Any optional?"}
+    C2 -- yes --> CS["skipped: names the optional ones"]
+    C2 -- no --> C3{"Any at all?"}
+    C3 -- "yes, all required" --> CF["failed: names each"]
+    C3 -- no --> CR["Run the case"]
+  end
+  subgraph rejections["Rejection case"]
+    R1["Snapshot.from_json"] -- SnapshotError --> RR["rejected"]
+    R1 -- "UnsupportedComponentError:<br/>renderer" --> R2{"Optional?"}
+    R2 -- yes --> RS["skipped"]
+    R2 -- no --> RF["failed"]
+    R1 -- "UnsupportedComponentError:<br/>tokenizer" --> RT["failed: it passed every check"]
+    R1 -- "a Snapshot" --> RA["failed: assembled or refused"]
+  end
+```
+
+Test-first, in `tests/test_report.py`:
+
+- `test_only_a_renderer_it_lacks_keeps_a_rejection_case_from_running` became `test_a_rejection_case_is_skipped_only_for_an_optional_renderer_whose_check_it_breaks`. It runs `profile-route-mismatch`, whose route check needs no renderer, and `profile-unrealizable`, which breaks `fixture-xml/v1`'s own check. Its three `profile-route-mismatch` renderer rows now expect `rejected`, and failed first as `skipped` and `failed`. The `profile-unrealizable` rows passed from the start and guard against skipping too little: skipped for an optional renderer, failed for a required one, and rejected whatever tokenizer it lacks.
+- `test_a_rejection_case_that_passes_every_check_and_then_lacks_its_tokenizer_fails` expects `failed` with a detail saying so. It failed first on the detail, since the runner reported the bare `UnsupportedComponentError`.
+- `test_a_case_lacking_an_optional_component_is_skipped_whatever_required_one_it_also_lacks` failed first for a required tokenizer beside an optional renderer. Its rows with a required renderer beside an optional tokenizer passed, since the tokenizer came first.
+- `test_a_case_lacking_only_required_components_fails_and_names_each` failed first on a detail that named only the tokenizer.
+
+`status.json` cites the renamed test and the tokenizer test for R-17, and the two case tests for R-21. These mutations were each caught:
+
+- deciding a rejection case on its renderer before it runs, as `be19a8d` did
+- an unprovided renderer always skipping a rejection case, or never skipping one
+- a tokenizer a rejection case lacks counting as a rejection, or skipping it
+- the first missing component deciding a case
+- skipping a case only when every missing component is optional
+- a case checking only its renderer
+- a failed case naming only its first missing component
+
+Result: 58 of 58 cases pass and 24 of 24 rejection cases are rejected, as before, and the report is byte-identical.
 
 
 **M13 status (2026-09-27): done. Second implementation.** The TypeScript assembler (`@contextwindowarchitecture/assembler`, repository assembler-typescript) is built from the vendored contract alone, under a standing rule never to read this assembler, and passes every published case: 52 of 52, and 22 of 22 rejection cases, at website `591f7eb` (its commit `a7d6b82`). The website imports its report beside this one and shows both in the matrix. The alignment review that closed the gate also showed what a second implementation is for: two behaviours the spec left open, on which the two disagreed while both passed every case (the contract updates above, D-22 and D-23), are now each written into the spec with a case that pins them. Every release gate (M11–M14) is met; the release itself (D-18) is the maintainer's call.

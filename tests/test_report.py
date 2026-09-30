@@ -107,6 +107,31 @@ def test_a_case_needing_a_required_tokenizer_or_renderer_it_lacks_fails(case, mo
                               "detail": f"no {field} {name}, which every implementation provides"}
 
 
+MIXED = [*[(("tokenizer", name), ("renderer", "elsewhere/v9")) for name in published("counts")],
+         *[(("renderer", name), ("tokenizer", "elsewhere/v9")) for name in published("renders")]]
+
+
+@pytest.mark.parametrize("required, optional", MIXED, ids=[f"{r[1]}+optional-{o[0]}" for r, o in MIXED])
+def test_a_case_lacking_an_optional_component_is_skipped_whatever_required_one_it_also_lacks(case, monkeypatch, required,
+                                                                                              optional):
+    """Reporting results: a case that uses an optional component the implementation lacks is skipped, whichever one it
+    checks first. Only a case whose every missing component is required has failed."""
+    edit(case / "snapshot.json", lambda s: s.update(dict([required, optional])))
+    lacking(monkeypatch, *required)
+    assert run_case(case) == {"id": "fixture-three-slot", "rules": read_json(case / "case.json")["rules"], "outcome": "skipped",
+                              "detail": f"no {optional[0]} {optional[1]}"}
+
+
+@pytest.mark.parametrize("renderer", published("renders"))
+@pytest.mark.parametrize("tokenizer", published("counts"))
+def test_a_case_lacking_only_required_components_fails_and_names_each(case, monkeypatch, tokenizer, renderer):
+    edit(case / "snapshot.json", lambda s: s.update(tokenizer=tokenizer, renderer=renderer))
+    lacking(monkeypatch, "tokenizer", tokenizer)
+    lacking(monkeypatch, "renderer", renderer)
+    assert run_case(case) == {"id": "fixture-three-slot", "rules": read_json(case / "case.json")["rules"], "outcome": "failed",
+                              "detail": f"no tokenizer {tokenizer} and no renderer {renderer}, which every implementation provides"}
+
+
 @pytest.fixture
 def rejection(tmp_path) -> Path:
     """A private copy of a rejection case: its profile is for another route (R-17, R-20)."""
@@ -138,21 +163,44 @@ def test_a_rejection_case_that_crashes_fails(rejection, monkeypatch):
     assert run_rejection(rejection)["detail"] == "RuntimeError: boom"
 
 
-@pytest.mark.parametrize("field, name, outcome", [
-    ("renderer", "elsewhere/v9", {"outcome": "skipped", "detail": "no renderer elsewhere/v9"}),
-    *[(field, name, {"outcome": "failed", "detail": f"no renderer {name}, which every implementation provides"})
-      for field, name in REQUIRED if field == "renderer"],
-    ("tokenizer", "elsewhere/v9", {"outcome": "rejected"}),
-    *[(field, name, {"outcome": "rejected"}) for field, name in REQUIRED if field == "tokenizer"],
+OPTIONAL = [("tokenizer", "elsewhere/v9"), ("renderer", "elsewhere/v9")]
+
+
+# profile-route-mismatch breaks a route check, which needs no renderer; profile-unrealizable breaks fixture-xml/v1's own.
+@pytest.mark.parametrize("name, field, component, outcome", [
+    *[("profile-route-mismatch", field, component, {"outcome": "rejected"}) for field, component in OPTIONAL + REQUIRED],
+    ("profile-unrealizable", "renderer", "elsewhere/v9", {"outcome": "skipped", "detail": "no renderer elsewhere/v9"}),
+    *[("profile-unrealizable", field, component,
+       {"outcome": "failed", "detail": f"no renderer {component}, which every implementation provides"})
+      for field, component in REQUIRED if field == "renderer"],
+    *[("profile-unrealizable", field, component, {"outcome": "rejected"})
+      for field, component in OPTIONAL + REQUIRED if field == "tokenizer"],
 ])
-def test_only_a_renderer_it_lacks_keeps_a_rejection_case_from_running(rejection, monkeypatch, field, name, outcome):
-    """R-17: a rejection case is skipped only for an optional renderer the implementation lacks, and one that lacks a
-    required renderer has failed it. No snapshot check needs a tokenizer, so a tokenizer it lacks, optional or
-    required, skips nothing: the case runs, and this one is rejected for the check it breaks."""
-    edit(rejection / "snapshot.json", lambda s: s.update({field: name}))
-    if name in {"tokenizer": TOKENIZERS, "renderer": RENDERERS}[field]:
-        lacking(monkeypatch, field, name)
-    assert run_rejection(rejection) == {"id": "profile-route-mismatch", "rules": ["R-17", "R-20"], **outcome}
+def test_a_rejection_case_is_skipped_only_for_an_optional_renderer_whose_check_it_breaks(tmp_path, monkeypatch, name,
+                                                                                         field, component, outcome):
+    """R-17 (conformance/README.md, Reporting results): every check but the renderer's own runs before a renderer is
+    needed, and no check needs a tokenizer. So a rejection case that breaks another check is rejected, whatever it
+    names. Only one that breaks the renderer's check can be kept from running, by a renderer the implementation
+    lacks: skipped when that renderer is optional, and failed when it is required."""
+    directory = Path(shutil.copytree(REJECTIONS / name, tmp_path / name))
+    edit(directory / "snapshot.json", lambda s: s.update({field: component}))
+    if component in {"tokenizer": TOKENIZERS, "renderer": RENDERERS}[field]:
+        lacking(monkeypatch, field, component)
+    assert run_rejection(directory) == {"id": name, "rules": read_json(directory / "case.json")["rules"], **outcome}
+
+
+@pytest.mark.parametrize("name", [OPTIONAL[0][1], *published("counts")])
+def test_a_rejection_case_that_passes_every_check_and_then_lacks_its_tokenizer_fails(rejection, monkeypatch, name):
+    """R-17: no check needs a tokenizer, so a snapshot that stops for one has passed every check, where it should have
+    been rejected. That holds for an optional tokenizer and a required one alike."""
+    def valid(s):
+        s["profile"]["route"] = "contract-fixture"
+        s["tokenizer"] = name
+    edit(rejection / "snapshot.json", valid)
+    if name in TOKENIZERS:
+        lacking(monkeypatch, "tokenizer", name)
+    assert run_rejection(rejection) == {"id": "profile-route-mismatch", "rules": ["R-17", "R-20"], "outcome": "failed",
+                                        "detail": f"passed every check instead of rejecting the snapshot, then found no tokenizer {name}"}
 
 
 def test_the_report_covers_every_case_in_id_order_and_names_the_vendored_commit():
