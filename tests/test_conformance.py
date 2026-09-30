@@ -6,7 +6,7 @@ import random
 
 import pytest
 
-from cwa import Snapshot, SnapshotError, assemble
+from cwa import Snapshot, SnapshotError, UnsupportedComponentError, assemble
 from cwa.conformance import comparable
 from cwa.snapshot import usable_id
 from cwa.trace import TraceError
@@ -14,14 +14,15 @@ from conftest import CASES, read_json
 
 # Cases whose milestone is in progress. Strict: once a case passes, pytest fails until it is removed here.
 PENDING: dict[str, str] = {}
-# What a pending case may raise in place of an outcome: its milestone's gap, a trace the newer
-# schema rejects, or a missing renderer or tokenizer, which conformance/README.md treats as a
-# skipped case.
-GAPS = (NotImplementedError, SnapshotError, TraceError)
+# What a pending case may raise in place of an outcome, and the only failures PENDING holds: a
+# feature not built yet, a snapshot the code still rejects, a trace the newer schema rejects, or a
+# tokenizer or renderer not provided yet. A wrong payload or trace is not a gap but a wrong answer;
+# PENDING cannot hold it, so the suite fails until the vendor commit fixes it (AGENTS.md).
+GAPS = (NotImplementedError, SnapshotError, TraceError, UnsupportedComponentError)
 
 
 @pytest.mark.parametrize("case", [
-    pytest.param(name, marks=pytest.mark.xfail(reason=PENDING[name], strict=True)) if name in PENDING else name
+    pytest.param(name, marks=pytest.mark.xfail(reason=PENDING[name], strict=True, raises=GAPS)) if name in PENDING else name
     for name in sorted(p.name for p in CASES.iterdir())
 ])
 def test_conformance_case(case: str) -> None:
