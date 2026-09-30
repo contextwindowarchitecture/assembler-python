@@ -205,7 +205,7 @@
     },
     {
       "id": "R-16",
-      "status": "boundary-checked",
+      "status": "in progress",
       "evidence": [
         "tests/test_admission.py::test_items_cannot_downgrade_a_protected_slot",
         "tests/test_admission.py::test_items_cannot_protect_themselves",

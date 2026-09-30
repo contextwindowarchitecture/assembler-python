@@ -698,6 +698,13 @@ The review behind those tests found one way around the check. It compared the ca
 
 Result: 58 of 58 cases pass and 24 of 24 rejection cases are rejected, and every checkable requirement is still claimed.
 
+**Contract update (2026-09-30): website `4576fb5`.** R-16's clause from `ec600d8` now covers renderers too: an assembler must not accept a tokenizer or renderer the application supplies under the ID of one `conformance/README.md` publishes. It stops before assembly, with no payload and no trace, so a trace that names a published tokenizer or renderer always means its published count or rendering. The README adds that an application may hand an assembler a renderer of its own, though it then renders with one no case covers, which §1 does not allow a conformant application, and that the stop holds for a published renderer the implementation does not provide itself. The published renderers are the two the README's Tokenizers and renderers section lists, `fixture-xml/v1` and `cwa-messages/v1`, which are the two built here. This assembler did not comply. `Snapshot.from_json` and `Snapshot.freeze` took `renderers=` as the whole renderer registry, published ids included, so `renderers={"fixture-xml/v1": r}` put the caller's `r` under a published id, and the trace named a renderer by the object's own `id` whatever key it came under. No case can supply a renderer, so re-vendored, every case passed and every rejection case was rejected without a code change, and only the lock's website commit changed in the report. `status.json` held R-16 in progress until unit tests covered the renderer clause. The plan follows the tokenizers' (`1cc120a`):
+
+```mermaid
+flowchart LR
+  V["Vendor 4576fb5;<br/>R-16 in progress"] --> J["Caller renderers join the built-in ones;<br/>a published id stops before assembly"] --> K["A caller renderer<br/>only under its own id"] --> C["R-16 boundary-checked"]
+```
+
 
 **M13 status (2026-09-27): done. Second implementation.** The TypeScript assembler (`@contextwindowarchitecture/assembler`, repository assembler-typescript) is built from the vendored contract alone, under a standing rule never to read this assembler, and passes every published case: 52 of 52, and 22 of 22 rejection cases, at website `591f7eb` (its commit `a7d6b82`). The website imports its report beside this one and shows both in the matrix. The alignment review that closed the gate also showed what a second implementation is for: two behaviours the spec left open, on which the two disagreed while both passed every case (the contract updates above, D-22 and D-23), are now each written into the spec with a case that pins them. Every release gate (M11–M14) is met; the release itself (D-18) is the maintainer's call.
 
