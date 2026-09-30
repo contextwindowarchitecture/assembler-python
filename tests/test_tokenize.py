@@ -85,3 +85,28 @@ def test_a_caller_cannot_redefine_a_built_in_tokenizer(fixture_snapshot, built_i
             "freeze": lambda **kw: Snapshot.freeze(**fixture_snapshot, **kw)}[entry]
     with pytest.raises(ValueError, match=f"{built_in} is built in"):
         load(tokenizers={built_in: Characters()})
+
+
+class Named:
+    """A caller's tokenizer that calls itself whatever it is given."""
+
+    def __init__(self, id: str) -> None:
+        self.id = id
+
+    def count(self, text: str) -> int:
+        return len(text)
+
+
+@pytest.mark.parametrize("entry", ["from_json", "freeze"])
+@pytest.mark.parametrize("own_id", [*PUBLISHED, "caller-other/v1"])
+def test_a_caller_tokenizer_is_accepted_only_under_its_own_id(fixture_snapshot, own_id, entry):
+    """R-16: the trace names the tokenizer by its own id. Under another key, one that calls itself a published
+    tokenizer would put that id in the trace beside the caller's count, and any other would name a tokenizer the
+    snapshot does not declare. Either entry point raises before a Snapshot exists: no payload and no trace."""
+    from cwa import Snapshot
+
+    fixture_snapshot["tokenizer"] = "caller/v1"
+    load = {"from_json": lambda **kw: Snapshot.from_json(fixture_snapshot, **kw),
+            "freeze": lambda **kw: Snapshot.freeze(**fixture_snapshot, **kw)}[entry]
+    with pytest.raises(ValueError, match=f"'caller/v1' calls itself '{own_id}'"):
+        load(tokenizers={"caller/v1": Named(own_id)})

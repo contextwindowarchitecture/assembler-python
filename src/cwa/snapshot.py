@@ -160,10 +160,14 @@ class Snapshot:
                   renderers: Mapping[str, Renderer] = RENDERERS) -> Snapshot:
         """Validate a snapshot.schema.json document and freeze it. The caller's object is copied, never kept.
 
-        tokenizers adds the caller's tokenizers, by id, to the built-in ones for this call only. A built-in id
-        cannot be redefined, since conformance/README.md fixes what it counts."""
+        tokenizers adds the caller's tokenizers, each under its own id, to the built-in ones for this call only. A
+        built-in id cannot be redefined, since conformance/README.md fixes what it counts (R-16), and a key must be
+        its tokenizer's id, since the trace names the tokenizer by that id."""
         if redefined := sorted(set(tokenizers) & set(TOKENIZERS)):
             raise ValueError(f"tokenizer {', '.join(redefined)} is built in; give yours another id")
+        if misnamed := sorted(key for key, tokenizer in tokenizers.items() if tokenizer.id != key):
+            raise ValueError("; ".join(f"the tokenizer under {key!r} calls itself {tokenizers[key].id!r}"
+                                       for key in misnamed) + "; pass each tokenizer under its own id")
         tokenizers = {**TOKENIZERS, **tokenizers}
         data: dict[str, Any] = json.loads(json.dumps(document))
         if problems := contract.errors("snapshot", data) + _not_i_json(data):

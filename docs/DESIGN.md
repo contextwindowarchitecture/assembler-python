@@ -694,6 +694,8 @@ Result: 58 of 58 cases pass and 24 of 24 rejection cases are rejected, and every
 
 Unit tests now pin the rule against the README rather than a copy of its list. The redefinition test takes its ids from the README's Tokenizers and renderers section, the bullets that count, and runs through both `Snapshot.from_json` and `Snapshot.freeze`. `test_the_built_in_tokenizers_are_the_published_ones` compares that list with the built-in ids, since the check compares with those, so a tokenizer the README publishes later fails the suite on the vendor commit until the check covers it. Mutations were each caught: `freeze` dropping the caller's tokenizers, a check that covered only `fixture-whitespace/v1`, and a README that listed a third tokenizer.
 
+The review behind those tests found one way around the check. It compared the caller's keys with the built-in ids, but the trace names a tokenizer by the object's own `id`, so a tokenizer passed as `{"caller/v1": t}` with `t.id == "fixture-whitespace/v1"` was accepted, and a snapshot declaring `caller/v1` produced a trace naming `fixture-whitespace/v1` beside a character count. The fix, test-first: a key must be its tokenizer's `id`, or `from_json` raises `ValueError` before it reads the snapshot, as it does for a built-in id. That also stops a trace naming a caller's tokenizer the snapshot does not declare. `tests/test_tokenize.py::test_a_caller_tokenizer_is_accepted_only_under_its_own_id` failed first, through both entry points, for each published id and for another caller id. Mutations were each caught: dropping the check, and checking only ids that are built in.
+
 Result: 58 of 58 cases pass and 24 of 24 rejection cases are rejected, and every checkable requirement is still claimed.
 
 
