@@ -1,11 +1,11 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "4576fb5827e55bffc6053ab393e75d508bda8802",
+    "commit": "d38f2186bbed3fe92d38f1296529f97c307d89ab",
     "dirty": false
   },
   "files": {
-    "conformance/README.md": "c6a06e3132be8af749a183ea4f3cc5b450d30826c6af079dab8f70c0486b9de6",
+    "conformance/README.md": "0e08076e0119742e2b660c60c28239d3038ddb9e5c84e9b52f202b56a3ba644d",
     "conformance/cases/admission-reasons/case.json": "51f506b50fb36f72e8824848527f14e51616a4d350fe41ca6056f65299434e56",
     "conformance/cases/admission-reasons/expected.payload.txt": "06179cbc8206a76ab393bfab41e5b5eb4f3f0e7c15842b720fa45a1b34a7d695",
     "conformance/cases/admission-reasons/expected.trace.json": "836ede06da33da324e522afcb306cd2857c63f69bd7674742deceb39a94c0f6e",
@@ -283,7 +283,7 @@
     "conformance/rejections/unpaired-surrogate/snapshot.json": "d69e654715f43abc9b728d32accdca3e16459caeeb169834701935c980d79918",
     "src/cwa/contract/data/assembler-scope.json": "680c97dcd02f3249ed3ab95db5e439295658b4ca11a8d7e29babeb27ec91e3dd",
     "src/cwa/contract/data/reasons.json": "54d48bae267395db4ea8eac13673db54a8de810069b497d513a88646d02b69c1",
-    "src/cwa/contract/data/requirements.json": "9d9f588fb9afb8b0066fadf442dd6cb8d81a83e11b232debd3c6deb9dac02cf1",
+    "src/cwa/contract/data/requirements.json": "2fc99c162c3d7f695726616a3d775ef14e67c7fdadfbe6aa0edb8517004bb3d0",
     "src/cwa/contract/data/schema/conflict_group.schema.json": "06b6df97c84474371194b7f8758c3264d61c96b4a50ca1e865bff3e811365b89",
     "src/cwa/contract/data/schema/conformance_report.schema.json": "20953f6e47d7d7151c8f02eeb60a01d5fec04532a82b4e8336e6fb6faf8cecf8",
     "src/cwa/contract/data/schema/context_item.schema.json": "de2de6038743aa5f0b473e409e7369aa4fffb515661a71803429fd9017ee8726",
