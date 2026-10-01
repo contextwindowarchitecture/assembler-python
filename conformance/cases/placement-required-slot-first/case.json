@@ -2,6 +2,7 @@
   "id": "placement-required-slot-first",
   "rules": [
     "R-4",
+    "R-17",
     "R-20",
     "R-21"
   ],

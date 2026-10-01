@@ -67,7 +67,8 @@ CASES = [
     ("profile-missing-query", ["R-4", "R-17", "R-20"], "The profile does not place interaction.query, which every assembly needs.",
      lambda s: s["profile"].update(placement=[p for p in s["profile"]["placement"] if p["slot"] != "interaction.query"])),
     ("profile-missing-output-contract", ["R-4", "R-17", "R-20"], "The route sets parser: true, and the profile does not place governance.output_contract.",
-     lambda s: s["route_policy"].update(parser=True)),
+     lambda s: (s["route_policy"].update(parser=True, version="profile-missing-output-contract/v1"),  # a changed policy is another policy (README, Registry), so it takes another version
+                s["profile"].update(route_policy_version="profile-missing-output-contract/v1"))),
     ("profile-missing-instructions", ["R-4", "R-17", "R-20"], "The profile does not place governance.instructions, which every assembly needs.",
      lambda s: s["profile"].update(placement=[p for p in s["profile"]["placement"] if p["slot"] != "governance.instructions"])),
     ("profile-unrealizable", ["R-17", "R-20"], "The profile wraps evidence.knowledge as system, which fixture-xml/v1 cannot render: it supports only xml: wraps.",

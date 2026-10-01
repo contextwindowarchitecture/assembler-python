@@ -10,11 +10,11 @@
   },
   "profile": {
     "spec": "cwa/draft",
-    "id": "fixture-three-slot",
+    "id": "profile-missing-output-contract",
     "version": 1,
     "route": "contract-fixture",
     "model_family": null,
-    "route_policy_version": "fixture/v1",
+    "route_policy_version": "profile-missing-output-contract/v1",
     "placement": [
       {
         "slot": "governance.instructions",
@@ -39,7 +39,7 @@
   },
   "route_policy": {
     "route": "contract-fixture",
-    "version": "fixture/v1",
+    "version": "profile-missing-output-contract/v1",
     "producers": {
       "policy-registry": {
         "kind": "policy",

@@ -2,6 +2,7 @@
   "id": "placement-protected-unplaced",
   "rules": [
     "R-16",
+    "R-17",
     "R-20",
     "R-21",
     "R-22"

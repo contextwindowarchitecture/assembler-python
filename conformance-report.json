@@ -5,7 +5,7 @@
     "language": "python"
   },
   "contract": {
-    "website_commit": "d38f2186bbed3fe92d38f1296529f97c307d89ab",
+    "website_commit": "d229b740bac68c4c5ea7ffc9ed20315ac2fccff9",
     "dirty": false
   },
   "cases": [
@@ -259,6 +259,7 @@
       "rules": [
         "R-4",
         "R-11",
+        "R-17",
         "R-21"
       ],
       "outcome": "passed"
@@ -453,6 +454,7 @@
       "id": "placement-protected-unplaced",
       "rules": [
         "R-16",
+        "R-17",
         "R-20",
         "R-21",
         "R-22"
@@ -463,6 +465,7 @@
       "id": "placement-required-slot-first",
       "rules": [
         "R-4",
+        "R-17",
         "R-20",
         "R-21"
       ],

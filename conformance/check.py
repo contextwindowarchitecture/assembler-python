@@ -34,6 +34,8 @@ try:
     from referencing import Registry, Resource
 except ImportError:  # pragma: no cover
     sys.exit("check.py needs the jsonschema package: pip install jsonschema")
+if "date-time" not in FormatChecker.checkers:  # pragma: no cover
+    sys.exit("check.py needs rfc3339-validator, so that format: date-time is asserted (conformance/README.md, Timestamps): pip install rfc3339-validator")
 
 UNTESTABLE = {"R-5"}  # the application enforces invariants; nothing observable in assembly can prove it
 XML_WRAP = re.compile(r"^xml:[A-Za-z_][A-Za-z0-9_.-]*$")

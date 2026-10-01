@@ -32,7 +32,7 @@
   {
     "id": "R-7",
     "scope": "assembler",
-    "note": "Only governance takes the system and tool roles, the query is the only live user turn, history renders as a transcript, and item bodies are escaped inside wrappers."
+    "note": "Only governance takes the system and tool roles, the query is the only live user turn, history renders as a transcript, and item bodies are escaped inside xml: wrappers; cwa-messages/v1 hands system and tools text over unescaped."
   },
   {
     "id": "R-8",
@@ -62,7 +62,7 @@
   {
     "id": "R-13",
     "scope": "boundary",
-    "note": "Gates retrieval producers to the evidence slots, requires the slot's authority and a score wherever the route sets a threshold, and requires that a reported near-duplicate names a candidate the producer kept. It cannot tell whether a producer merged chunks or dropped one silently."
+    "note": "Gates retrieval producers to the evidence slots, requires the slot's authority, a score on every knowledge item and wherever the route sets a threshold, and that a reported near-duplicate names a candidate the producer kept. It cannot tell whether a producer merged chunks or dropped one silently."
   },
   {
     "id": "R-14",
@@ -92,12 +92,12 @@
   {
     "id": "R-19",
     "scope": "boundary",
-    "note": "Rejects a profile written for another spec, and in deployment mode an unevaluated one. Evaluation itself happens outside assembly."
+    "note": "Rejects a profile written for another spec. Evaluation and promotion happen outside assembly: the Python assembler's registry hands a deployment only an evaluated profile, which no case covers."
   },
   {
     "id": "R-20",
     "scope": "boundary",
-    "note": "Pins profile content by hash, rejects a profile that doesn't place a required slot, and refuses the assembly when admitted protected content has no placement. Raising the version for every change is the application's."
+    "note": "Rejects a profile that doesn't place a required slot, and refuses the assembly when admitted protected content has no placement. Raising the version for every change is the application's; the Python assembler's registry pins content by digest, outside assembly and the cases."
   },
   {
     "id": "R-21",
