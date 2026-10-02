@@ -128,7 +128,7 @@ def report(cases: Path, lock: Mapping[str, Any], rejections: Path | None = None)
     `rejections` (by default the rejections folder beside `cases`), each by id."""
     rejections = rejections or cases.parent / "rejections"
     return {
-        "implementation": {"name": "cwa-assembler", "version": version("cwa-assembler"), "language": "python"},
+        "implementation": {"name": "contextwindowarchitecture-assembler", "version": version("contextwindowarchitecture-assembler"), "language": "python"},
         "contract": {"website_commit": lock["source"]["commit"], "dirty": lock["source"]["dirty"]},
         "cases": [run_case(d) for d in _by_id(cases)],
         "rejections": [run_rejection(d) for d in _by_id(rejections)],

@@ -3,7 +3,7 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "cwa-assembler"
+name = "contextwindowarchitecture-assembler"
 version = "0.0.1"
 description = "Reference assembler for the Context Window Architecture (CWA) draft specification"
 readme = "README.md"

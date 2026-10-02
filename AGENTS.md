@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Instructions for coding agents and contributors working in `cwa-assembler`, the Python reference assembler for the CWA draft specification. Read [docs/DESIGN.md](docs/DESIGN.md) before changing behavior. It holds the design, the milestone plan (§8) and the decisions already made (§9).
+Instructions for coding agents and contributors working in `contextwindowarchitecture-assembler`, the Python reference assembler for the CWA draft specification. Read [docs/DESIGN.md](docs/DESIGN.md) before changing behavior. It holds the design, the milestone plan (§8) and the decisions already made (§9).
 
 ## Commands
 

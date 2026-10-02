@@ -1,6 +1,6 @@
 {
   "implementation": {
-    "name": "cwa-assembler",
+    "name": "contextwindowarchitecture-assembler",
     "version": "0.0.1",
     "language": "python"
   },

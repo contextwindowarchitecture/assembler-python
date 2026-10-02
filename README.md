@@ -1,4 +1,4 @@
-# cwa-assembler
+# contextwindowarchitecture-assembler
 
 Reference assembler for the [Context Window Architecture](https://contextwindowarchitecture.io) draft specification. It turns a frozen snapshot of candidate items into a rendered payload and a trace, without calling a model or reading anything outside the snapshot.
 

@@ -210,7 +210,7 @@ def test_the_report_covers_every_case_in_id_order_and_names_the_vendored_commit(
     assert [c["id"] for c in produced["rejections"]] == sorted((p.name for p in REJECTIONS.iterdir()), key=utf16)
     assert {c["outcome"] for c in produced["rejections"]} == {"rejected"}
     assert produced["contract"] == {"website_commit": LOCK["source"]["commit"], "dirty": LOCK["source"]["dirty"]}
-    assert produced["implementation"] == {"name": "cwa-assembler", "version": "0.0.1", "language": "python"}
+    assert produced["implementation"] == {"name": "contextwindowarchitecture-assembler", "version": "0.0.1", "language": "python"}
 
 
 def test_the_committed_report_is_current():
