@@ -1,0 +1,49 @@
+# A GitHub release for each tag, made once ci passes on the tagged commit. The notes name the website commit the
+# contract is vendored from, then list the tag's own commits, written by git-cliff from cliff.toml. A tag that is
+# not vX.Y.Z, such as draft-release, is a prerelease. A tag pushed before this workflow existed is released by
+# hand: gh workflow run release.yml -f tag=<tag>
+name: release
+
+on:
+  push:
+    tags: ["*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The existing tag to release
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: refs/tags/${{ inputs.tag || github.ref_name }}
+
+  release:
+    name: GitHub release
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+      - run: |
+          commit=$(python3 -c 'import json; print(json.load(open("contract.lock.json"))["source"]["commit"])')
+          printf 'Vendors the published contract at website [`%s`](https://github.com/contextwindowarchitecture/website/commit/%s).\n\n' "${commit::7}" "$commit" > notes.md
+          uvx git-cliff@2.14.2 --current --strip all >> notes.md
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=()
+          [[ $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || prerelease=(--prerelease)
+          gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md "${prerelease[@]}"
