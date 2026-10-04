@@ -111,6 +111,13 @@ def test_the_guarded_renderer_ids_are_the_published_ones():
     assert set(render.REQUIRED) <= set(REGISTRY) <= set(render.PUBLISHED)
 
 
+def test_every_published_renderer_is_built_in():
+    """This assembler provides every renderer conformance/README.md publishes, the optional cwa-message-blocks/v1
+    included, so no published case is skipped for one. A renderer published later fails this until it is built or
+    the assembler decides to leave it out."""
+    assert set(REGISTRY) == set(PUBLISHED)
+
+
 @pytest.mark.parametrize("entry", ["from_json", "freeze"])
 @pytest.mark.parametrize("built_in", PUBLISHED)
 def test_a_caller_cannot_redefine_a_built_in_renderer(fixture_snapshot, built_in, entry):

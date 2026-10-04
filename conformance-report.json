@@ -44,8 +44,7 @@
         "R-16",
         "R-21"
       ],
-      "outcome": "skipped",
-      "detail": "no renderer cwa-message-blocks/v1"
+      "outcome": "passed"
     },
     {
       "id": "blocks-render",
@@ -55,8 +54,7 @@
         "R-11",
         "R-21"
       ],
-      "outcome": "skipped",
-      "detail": "no renderer cwa-message-blocks/v1"
+      "outcome": "passed"
     },
     {
       "id": "budget-droppable-order",
@@ -632,8 +630,7 @@
         "R-17",
         "R-20"
       ],
-      "outcome": "skipped",
-      "detail": "no renderer cwa-message-blocks/v1"
+      "outcome": "rejected"
     },
     {
       "id": "conflict-group-overlap",

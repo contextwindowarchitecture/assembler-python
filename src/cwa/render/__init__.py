@@ -11,6 +11,7 @@ from ..strings import utf16
 from ..model import Item, Profile
 from ..tokenize import Tokenizer
 from .fixture_xml import FixtureXml
+from .message_blocks import MessageBlocks
 from .messages import Messages
 
 HISTORY = "interaction.history"
@@ -84,4 +85,4 @@ class Renderer(Protocol):
 # tests/test_render.py pins both to the README's bullets.
 REQUIRED = ("fixture-xml/v1", "cwa-messages/v1")
 PUBLISHED = (*REQUIRED, "cwa-message-blocks/v1")
-REGISTRY: dict[str, Renderer] = {r.id: r for r in (FixtureXml(), Messages())}
+REGISTRY: dict[str, Renderer] = {r.id: r for r in (FixtureXml(), Messages(), MessageBlocks())}

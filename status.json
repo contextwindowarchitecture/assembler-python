@@ -82,7 +82,7 @@
     },
     {
       "id": "R-7",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_render.py::test_untrusted_bodies_cannot_break_out_of_their_wrapper",
         "tests/test_conflicts.py::test_members_that_cannot_instruct_stay_as_material",
@@ -93,7 +93,9 @@
         "tests/test_messages.py::test_system_text_is_the_raw_governing_body_while_message_bodies_stay_escaped",
         "tests/test_messages.py::test_the_granted_tools_take_the_tools_channel",
         "tests/test_conformance.py::test_conformance_case",
-        "tests/test_render.py::test_history_renders_in_the_order_turns_were_said_and_other_slots_by_id"
+        "tests/test_render.py::test_history_renders_in_the_order_turns_were_said_and_other_slots_by_id",
+        "tests/test_message_blocks.py::test_the_request_is_cwa_messages_v1s_with_one_entry_per_xml_occurrence",
+        "tests/test_message_blocks.py::test_it_rejects_exactly_the_profiles_cwa_messages_v1_cannot_realize"
       ]
     },
     {
@@ -119,7 +121,7 @@
     },
     {
       "id": "R-10",
-      "status": "in progress",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_admission.py::test_governance_requires_verified_unmarked_content",
         "tests/test_admission.py::test_retrieved_and_user_content_must_stay_marked",
@@ -127,12 +129,13 @@
         "tests/test_render.py::test_untrusted_bodies_cannot_break_out_of_their_wrapper",
         "tests/test_messages.py::test_system_text_is_the_raw_governing_body_while_message_bodies_stay_escaped",
         "tests/test_messages.py::test_governance_takes_system_and_everything_else_one_user_message",
-        "tests/test_conformance.py::test_conformance_case"
+        "tests/test_conformance.py::test_conformance_case",
+        "tests/test_message_blocks.py::test_bodies_in_entries_stay_escaped_material"
       ]
     },
     {
       "id": "R-11",
-      "status": "in progress",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_snapshot.py::test_conflict_groups_must_agree_with_the_snapshot",
         "tests/test_conflicts.py::test_a_group_with_fewer_than_two_admitted_members_is_moot",
@@ -147,7 +150,8 @@
         "tests/test_conflicts.py::test_conflict_rows_follow_admission_rows_by_item_id_and_precede_fitting_rows",
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_messages.py::test_surfaced_members_in_system_are_marked_inside_their_text",
-        "tests/test_messages.py::test_surfaced_tools_are_marked_inside_their_text"
+        "tests/test_messages.py::test_surfaced_tools_are_marked_inside_their_text",
+        "tests/test_message_blocks.py::test_a_surfaced_member_entry_names_its_group_and_keeps_its_mark"
       ]
     },
     {
@@ -206,7 +210,7 @@
     },
     {
       "id": "R-16",
-      "status": "in progress",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_admission.py::test_items_cannot_downgrade_a_protected_slot",
         "tests/test_admission.py::test_items_cannot_protect_themselves",
@@ -267,12 +271,15 @@
         "tests/test_render.py::test_caller_renderers_join_the_built_in_ones_and_leave_no_trace_behind",
         "tests/test_render.py::test_the_guarded_renderer_ids_are_the_published_ones",
         "tests/test_render.py::test_a_caller_cannot_redefine_a_built_in_renderer",
-        "tests/test_render.py::test_a_caller_renderer_is_accepted_only_under_its_own_id"
+        "tests/test_render.py::test_a_caller_renderer_is_accepted_only_under_its_own_id",
+        "tests/test_message_blocks.py::test_its_size_is_the_sum_of_every_entrys_count",
+        "tests/test_message_blocks.py::test_fitting_tests_this_renderers_count",
+        "tests/test_render.py::test_every_published_renderer_is_built_in"
       ]
     },
     {
       "id": "R-17",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_refusal.py::test_an_excluded_instruction_does_not_count_and_its_exclusion_stays_in_the_trace",
         "tests/test_refusal.py::test_a_payload_that_fits_only_by_breaking_a_floor_refuses_and_keeps_the_fitting_rows",
@@ -295,7 +302,8 @@
         "tests/test_snapshot.py::test_numbers_outside_the_double_range_are_rejected_before_assembly",
         "tests/test_snapshot.py::test_a_snapshot_naming_a_component_this_implementation_does_not_provide_stops_without_a_rejection",
         "tests/test_snapshot.py::test_the_renderers_own_check_needs_the_renderer_so_an_unprovided_one_is_unsupported",
-        "tests/test_snapshot.py::test_a_snapshot_that_fails_a_check_is_rejected_whatever_component_it_names"
+        "tests/test_snapshot.py::test_a_snapshot_that_fails_a_check_is_rejected_whatever_component_it_names",
+        "tests/test_message_blocks.py::test_it_rejects_exactly_the_profiles_cwa_messages_v1_cannot_realize"
       ]
     },
     {
@@ -324,7 +332,7 @@
     },
     {
       "id": "R-20",
-      "status": "in progress",
+      "status": "boundary-checked",
       "evidence": [
         "tests/test_snapshot.py::test_profiles_that_cannot_carry_the_route_are_rejected_before_assembly",
         "tests/test_snapshot.py::test_a_parser_route_accepts_a_profile_that_places_the_output_contract",
@@ -340,12 +348,14 @@
         "tests/test_registry.py::test_an_evaluation_alone_keeps_the_version",
         "tests/test_registry.py::test_locking_adds_new_identities_and_never_rewrites_one",
         "tests/test_registry.py::test_what_the_registry_returns_is_what_a_snapshot_carries",
-        "tests/test_placement.py::test_every_trace_records_the_profile_id_and_version"
+        "tests/test_placement.py::test_every_trace_records_the_profile_id_and_version",
+        "tests/test_message_blocks.py::test_it_rejects_exactly_the_profiles_cwa_messages_v1_cannot_realize",
+        "tests/test_message_blocks.py::test_it_realizes_the_profiles_cwa_messages_v1_realizes"
       ]
     },
     {
       "id": "R-21",
-      "status": "in progress",
+      "status": "implemented",
       "evidence": [
         "tests/test_conformance.py::test_conformance_case",
         "tests/test_admission.py::test_schema_invalid_items_are_excluded_with_the_earliest_reason",
@@ -370,7 +380,9 @@
         "tests/test_properties.py::test_included_tokens_fit_within_the_payload_and_the_payload_within_the_budget",
         "tests/test_properties.py::test_a_refusal_has_no_payload_and_a_payload_carries_its_hash",
         "tests/test_placement.py::test_every_trace_names_the_specification_its_profile_follows",
-        "tests/test_admission.py::test_a_variant_missing_one_of_its_fields_is_invalid_structure"
+        "tests/test_admission.py::test_a_variant_missing_one_of_its_fields_is_invalid_structure",
+        "tests/test_message_blocks.py::test_per_item_tokens_are_cwa_messages_v1s_and_the_hash_is_the_payloads",
+        "tests/test_message_blocks.py::test_its_size_is_the_sum_of_every_entrys_count"
       ]
     },
     {
