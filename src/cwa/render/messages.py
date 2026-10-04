@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from ..canonical import canonical_json
@@ -10,6 +11,47 @@ if TYPE_CHECKING:
     from ..model import Profile
 
 _CHANNELS = ("system", "tools")
+
+
+@dataclass(frozen=True, slots=True)
+class Request:
+    """The parts of a cwa-messages/v1 request, before its user message is assembled."""
+    channels: dict[str, list[dict[str, Any]]]
+    """The system and tools entries, {"id", "text"} and "conflict" for a surfaced member, in occurrence order."""
+    message: tuple[dict[str, Any], ...]
+    """One entry per xml: occurrence, in order: its id, the text cwa-messages/v1 writes for it into the user message,
+    and "conflict" for a surfaced member."""
+    bodies: tuple[str, ...]
+    """Each occurrence's rendered body, in order, for per-item token attribution."""
+
+    @property
+    def channel_texts(self) -> tuple[str, ...]:
+        return tuple(entry["text"] for name in _CHANNELS for entry in self.channels[name])
+
+
+def request(occurrences: tuple[Occurrence, ...]) -> Request:
+    """Render each occurrence as cwa-messages/v1 does: governance in the platform's system and tools channels, and every
+    other occurrence, prior turns included, as escaped material for the one user message (R-7, R-10, R-11)."""
+    channels: dict[str, list[dict[str, Any]]] = {name: [] for name in _CHANNELS}
+    message, bodies = [], []
+    for occurrence in occurrences:
+        item, mark = occurrence.item, {"conflict": occurrence.conflict} if occurrence.conflict else {}
+        if occurrence.wrap in _CHANNELS:
+            # Only verified governance with no injection risk reaches these slots (R-10). The model
+            # sees only an entry's text, so a surfaced member's mark goes inside it (R-11).
+            body = item.body
+            text = f'<conflict group="{escape_attribute(occurrence.conflict)}">\n{body}\n</conflict>' if occurrence.conflict else body
+            channels[occurrence.wrap].append({"id": item.id, **mark, "text": text})
+        else:
+            body, tag = escape_body(item.body), occurrence.wrap.removeprefix("xml:")
+            attributes = f' id="{escape_attribute(item.id)}"'
+            if occurrence.slot == "interaction.history":
+                attributes += f' speaker="{"assistant" if item.lineage == "generated" else "user"}"'
+            if occurrence.conflict:
+                attributes += f' conflict="{escape_attribute(occurrence.conflict)}"'
+            message.append({"id": item.id, **mark, "text": f"<{tag}{attributes}>\n{body}\n</{tag}>\n"})
+        bodies.append(body)
+    return Request(channels=channels, message=tuple(message), bodies=tuple(bodies))
 
 
 class Messages:
@@ -40,29 +82,7 @@ class Messages:
     def render(self, occurrences: tuple[Occurrence, ...]) -> Rendered:
         from . import Rendered
 
-        channels: dict[str, list[dict[str, Any]]] = {name: [] for name in _CHANNELS}
-        bodies, parts = [], []
-        for occurrence in occurrences:
-            item = occurrence.item
-            if occurrence.wrap in _CHANNELS:
-                # Only verified governance with no injection risk reaches these slots (R-10). The model
-                # sees only an entry's text, so a surfaced member's mark goes inside it (R-11).
-                body = item.body
-                entry = {"id": item.id, "text": body}
-                if occurrence.conflict:
-                    group = occurrence.conflict
-                    entry = {**entry, "conflict": group, "text": f'<conflict group="{escape_attribute(group)}">\n{body}\n</conflict>'}
-                channels[occurrence.wrap].append(entry)
-            else:
-                body, tag = escape_body(item.body), occurrence.wrap.removeprefix("xml:")
-                attributes = f' id="{escape_attribute(item.id)}"'
-                if occurrence.slot == "interaction.history":
-                    attributes += f' speaker="{"assistant" if item.lineage == "generated" else "user"}"'
-                if occurrence.conflict:
-                    attributes += f' conflict="{escape_attribute(occurrence.conflict)}"'
-                parts.append(f"<{tag}{attributes}>\n{body}\n</{tag}>\n")
-            bodies.append(body)
-        content = "".join(parts)
-        document = {"messages": [{"role": "user", "content": content}], **channels}
-        texts = tuple(entry["text"] for name in _CHANNELS for entry in channels[name]) + (content,)
-        return Rendered(payload=canonical_json(document), bodies=tuple(bodies), texts=texts)
+        parts = request(occurrences)
+        content = "".join(entry["text"] for entry in parts.message)
+        document = {"messages": [{"role": "user", "content": content}], **parts.channels}
+        return Rendered(payload=canonical_json(document), bodies=parts.bodies, texts=parts.channel_texts + (content,))
