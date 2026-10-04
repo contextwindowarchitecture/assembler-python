@@ -2,7 +2,7 @@
 """Checks the CWA contract's own consistency, and regenerates the copies derived from it.
 
     python3 conformance/check.py          # verify; exit 1 on any contract problem
-    python3 conformance/check.py --write  # also rewrite SPEC.md and the spec page's RULES block from contract/requirements.json
+    python3 conformance/check.py --write  # also rewrite the spec page's RULES block from contract/requirements.json
 
 It checks, in this order:
 
@@ -14,7 +14,8 @@ It checks, in this order:
 - contract/reasons.json against the schemas that list its codes and against the requirements that cite them: each code is
   named by the rule it is attributed to, so R-21's "the conditions those codes name" always has a home;
 - every requirement exercised by at least one case, except those listed in UNTESTABLE;
-- SPEC.md and the spec page's RULES block equal to what contract/requirements.json generates.
+- the spec page's RULES block equal to what contract/requirements.json generates, and SPEC.md, which
+  `npm run build:contract` writes from the spec page, holding every requirement once, worded as that file words it.
 
 The two assembler reports under contract/ are checked for schema validity and coverage of the cases now on disk, and any
 problem there is a warning, since the reports are artifacts of another repository.
@@ -253,12 +254,10 @@ for slot, d in slot_defaults.items():
 
 
 # ---------------------------------------------------------------------------------------------- derived copies
-def render_spec_md():
-    out = ["# CWA draft — numbered requirements", "",
-           "Generated from `contract/requirements.json`. The [Spec page](./spec.html) provides the normative definitions and context. Published schemas in `schema/` define JSON field shapes.", ""]
-    for r in requirements:
-        out += [f"## {r['id']}: {r['summary']}", "", r["text"], ""]
-    return "\n".join(out)
+def spec_md_blocks():
+    """Each requirement as SPEC.md holds it, escaped as scripts/spec-markdown.mjs escapes text for Markdown."""
+    md = lambda text: re.sub(r"[\\*<]", lambda m: "\\" + m.group(0), text)
+    return {r["id"]: f"### {r['id']}: {md(r['summary'])}\n\n{md(r['text'])}\n" for r in requirements}
 
 def render_rules_block():
     rules = [[r["section"], r["keyword"], r["summary"], r["text"]] for r in requirements]
@@ -267,18 +266,19 @@ def render_rules_block():
 RULES_RE = re.compile(r"const RULES = \[[\s\S]*?\n\];")
 def check_or_write(write):
     spec_md, html = read("SPEC.md"), read("spec.html")
-    want_md, want_rules = render_spec_md(), render_rules_block()
+    want_rules = render_rules_block()
     m = RULES_RE.search(html)
     if not m: problem("spec.html: RULES block not found"); return
     if write:
-        if spec_md != want_md:
-            open(os.path.join(ROOT, "SPEC.md"), "w", encoding="utf-8").write(want_md); print("wrote SPEC.md")
         if m.group(0) != want_rules:
             open(os.path.join(ROOT, "spec.html"), "w", encoding="utf-8").write(html[:m.start()] + want_rules + html[m.end():]); print("wrote spec.html RULES block")
     else:
-        if spec_md != want_md: problem("SPEC.md differs from contract/requirements.json; run check.py --write")
         if m.group(0) != want_rules: problem("spec.html's RULES block differs from contract/requirements.json; run check.py --write")
     if not re.search(r"Specification · draft · \d{4}-\d{2}-\d{2}", html): problem("spec.html: draft date header not found")
+    blocks = spec_md_blocks()
+    stale = [rid for rid, block in blocks.items() if block not in spec_md]
+    if stale or sorted(re.findall(r"^### (R-\d+):", spec_md, re.M)) != sorted(blocks):
+        problem(f"SPEC.md differs from contract/requirements.json{' at ' + ', '.join(stale) if stale else ''}; run npm run build:contract")
 
 
 # ---------------------------------------------------------------------------------------------- assembler reports (warnings)
@@ -300,7 +300,7 @@ for path in sorted(glob.glob(os.path.join(ROOT, "contract", "assembler*-conforma
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--write", action="store_true", help="rewrite SPEC.md and the spec page's RULES block from contract/requirements.json")
+    ap.add_argument("--write", action="store_true", help="rewrite the spec page's RULES block from contract/requirements.json")
     args = ap.parse_args()
     check_or_write(args.write)
     print(f"{len(case_dirs)} cases, {len(rejection_dirs)} rejections, {len(requirements)} requirements, {len(reasons)} reason codes")
