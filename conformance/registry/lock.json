@@ -26,6 +26,11 @@
       "sha256": "3ca3642d6f9b7f98ebd8855521c441ac334fd7bf60af1fdabe68a1e0edd9e41e"
     },
     {
+      "id": "cache-first-chat",
+      "version": 1,
+      "sha256": "5b86d884b783533f3b9b75080be79cbed63a5e5efb35afe864fd34ffdf7c1fcf"
+    },
+    {
       "id": "fixture-three-slot",
       "version": 1,
       "sha256": "e3cecc1ac42022ec3d9edbacdb55b6a9bbb535b635480ba6b87cc93cb8569640"

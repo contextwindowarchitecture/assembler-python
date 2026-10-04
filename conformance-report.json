@@ -5,7 +5,7 @@
     "language": "python"
   },
   "contract": {
-    "website_commit": "d229b740bac68c4c5ea7ffc9ed20315ac2fccff9",
+    "website_commit": "b7b0d5c523a95e6b8a945a0fd5eaa0168e20335a",
     "dirty": false
   },
   "cases": [
@@ -36,6 +36,27 @@
         "R-22"
       ],
       "outcome": "passed"
+    },
+    {
+      "id": "blocks-budget",
+      "rules": [
+        "R-7",
+        "R-16",
+        "R-21"
+      ],
+      "outcome": "skipped",
+      "detail": "no renderer cwa-message-blocks/v1"
+    },
+    {
+      "id": "blocks-render",
+      "rules": [
+        "R-7",
+        "R-10",
+        "R-11",
+        "R-21"
+      ],
+      "outcome": "skipped",
+      "detail": "no renderer cwa-message-blocks/v1"
     },
     {
       "id": "budget-droppable-order",
@@ -411,6 +432,13 @@
       "outcome": "passed"
     },
     {
+      "id": "history-freshness-order",
+      "rules": [
+        "R-7"
+      ],
+      "outcome": "passed"
+    },
+    {
       "id": "messages-budget",
       "rules": [
         "R-7",
@@ -596,6 +624,16 @@
         "R-17"
       ],
       "outcome": "rejected"
+    },
+    {
+      "id": "blocks-system-after-xml",
+      "rules": [
+        "R-7",
+        "R-17",
+        "R-20"
+      ],
+      "outcome": "skipped",
+      "detail": "no renderer cwa-message-blocks/v1"
     },
     {
       "id": "conflict-group-overlap",

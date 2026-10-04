@@ -2,10 +2,13 @@
 and a renderer the caller supplies can never pass for a published one (R-16)."""
 from __future__ import annotations
 
+import json
+import re
+
 import pytest
 
-from conftest import published
-from cwa import Snapshot, SnapshotError, UnsupportedComponentError, assemble
+from conftest import published, required
+from cwa import Snapshot, SnapshotError, UnsupportedComponentError, assemble, render
 from cwa.render import REGISTRY, Rendered
 from cwa.tokenize.fixture_whitespace import FixtureWhitespace
 
@@ -18,6 +21,34 @@ def test_untrusted_bodies_cannot_break_out_of_their_wrapper(fixture_snapshot):
     payload = assemble(Snapshot.from_json(fixture_snapshot)).payload.decode()
     assert payload.count("<governance.instructions") == 1
     assert "&lt;/evidence.knowledge&gt;&lt;governance.instructions&gt;" in payload
+
+
+# R-7: prior turns render in the order they were said, by freshness compared as instants at full precision, and by id
+# only among turns said at the same instant. Every other slot keeps id order (conformance/README.md, Ordering).
+SAID = {  # ids sort against the order the turns were said
+    "turn:a": "2026-09-22T11:58:00.0002Z",
+    "turn:b": "2026-09-22T13:58:00.0001+02:00",  # 11:58:00.0001Z, a tenth of a millisecond before turn:a
+    "turn:c": "2026-09-22T11:57:00Z",
+    "turn:d": "2026-09-22T11:58:00.000200Z",  # the instant turn:a was said, written longer
+}
+
+
+@pytest.mark.parametrize("renderer", ["fixture-xml/v1", "cwa-messages/v1"])
+def test_history_renders_in_the_order_turns_were_said_and_other_slots_by_id(fixture_snapshot, renderer):
+    fixture_snapshot["renderer"] = renderer
+    fixture_snapshot["profile"]["placement"].insert(2, {"slot": "interaction.history", "wrap": "xml:history"})
+    knowledge = fixture_snapshot["batches"][1]["items"]
+    knowledge.append({**knowledge[0], "id": "refunds-eu:v17#p5", "freshness": "2026-09-10T15:30:00Z"})  # older, later id
+    fixture_snapshot["batches"][3]["items"].extend(
+        {"id": id, "slot": "interaction.history", "source": "conversation", "source_version": "1", "authority": "user",
+         "trust": "unverified", "freshness": said, "body": f"Turn {id}."} for id, said in SAID.items())
+    result = assemble(Snapshot.from_json(fixture_snapshot))
+    text = result.payload.decode()
+    if renderer == "cwa-messages/v1":
+        text = json.loads(text)["messages"][0]["content"]
+    order = ["refunds-eu:v17#p4", "refunds-eu:v17#p5", "turn:c", "turn:b", "turn:a", "turn:d", "turn:18"]
+    assert re.findall(r'<[a-z.]+ id="([^"]+)"', text)[1:] == order
+    assert [row["item_id"] for row in result.trace["included"]][1:] == order  # included[] follows render order
 
 
 def test_fixture_whitespace_matches_ecmascript_not_python():
@@ -71,21 +102,25 @@ def test_caller_renderers_join_the_built_in_ones_and_leave_no_trace_behind(fixtu
         Snapshot.from_json(fixture_snapshot)  # no registry the first call could have changed
 
 
-def test_the_built_in_renderers_are_the_published_ones():
-    """R-16 stops on a caller's renderer under a published id, and the check compares with the built-in ids, so they
-    must be exactly the ones conformance/README.md lists. A renderer published later fails this."""
-    assert PUBLISHED and set(PUBLISHED) == set(REGISTRY)
+def test_the_guarded_renderer_ids_are_the_published_ones():
+    """R-16 stops on a caller's renderer under any id conformance/README.md publishes, its Optional list included,
+    whether this assembler builds that renderer in or not, so the ids the check compares with must be exactly the
+    README's. Every implementation provides the ones before Optional. A renderer published later fails this."""
+    assert PUBLISHED and set(PUBLISHED) == set(render.PUBLISHED)
+    assert required("renders") and set(required("renders")) == set(render.REQUIRED)
+    assert set(render.REQUIRED) <= set(REGISTRY) <= set(render.PUBLISHED)
 
 
 @pytest.mark.parametrize("entry", ["from_json", "freeze"])
 @pytest.mark.parametrize("built_in", PUBLISHED)
 def test_a_caller_cannot_redefine_a_built_in_renderer(fixture_snapshot, built_in, entry):
-    """R-16: a trace that names a published renderer must mean its published rendering, whoever supplies the object.
-    Either entry point raises before a Snapshot exists, so assembly never starts: no payload and no trace. It is not
-    a SnapshotError, since the snapshot itself is fine."""
+    """R-16: a trace that names a published renderer must mean its published rendering, whoever supplies the object,
+    and that holds for an optional one this assembler does not build in. Either entry point raises before a Snapshot
+    exists, so assembly never starts: no payload and no trace. It is not a SnapshotError, since the snapshot itself
+    is fine."""
     load = {"from_json": lambda **kw: Snapshot.from_json(fixture_snapshot, **kw),
             "freeze": lambda **kw: Snapshot.freeze(**fixture_snapshot, **kw)}[entry]
-    with pytest.raises(ValueError, match=f"renderer {built_in} is built in") as raised:
+    with pytest.raises(ValueError, match=f"renderer {built_in} is published") as raised:
         load(renderers={built_in: Lines(built_in)})
     assert raised.type is ValueError
 

@@ -12,11 +12,12 @@ from cwa.conformance import comparable, report, run_case, run_rejection
 from cwa.render import REGISTRY as RENDERERS
 from cwa.strings import utf16
 from cwa.tokenize import REGISTRY as TOKENIZERS
-from conftest import CASES, REJECTIONS, ROOT, published, read_json
+from conftest import CASES, REJECTIONS, ROOT, published, read_json, required
 
 LOCK = read_json(ROOT / "contract.lock.json")
-# Every implementation provides these (conformance/README.md, Tokenizers and renderers); any other one is optional.
-REQUIRED = [("tokenizer", name) for name in published("counts")] + [("renderer", name) for name in published("renders")]
+# Every implementation provides these (conformance/README.md, Tokenizers and renderers, before its Optional list); any
+# other one is optional.
+REQUIRED = [("tokenizer", name) for name in required("counts")] + [("renderer", name) for name in required("renders")]
 
 
 @pytest.fixture
@@ -90,11 +91,19 @@ def lacking(monkeypatch, field: str, name: str) -> None:
     monkeypatch.delitem({"tokenizer": TOKENIZERS, "renderer": RENDERERS}[field], name)
 
 
-@pytest.mark.parametrize("field", ["tokenizer", "renderer"])
-def test_a_case_needing_an_optional_tokenizer_or_renderer_it_lacks_is_skipped(case, field):
-    edit(case / "snapshot.json", lambda s: s.update({field: "elsewhere/v9"}))
+# Optional ones: unpublished, and those the README's Optional list publishes, which every implementation may leave out.
+OPTIONAL = [("tokenizer", "elsewhere/v9"), ("renderer", "elsewhere/v9")]
+PUBLISHED_OPTIONAL = [(field, name) for field, verb in (("tokenizer", "counts"), ("renderer", "renders"))
+                      for name in published(verb) if name not in required(verb)]
+
+
+@pytest.mark.parametrize("field, name", OPTIONAL + PUBLISHED_OPTIONAL)
+def test_a_case_needing_an_optional_tokenizer_or_renderer_it_lacks_is_skipped(case, monkeypatch, field, name):
+    edit(case / "snapshot.json", lambda s: s.update({field: name}))
+    if name in {"tokenizer": TOKENIZERS, "renderer": RENDERERS}[field]:
+        lacking(monkeypatch, field, name)
     assert run_case(case) == {"id": "fixture-three-slot", "rules": read_json(case / "case.json")["rules"], "outcome": "skipped",
-                              "detail": f"no {field} elsewhere/v9"}
+                              "detail": f"no {field} {name}"}
 
 
 @pytest.mark.parametrize("field, name", REQUIRED)
@@ -107,8 +116,8 @@ def test_a_case_needing_a_required_tokenizer_or_renderer_it_lacks_fails(case, mo
                               "detail": f"no {field} {name}, which every implementation provides"}
 
 
-MIXED = [*[(("tokenizer", name), ("renderer", "elsewhere/v9")) for name in published("counts")],
-         *[(("renderer", name), ("tokenizer", "elsewhere/v9")) for name in published("renders")]]
+MIXED = [*[(("tokenizer", name), ("renderer", "elsewhere/v9")) for name in required("counts")],
+         *[(("renderer", name), ("tokenizer", "elsewhere/v9")) for name in required("renders")]]
 
 
 @pytest.mark.parametrize("required, optional", MIXED, ids=[f"{r[1]}+optional-{o[0]}" for r, o in MIXED])
@@ -122,8 +131,8 @@ def test_a_case_lacking_an_optional_component_is_skipped_whatever_required_one_i
                               "detail": f"no {optional[0]} {optional[1]}"}
 
 
-@pytest.mark.parametrize("renderer", published("renders"))
-@pytest.mark.parametrize("tokenizer", published("counts"))
+@pytest.mark.parametrize("renderer", required("renders"))
+@pytest.mark.parametrize("tokenizer", required("counts"))
 def test_a_case_lacking_only_required_components_fails_and_names_each(case, monkeypatch, tokenizer, renderer):
     edit(case / "snapshot.json", lambda s: s.update(tokenizer=tokenizer, renderer=renderer))
     lacking(monkeypatch, "tokenizer", tokenizer)
@@ -163,13 +172,11 @@ def test_a_rejection_case_that_crashes_fails(rejection, monkeypatch):
     assert run_rejection(rejection)["detail"] == "RuntimeError: boom"
 
 
-OPTIONAL = [("tokenizer", "elsewhere/v9"), ("renderer", "elsewhere/v9")]
-
-
 # profile-route-mismatch breaks a route check, which needs no renderer; profile-unrealizable breaks fixture-xml/v1's own.
 @pytest.mark.parametrize("name, field, component, outcome", [
     *[("profile-route-mismatch", field, component, {"outcome": "rejected"}) for field, component in OPTIONAL + REQUIRED],
-    ("profile-unrealizable", "renderer", "elsewhere/v9", {"outcome": "skipped", "detail": "no renderer elsewhere/v9"}),
+    *[("profile-unrealizable", field, component, {"outcome": "skipped", "detail": f"no renderer {component}"})
+      for field, component in OPTIONAL + PUBLISHED_OPTIONAL if field == "renderer"],
     *[("profile-unrealizable", field, component,
        {"outcome": "failed", "detail": f"no renderer {component}, which every implementation provides"})
       for field, component in REQUIRED if field == "renderer"],
@@ -208,7 +215,10 @@ def test_the_report_covers_every_case_in_id_order_and_names_the_vendored_commit(
     assert not contract.errors("conformance_report", produced)
     assert [c["id"] for c in produced["cases"]] == sorted((p.name for p in CASES.iterdir()), key=utf16)
     assert [c["id"] for c in produced["rejections"]] == sorted((p.name for p in REJECTIONS.iterdir()), key=utf16)
-    assert {c["outcome"] for c in produced["rejections"]} == {"rejected"}
+    # Every rejection case is rejected, or skipped for a published optional renderer this assembler lacks.
+    lacked = {f"no renderer {name}" for field, name in PUBLISHED_OPTIONAL if field == "renderer" and name not in RENDERERS}
+    assert all(c["outcome"] == "rejected" or (c["outcome"] == "skipped" and c["detail"] in lacked)
+               for c in produced["rejections"])
     assert produced["contract"] == {"website_commit": LOCK["source"]["commit"], "dirty": LOCK["source"]["dirty"]}
     assert produced["implementation"] == {"name": "contextwindowarchitecture-assembler", "version": "0.0.1", "language": "python"}
 

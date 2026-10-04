@@ -17,6 +17,7 @@ omit a member, and the members it keeps render marked (R-11).
 import copy, hashlib, json, os, re, sys
 sys.dont_write_bytecode = True  # importing digest must not leave a __pycache__ for implementations to vendor
 from digest import snapshot_digest  # noqa: E402
+from order import placed  # noqa: E402
 U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 WEB = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -71,7 +72,7 @@ def render(placement, kept, count=count, marks={}):
     bytes and included rows, per the fixture renderer."""
     parts, included = [], []
     for slot in placement:
-        for it, body in sorted((v for v in kept.values() if v[0]["slot"] == slot), key=lambda v: U16(v[0]["id"])):
+        for it, body in placed(slot, (v for v in kept.values() if v[0]["slot"] == slot), lambda v: v[0]):
             b = esc(body)
             mark = f' conflict="{esc(marks[it["id"]]).replace(chr(34), "&quot;")}"' if it["id"] in marks else ""
             parts.append(f'<{slot} id="{esc(it["id"]).replace(chr(34), "&quot;")}"{mark}>\n{b}\n</{slot}>\n')
@@ -683,7 +684,7 @@ CASES = [
     },
     {
         "id": "placement-protected-unplaced",
-        "rules": ["R-16", "R-20", "R-21", "R-22"],
+        "rules": ["R-16", "R-17", "R-20", "R-21", "R-22"],
         "description": "An admitted protected item whose slot the profile does not place refuses with protected_slot_unplaced, whether its slot is "
                        "protected by default or raised by the route; unprotected unplaced items keep their slot_unplaced rows.",
         "budget": 4096,
@@ -764,7 +765,7 @@ CASES = [
     },
     {
         "id": "placement-required-slot-first",
-        "rules": ["R-4", "R-20", "R-21"],
+        "rules": ["R-4", "R-17", "R-20", "R-21"],
         "description": "A missing query is reported before a protected item the profile does not place: required_slot_missing comes first in contract/reasons.json.",
         "budget": 4096,
         "placement": [s for s in PLACEMENT if s != "state.task"],

@@ -10,7 +10,7 @@
   },
   "result": {
     "input_tokens": 227,
-    "hash": "e0d6a047c19ef93538d53ebc817e5da95750e78e8df33ea75e775f2d76a0644e"
+    "hash": "57bf8e2f92b536f55d61930dcbeeceb46af1e55d5ae8ecdf87631d22b26c6283"
   },
   "included": [
     {
@@ -134,6 +134,13 @@
     },
     {
       "slot": "interaction.history",
+      "item_id": "turn:9",
+      "tokens": 4,
+      "source_version": "1",
+      "eligibility": "route-policy"
+    },
+    {
+      "slot": "interaction.history",
       "item_id": "turn:10",
       "tokens": 6,
       "source_version": "1",
@@ -150,13 +157,6 @@
       "slot": "interaction.history",
       "item_id": "turn:13",
       "tokens": 6,
-      "source_version": "1",
-      "eligibility": "route-policy"
-    },
-    {
-      "slot": "interaction.history",
-      "item_id": "turn:9",
-      "tokens": 4,
       "source_version": "1",
       "eligibility": "route-policy"
     },
@@ -358,7 +358,7 @@
     "route_policy_version": "conflict-instruction/v1",
     "tokenizer": "fixture-whitespace/v1",
     "renderer": "fixture-xml/v1",
-    "snapshot_digest": "b9782cd653ece0ffecb3fcd7c202a665de34aca897b3f7901c4d53d74b889f60"
+    "snapshot_digest": "c61c4eeae1d152a59ec61a2906602cb2126cf14750a70acc0582bb3416d978cb"
   },
   "defaults_filled": []
 }

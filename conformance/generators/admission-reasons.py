@@ -6,6 +6,7 @@ fail an implementation. Rendering and counting follow conformance/README.md's fi
 import copy, hashlib, json, os, re, sys
 sys.dont_write_bytecode = True  # importing digest must not leave a __pycache__ for implementations to vendor
 from digest import jcs, snapshot_digest  # noqa: E402
+from order import placed  # noqa: E402
 NONBLANK = re.compile(r"[^\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]")  # conformance/README.md, Blank strings
 U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
@@ -211,7 +212,7 @@ WS = re.compile(r"[^\t\n\v\f\r    -     　﻿]+")
 esc = lambda s: s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 parts, included = [], []
 for slot in placement:
-    for it in sorted((i for i in admitted if i["slot"] == slot), key=lambda i: U16(i["id"])):
+    for it in placed(slot, (i for i in admitted if i["slot"] == slot)):
         body = esc(it["body"])
         parts.append(f'<{slot} id="{esc(it["id"]).replace(chr(34), "&quot;")}">\n{body}\n</{slot}>\n')
         included.append({"slot": slot, "item_id": it["id"], "tokens": len(WS.findall(body)), "source_version": it["source_version"],

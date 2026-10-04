@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from . import assemble
-from .render import REGISTRY as RENDERERS
+from .render import REGISTRY as RENDERERS, REQUIRED as REQUIRED_RENDERERS
 from .snapshot import Snapshot, SnapshotError, UnsupportedComponentError
 from .strings import utf16
 from .tokenize import REGISTRY as TOKENIZERS
@@ -21,10 +21,11 @@ from .tokenize import REGISTRY as TOKENIZERS
 # requirement defines (conformance/README.md, Running a case, step 4); everything else is compared.
 IGNORED = ("trace_id", "timings")
 IGNORED_IN_RECOVERY = ("detail",)
-# The tokenizers and renderers every implementation provides (conformance/README.md, Tokenizers and renderers); any
-# other one is optional. They are the built-in ones, which tests/test_tokenize.py and tests/test_render.py pin to the
-# README's bullets, copied so the set stays the required one whatever a registry holds when a case runs.
-REQUIRED = {"tokenizer": frozenset(TOKENIZERS), "renderer": frozenset(RENDERERS)}
+# The tokenizers and renderers every implementation provides (conformance/README.md, Tokenizers and renderers, before
+# its Optional list); any other one is optional. tests/test_tokenize.py and tests/test_render.py pin them to the
+# README's bullets: the built-in tokenizers, all of them required, and the required renderers. Copied, so the set stays
+# the required one whatever a registry holds when a case runs.
+REQUIRED = {"tokenizer": frozenset(TOKENIZERS), "renderer": frozenset(REQUIRED_RENDERERS)}
 
 
 def comparable(trace: Mapping[str, Any]) -> dict[str, Any]:

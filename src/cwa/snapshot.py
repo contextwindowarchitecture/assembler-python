@@ -5,13 +5,13 @@ import copy
 import json
 import math
 from dataclasses import dataclass
-from typing import Any, Mapping, Protocol, TypeVar
+from typing import Any, Iterable, Mapping, Protocol, TypeVar
 
 from . import contract
 from .canonical import canonical_json, digest
 from .model import (Budget, CapabilityGrant, ConflictGroup, Placement, ProducerBatch, ProducerExclusion, ProducerIdentity,
                     Profile, RoutePolicy)
-from .render import REGISTRY as RENDERERS, Renderer
+from .render import PUBLISHED as PUBLISHED_RENDERERS, REGISTRY as RENDERERS, Renderer
 from .strings import blank, utf16
 from .tokenize import REGISTRY as TOKENIZERS, Tokenizer
 
@@ -23,12 +23,13 @@ class _Component(Protocol):
 C = TypeVar("C", bound=_Component)
 
 
-def _with_built_ins(kind: str, caller: Mapping[str, C], built_in: Mapping[str, C]) -> dict[str, C]:
-    """The built-in tokenizers or renderers with the caller's added, for one call. A caller's cannot take a built-in
-    id, since conformance/README.md fixes what each published one counts or renders (R-16), and each must sit under
-    its own id, since the trace names it by that id. Raised before the snapshot is read, so assembly never starts."""
-    if redefined := sorted(set(caller) & set(built_in)):
-        raise ValueError(f"{kind} {', '.join(redefined)} is built in; give yours another id")
+def _with_built_ins(kind: str, caller: Mapping[str, C], built_in: Mapping[str, C], published: Iterable[str]) -> dict[str, C]:
+    """The built-in tokenizers or renderers with the caller's added, for one call. A caller's cannot take a published
+    id, built in here or not, since conformance/README.md fixes what each published one counts or renders (R-16), and
+    each must sit under its own id, since the trace names it by that id. Raised before the snapshot is read, so
+    assembly never starts."""
+    if redefined := sorted(set(caller) & (set(built_in) | set(published))):
+        raise ValueError(f"{kind} {', '.join(redefined)} is published; give yours another id")
     if misnamed := sorted(key for key, component in caller.items() if component.id != key):
         raise ValueError("; ".join(f"the {kind} under {key!r} calls itself {caller[key].id!r}" for key in misnamed)
                          + f"; pass each {kind} under its own id")
@@ -198,8 +199,8 @@ class Snapshot:
         tokenizers and renderers add the caller's own, each under its own id, to the built-in ones for this call
         only. A built-in id cannot be redefined, since conformance/README.md fixes what it counts or renders (R-16),
         and a key must be its object's id, since the trace names the tokenizer and renderer by that id."""
-        tokenizers = _with_built_ins("tokenizer", tokenizers, TOKENIZERS)
-        renderers = _with_built_ins("renderer", renderers, RENDERERS)
+        tokenizers = _with_built_ins("tokenizer", tokenizers, TOKENIZERS, TOKENIZERS)
+        renderers = _with_built_ins("renderer", renderers, RENDERERS, PUBLISHED_RENDERERS)
         data: dict[str, Any] = json.loads(json.dumps(document))
         if problems := contract.errors("snapshot", data) + _not_i_json(data):
             raise SnapshotError(problems)

@@ -1,8 +1,8 @@
 """Builds conformance/rejections/: snapshots that break exactly one of conformance/README.md's Snapshot checks
 or their schemas. A conformant assembler rejects each before assembly, with no payload and no trace (R-17).
 
-Each case changes fixture-three-slot's snapshot in one place, or messages-render's for the cwa-messages/v1
-rules. The website's tests check each with contract.js's checkSnapshot, which must find exactly one
+Each case changes fixture-three-slot's snapshot in one place, or messages-render's or blocks-render's for the
+cwa-messages/v1 and cwa-message-blocks/v1 rules. The website's tests check each with contract.js's checkSnapshot, which must find exactly one
 problem, independently of this generator.
 """
 import copy, json, os, shutil, sys
@@ -14,6 +14,7 @@ LONE = "LONE"  # stands in for an unpaired surrogate, which UTF-8 cannot e
 HUGE = "\ue000HUGE\ue000"  # stands in for 1e400, which Python's json writes as Infinity
 HUGE_INT = "\ue000HUGE_INT\ue000"  # stands in for 1 followed by 400 zeros, an integer literal no double can hold
 MESSAGES = json.load(open(os.path.join(WEB, "conformance/cases/messages-render/snapshot.json")))
+BLOCKS = json.load(open(os.path.join(WEB, "conformance/cases/blocks-render/snapshot.json")))
 
 
 def group(id, items, **extra):
@@ -82,6 +83,9 @@ CASES = [
      lambda s: s["profile"]["placement"][0].update(wrap="tools"), MESSAGES),
     ("messages-system-after-xml", ["R-7", "R-17", "R-20"], "Under cwa-messages/v1 a system placement follows an xml: one, and a message request cannot put material ahead of its system text.",
      lambda s: s["profile"]["placement"].append({"slot": "governance.output_contract", "wrap": "system"}), MESSAGES),
+    ("blocks-system-after-xml", ["R-7", "R-17", "R-20"], "Under cwa-message-blocks/v1, which realizes the placements cwa-messages/v1 does, a system "
+     "placement follows an xml: one. An implementation without the optional renderer skips the case.",
+     lambda s: s["profile"]["placement"].append({"slot": "governance.output_contract", "wrap": "system"}), BLOCKS),
 ]
 
 if __name__ == "__main__":

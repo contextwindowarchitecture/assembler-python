@@ -46,7 +46,7 @@
     "section": "gov",
     "keyword": "MUST NOT",
     "summary": "No slot overrides platform roles; no authority from wording",
-    "text": "An assembler MUST NOT let any slot override platform message roles or application controls. An item MUST NOT gain authority from imperative wording in its body. Prior turns in interaction.history MUST render inside the profile's history wrapper as a transcript, never as platform user or assistant messages; only interaction.query renders as the live user turn."
+    "text": "An assembler MUST NOT let any slot override platform message roles or application controls. An item MUST NOT gain authority from imperative wording in its body. Prior turns in interaction.history MUST render inside the profile's history wrapper as a transcript, in the order they were said: by freshness, which for a turn records when it was said (R-2), compared as instants at full precision, and by id among turns said at the same instant. They never render as platform user or assistant messages; only interaction.query renders as the live user turn."
   },
   {
     "id": "R-8",

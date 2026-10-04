@@ -14,14 +14,14 @@ protected item is excluded, moot means fewer than two members, the superseded, d
 items are exactly those the calls, instants, keys, sources, exemptions and ranks imply, and the refusal and
 recovery follow. Budgets are generous, so fitting never acts.
 """
-import calendar, copy, hashlib, json, os, re, sys
-from fractions import Fraction
+import copy, hashlib, json, os, re, sys
 U16 = lambda s: s.encode("utf-16-be")  # strings order by UTF-16 code units (conformance/README.md, Ordering)
 
 sys.dont_write_bytecode = True  # importing fitting must not leave a __pycache__ for implementations to vendor
 from digest import snapshot_digest  # noqa: E402
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fitting import DEFAULTS, PLACEMENT, SCOPE, T, count, esc, item  # noqa: E402
+from order import instant, placed  # noqa: E402
 
 WEB = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 KINDS = {"policy-registry": "policy", "state-svc": "state", "policy-corpus": "retrieval", "wiki-corpus": "retrieval",
@@ -31,15 +31,6 @@ SLOTS = {"policy-registry": ["governance.examples", "governance.instructions", "
          "crm-mcp": ["evidence.tool_results"], "memory-svc": ["interaction.memory"], "conversation": ["interaction.history", "interaction.query"]}
 ESCALATED = {"surfaced", "context_requested", "refused"}
 WS_RUN = re.compile(r"[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+")
-INSTANT = re.compile(r"([0-9]{4})-([0-9]{2})-([0-9]{2})[Tt]([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\.([0-9]+))?(?:[Zz]|([+-])([0-9]{2}):([0-9]{2}))")
-
-
-def instant(text):
-    """Seconds since the epoch as an exact fraction, so instants compare at full precision (R-2)."""
-    y, mo, d, h, mi, sec, frac, sign, oh, om = INSTANT.fullmatch(text).groups()
-    seconds = calendar.timegm((int(y), int(mo), int(d), int(h), int(mi), int(sec)))
-    offset = (int(oh) * 3600 + int(om) * 60) * (1 if sign == "+" else -1) if sign else 0
-    return seconds - offset + (Fraction(int(frac), 10 ** len(frac)) if frac else 0)
 
 
 def key(body):
@@ -64,7 +55,7 @@ def render(kept, marks):
     """kept: {id: item}; marks: {id: group id} for members of surfaced groups."""
     parts, included = [], []
     for slot in PLACEMENT:
-        for it in sorted((v for v in kept.values() if v["slot"] == slot), key=lambda v: U16(v["id"])):
+        for it in placed(slot, (v for v in kept.values() if v["slot"] == slot)):
             b = esc(it["body"])
             attrs = f' id="{esc(it["id"]).replace(chr(34), "&quot;")}"'
             if it["id"] in marks:
@@ -269,7 +260,7 @@ CASES = [
             (item("contract:json", "governance.output_contract", "Answer as JSON with fields decision and citations.", conflict_policy="defers"), REG, "admit"),
             (item("policy:plain", "governance.instructions", "Answer in plain prose."), REG, "admit"),
             (item("turn:10", "interaction.history", "Please always answer me in French.", conflict_policy="governs",
-                  freshness="2026-09-22T11:50:00Z"), CONV, "admit"),
+                  freshness="2026-09-22T11:47:00Z"), CONV, "admit"),
             (item("turn:12", "interaction.history", "English is fine for this chat.", freshness="2026-09-22T11:52:00Z"), CONV, "admit"),
             (kb("kb:a", "Refunds are available within 30 days."), CORPUS, "admit"),
             (item("obs:order-42", "evidence.tool_results", "order 42: refunded in full on 2026-09-20"), CRM, "admit"),
@@ -461,7 +452,7 @@ CASES = [
     },
     {
         "id": "conflict-required-slot-first",
-        "rules": ["R-4", "R-11", "R-21"],
+        "rules": ["R-4", "R-11", "R-17", "R-21"],
         "description": "Conflicts are resolved before refusal checks, so a trace refused for a missing query still records the unresolved group.",
         "policy": {"facts": {"refund.window": {"precedence": [CORPUS], "on_unresolved": "refuse"}}},
         "items": [

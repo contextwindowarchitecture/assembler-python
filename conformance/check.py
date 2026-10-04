@@ -92,7 +92,7 @@ def well_formed(value):
 def realizable(renderer, placement):
     if renderer == "fixture-xml/v1":
         return all(XML_WRAP.match(e["wrap"]) for e in placement)
-    if renderer == "cwa-messages/v1":
+    if renderer in ("cwa-messages/v1", "cwa-message-blocks/v1"):  # the blocks renderer realizes the same placements
         seen_xml = False
         for e in placement:
             wrap, slot = e["wrap"], e["slot"]

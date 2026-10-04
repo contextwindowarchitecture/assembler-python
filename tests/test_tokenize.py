@@ -73,7 +73,7 @@ def test_a_caller_cannot_redefine_a_built_in_tokenizer(fixture_snapshot, built_i
 
     load = {"from_json": lambda **kw: Snapshot.from_json(fixture_snapshot, **kw),
             "freeze": lambda **kw: Snapshot.freeze(**fixture_snapshot, **kw)}[entry]
-    with pytest.raises(ValueError, match=f"{built_in} is built in"):
+    with pytest.raises(ValueError, match=f"tokenizer {built_in} is published"):
         load(tokenizers={built_in: Characters()})
 
 

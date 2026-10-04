@@ -32,7 +32,7 @@
   {
     "id": "R-7",
     "scope": "assembler",
-    "note": "Only governance takes the system and tool roles, the query is the only live user turn, history renders as a transcript, and item bodies are escaped inside xml: wrappers; cwa-messages/v1 hands system and tools text over unescaped."
+    "note": "Only governance takes the system and tool roles, the query is the only live user turn, history renders as a transcript in the order turns were said, and item bodies are escaped inside xml: wrappers; cwa-messages/v1 hands system and tools text over unescaped."
   },
   {
     "id": "R-8",

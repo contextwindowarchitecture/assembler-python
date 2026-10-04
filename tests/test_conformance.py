@@ -13,7 +13,10 @@ from cwa.trace import TraceError
 from conftest import CASES, read_json
 
 # Cases whose milestone is in progress. Strict: once a case passes, pytest fails until it is removed here.
-PENDING: dict[str, str] = {}
+PENDING: dict[str, str] = {
+    "blocks-budget": "cwa-message-blocks/v1, the optional renderer, is not built yet",
+    "blocks-render": "cwa-message-blocks/v1, the optional renderer, is not built yet",
+}
 # What a pending case may raise in place of an outcome, and the only failures PENDING holds: a
 # feature not built yet, a snapshot the code still rejects, a trace the newer schema rejects, or a
 # tokenizer or renderer not provided yet. A wrong payload or trace is not a gap but a wrong answer;
