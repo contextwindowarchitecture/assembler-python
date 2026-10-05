@@ -67,6 +67,12 @@ ROWS = [
     ("policy-corpus", item("\u001c", "evidence.knowledge", "An id that is a control character.", relevance=0.79), "below_threshold"),
     ("policy-corpus", item("kb:bad-slot", "evidence.web", "Web result."), "unknown_slot"),
     ("policy-corpus", item("kb:bad-authority", "evidence.knowledge", "Old vocabulary.", authority="reference"), "unknown_authority"),
+    # A value outside the closed set is unknown whatever its JSON type: the earlier code wins over invalid_structure (R-21).
+    ("policy-corpus", {**item("kb:slot-number", "evidence.knowledge", "A slot that is a number."), "slot": 5}, "unknown_slot"),
+    ("policy-corpus", {**item("kb:slot-null", "evidence.knowledge", "A slot that is null."), "slot": None}, "unknown_slot"),
+    ("policy-corpus", {**item("kb:slot-array", "evidence.knowledge", "A slot that is an array."), "slot": ["evidence.knowledge"]}, "unknown_slot"),
+    ("policy-corpus", item("kb:authority-number", "evidence.knowledge", "An authority that is a number.", authority=7), "unknown_authority"),
+    ("policy-corpus", item("kb:authority-null", "evidence.knowledge", "An authority that is null.", authority=None), "unknown_authority"),
     # eligibility is never blank: the trace repeats it for every included occurrence (R-22).
     ("policy-corpus", item("kb:blank-eligibility", "evidence.knowledge", "A chunk with a blank eligibility note.", eligibility=" "), "invalid_structure"),
     ("policy-corpus", item("kb:bad-date", "evidence.knowledge", "Impossible date.", freshness="2026-02-30T12:00:00Z"), "invalid_structure"),
@@ -206,7 +212,7 @@ for producer, it, intent in ROWS:
         excluded.append((producer, rid, intent, it.get("slot"), jcs(it).encode()))
 # Candidates sharing an id order by their RFC 8785 bytes, as the snapshot digest does (conformance/README.md, Ordering).
 excluded.sort(key=lambda r: (U16(r[0]), U16(r[1]), r[4]))
-row = lambda rid, r, slot: {"item_id": rid, "reason": r, "stage": "assembler", **({"slot": slot} if slot in DEFAULTS else {})}
+row = lambda rid, r, slot: {"item_id": rid, "reason": r, "stage": "assembler", **({"slot": slot} if isinstance(slot, str) and slot in DEFAULTS else {})}
 
 WS = re.compile(r"[^\t\n\v\f\r    -     　﻿]+")
 esc = lambda s: s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
