@@ -413,6 +413,171 @@ def check_or_write(write):
         if not os.path.exists(os.path.join(ROOT, target.split("#")[0])): problem(f"SPEC.md links {target}, which is not beside it")
 
 
+# ---------------------------------------------------------------------------------------------- examples and renderings
+# Each check here has a twin in the website's JavaScript suite, written separately. The renderings and counts below are
+# derived from conformance/README.md again, without the generators' rendering code, so that they are a second derivation.
+ES_SPACE = "\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff"  # ECMAScript's \s
+TOKENIZERS = {"fixture-whitespace/v1": lambda text: len(re.findall(f"[^{ES_SPACE}]+", text)), "estimate-utf8/v1": lambda text: (len(text.encode("utf-8")) + 3) // 4}
+utf16 = lambda text: text.encode("utf-16-be")
+INSTANT = re.compile(r"^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(\.\d+)?([Zz]|[+-]\d{2}:\d{2})$")
+
+def instant(text):
+    """An RFC 3339 date-time as seconds since the epoch, at its full stated precision."""
+    import calendar, decimal
+    y, mo, d, h, mi, sec, frac, zone = INSTANT.match(text).groups()
+    offset = 0 if zone in "Zz" else (1 if zone[0] == "+" else -1) * (int(zone[1:3]) * 3600 + int(zone[4:6]) * 60)
+    return decimal.Decimal(calendar.timegm((int(y), int(mo), int(d), int(h), int(mi), int(sec))) - offset) + decimal.Decimal("0" + (frac or ""))
+
+said = lambda item: (instant(item["freshness"]), utf16(item["id"]))  # R-7: history in the order turns were said
+canonical = lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+xml = lambda text: text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+attr = lambda text: xml(text).replace('"', "&quot;")
+
+def render_messages(snap, included, body=lambda item: item["body"], marks={}):
+    """cwa-messages/v1 or cwa-message-blocks/v1 from conformance/README.md: the request and every text it counts."""
+    system, tools, entries = [], [], []
+    for p in snap["profile"]["placement"]:
+        slot, wrap = p["slot"], p["wrap"]
+        for item in sorted((i for i in included if i["slot"] == slot), key=said if slot == "interaction.history" else lambda i: utf16(i["id"])):
+            mark = {"conflict": marks[item["id"]]} if item["id"] in marks else {}
+            if wrap in ("system", "tools"):
+                text = f'<conflict group="{attr(mark["conflict"])}">\n{body(item)}\n</conflict>' if mark else body(item)
+                (system if wrap == "system" else tools).append({"id": item["id"], "text": text, **mark})
+                continue
+            tag = wrap[len("xml:"):]
+            speaker = f' speaker="{"assistant" if item.get("lineage") == "generated" else "user"}"' if slot == "interaction.history" else ""
+            conflict = f' conflict="{attr(mark["conflict"])}"' if mark else ""
+            entries.append({"id": item["id"], "text": f'<{tag} id="{attr(item["id"])}"{speaker}{conflict}>\n{xml(body(item))}\n</{tag}>\n', **mark})
+    blocks = snap["renderer"] == "cwa-message-blocks/v1"
+    joined = "".join(e["text"] for e in entries)
+    request = {"messages": [{"role": "user", "content": entries if blocks else joined}], "system": system, "tools": tools}
+    return canonical(request), [e["text"] for e in system + tools] + ([e["text"] for e in entries] if blocks else [joined])
+
+def readme_components():
+    section = (read("conformance/README.md").split("\n## Tokenizers and renderers\n") + [""])[1].split("\n## ")[0]
+    before, _, after = section.partition("\n### Optional\n")
+    listed = lambda text: re.findall(r"^- `([^`]+)`", text, re.M)
+    return listed(before), listed(after)
+
+def check_examples():
+    ex_profiles, fixture, trace = load("examples/profiles.json"), load("examples/fixture-profile.json"), load("examples/trace.json")
+    # Every example profile is a valid, explicitly unevaluated draft that cwa-messages/v1 can realize, and the registry holds them.
+    for p in ex_profiles:
+        if (e := first_error(V_PROFILE, p)): problem(f"examples/profiles.json {p.get('id')}: invalid: {e}")
+        if p.get("evaluation", {}).get("status") != "unevaluated" or p.get("model_family") is not None: problem(f"examples/profiles.json {p['id']}: not an unevaluated draft with model_family null")
+        if not realizable("cwa-messages/v1", p["placement"]): problem(f"examples/profiles.json {p['id']}: cwa-messages/v1 cannot realize its placement")
+    if profiles != ex_profiles + [fixture]: problem("conformance/registry/profiles.json is not examples/profiles.json followed by examples/fixture-profile.json")
+    for p in ex_profiles + [fixture]:
+        if p.get("spec") != "cwa/draft": problem(f"{p['id']}: spec is {p.get('spec')!r}, not cwa/draft")
+    # cache-first-chat/v1 places nothing a turn refills ahead of the history, and closes with the query.
+    cache = next((p for p in ex_profiles if p["id"] == "cache-first-chat" and p["version"] == 1), None)
+    if cache is None: problem("examples/profiles.json has no cache-first-chat/v1")
+    else:
+        at = {e["slot"]: i for i, e in enumerate(cache["placement"])}
+        history = at.get("interaction.history", -1)
+        before = ["governance.instructions", "governance.capabilities", "governance.examples", "governance.output_contract", "state.user", "interaction.memory"]
+        after = ["evidence.knowledge", "evidence.tool_results", "state.task", "interaction.query"]
+        if cache["route"] != "support-chat" or history < 0 or any(at.get(s, history) >= history for s in before) or any(at.get(s, -1) <= history for s in after) \
+                or at["interaction.query"] != len(cache["placement"]) - 1:
+            problem("cache-first-chat/v1: something a turn refills is placed ahead of the history, or the query does not close the payload")
+    # The sample trace is the fixture case's, and its hash and count are the sample payload's.
+    payload = open(os.path.join(ROOT, "examples/payload.txt"), "rb").read()
+    if (e := first_error(V_PROFILE, fixture)): problem(f"examples/fixture-profile.json: invalid: {e}")
+    if trace["profile"] != {"id": fixture["id"], "version": fixture["version"]} or trace["context"]["route_policy_version"] != fixture["route_policy_version"] \
+            or [r["slot"] for r in trace["included"]] != [e["slot"] for e in fixture["placement"]] or trace["context"]["spec"] != fixture["spec"]:
+        problem("examples/trace.json does not follow examples/fixture-profile.json")
+    if trace["result"]["hash"] != hashlib.sha256(payload).hexdigest() or trace["result"]["input_tokens"] != TOKENIZERS["fixture-whitespace/v1"](payload.decode()):
+        problem("examples/trace.json: its hash or token count is not examples/payload.txt's")
+    if load("conformance/cases/fixture-three-slot/expected.trace.json") != trace or open(os.path.join(ROOT, "conformance/cases/fixture-three-slot/expected.payload.txt"), "rb").read() != payload:
+        problem("conformance/cases/fixture-three-slot differs from examples/trace.json and examples/payload.txt")
+    required, optional = readme_components()
+    if sorted(required) != ["cwa-messages/v1", "estimate-utf8/v1", "fixture-whitespace/v1", "fixture-xml/v1"] or optional != ["cwa-message-blocks/v1"]:
+        problem(f"conformance/README.md lists required {required} and optional {optional}")
+    used, alone, history_pairs = set(), set(), 0
+    for d in case_dirs + rejection_dirs:
+        cid, snap = os.path.basename(d.rstrip("/")), json.load(open(d + "snapshot.json", encoding="utf-8"))
+        for component in (snap["tokenizer"], snap["renderer"]):
+            if component not in required + optional: problem(f"{cid}: uses {component}, which conformance/README.md does not publish")
+            used.add(component)
+        if d not in case_dirs: continue
+        if snap["tokenizer"] in required and snap["renderer"] in required: alone.update((snap["tokenizer"], snap["renderer"]))
+        expected = json.load(open(d + "expected.trace.json", encoding="utf-8"))
+        items = {i["id"]: i for b in snap["batches"] for i in b["items"] if isinstance(i, dict) and isinstance(i.get("id"), str)}
+        # History renders in the order turns were said (R-7); included[] follows render order.
+        for prev, row in zip(expected["included"], expected["included"][1:]):
+            if prev["slot"] == row["slot"] == "interaction.history":
+                history_pairs += 1
+                if not said(items[prev["item_id"]]) < said(items[row["item_id"]]): problem(f"{cid}: {prev['item_id']} renders before {row['item_id']}, against the order they were said")
+        payload_path = d + "expected.payload.txt"
+        if not os.path.exists(payload_path): continue
+        text = open(payload_path, "rb").read().decode("utf-8")
+        if snap["renderer"] == "fixture-xml/v1":
+            count = TOKENIZERS[snap["tokenizer"]](text)
+            margin = snap["budget"].get("margin_percent", 0)
+            if expected["result"]["input_tokens"] != count: problem(f"{cid}: input_tokens {expected['result']['input_tokens']}, but the payload counts {count}")
+            if (count * (100 + margin) + 99) // 100 > snap["budget"]["input"]: problem(f"{cid}: the payload does not fit its budget with the margin")
+        elif snap["renderer"] in ("cwa-messages/v1", "cwa-message-blocks/v1"):
+            chosen = {r["item_id"]: r["variant_id"] for r in expected["compressed"]}
+            body = lambda item: next(v["body"] for v in item["variants"] if v["id"] == chosen[item["id"]]) if item["id"] in chosen else item["body"]
+            marks = {i: c["group_id"] for c in expected["conflicts"] if c["resolution"] == "surfaced" for i in c["items"]}
+            included = [items[i] for i in dict.fromkeys(r["item_id"] for r in expected["included"])]
+            want, texts = render_messages(snap, included, body, marks)
+            if text != want: problem(f"{cid}: expected.payload.txt is not the {snap['renderer']} rendering of the items its trace includes")
+            if expected["result"]["input_tokens"] != sum(TOKENIZERS[snap["tokenizer"]](t) for t in texts): problem(f"{cid}: input_tokens is not the sum over the texts the renderer emits")
+    for component in optional:
+        if component not in used: problem(f"no published case uses {component}")
+    for component in required:
+        if component not in alone: problem(f"no case uses {component} without an optional component")
+    if history_pairs == 0: problem("no case renders two history turns")
+    turns = [i for b in json.load(open(os.path.join(ROOT, "conformance/cases/history-freshness-order/snapshot.json"), encoding="utf-8"))["batches"] for i in b["items"] if i["slot"] == "interaction.history"]
+    if [t["id"] for t in sorted(turns, key=said)] == sorted((t["id"] for t in turns), key=utf16): problem("history-freshness-order: its turns' ids sort the same way as the order they were said")
+    # One profile id and version, and one route policy route and version, name one document wherever they appear.
+    for kind, key, docs in (("profile", lambda p: (p["id"], p["version"]), [("examples/profiles.json", p) for p in ex_profiles] + [("examples/fixture-profile.json", fixture)]),
+                            ("route policy", lambda p: (p["route"], p["version"]), [("examples/route-policies.json", p) for p in load("examples/route-policies.json")] + [("conformance/registry/route-policies.json", p) for p in policies])):
+        member = "profile" if kind == "profile" else "route_policy"
+        seen = {}
+        for where, doc in docs + [(os.path.relpath(d, ROOT), json.load(open(d + "snapshot.json", encoding="utf-8"))[member]) for d in case_dirs + rejection_dirs]:
+            k = key(doc)
+            if k in seen and seen[k][1] != canonical(doc): problem(f"{kind} {k}: {where} and {seen[k][0]} hold different documents")
+            seen.setdefault(k, (where, canonical(doc)))
+    # Every registry profile names a route policy whose producers emit each slot it places, within their kinds (R-15, R-20).
+    kind_slots = {"retrieval": lambda s: s.startswith("evidence."), "memory": lambda s: s == "interaction.memory", "mcp": lambda s: s.startswith("evidence.") or s == "governance.capabilities"}
+    for p in profiles:
+        policy = next((r for r in policies if r["route"] == p["route"] and r["version"] == p["route_policy_version"]), None)
+        if policy is None: continue  # reported with the registry
+        emitted = {s for producer in policy["producers"].values() for s in producer["slots"]}
+        for e in p["placement"]:
+            if e["slot"] not in emitted: problem(f"profile {p['id']} places {e['slot']}, which no producer of {policy['route']}/{policy['version']} emits")
+        for pid, producer in policy["producers"].items():
+            for slot in producer["slots"]:
+                if (slot.startswith("state.") and producer["kind"] != "state") or not kind_slots.get(producer["kind"], lambda s: True)(slot):
+                    problem(f"{policy['route']}/{policy['version']}: {pid} of kind {producer['kind']} lists {slot}, which its kind rules out")
+    # The landing page's request, and its trace, are the messages snapshot's: every item admitted and rendered.
+    snap, mtrace = load("examples/messages-snapshot.json"), load("examples/messages-trace.json")
+    mpayload = open(os.path.join(ROOT, "examples/messages-payload.json"), "rb").read()
+    items = [i for b in snap["batches"] for i in b["items"]]
+    if (e := first_error(V_SNAPSHOT, snap)) or snapshot_checks(snap): problem(f"examples/messages-snapshot.json is not a valid snapshot: {e or snapshot_checks(snap)}")
+    if snap["profile"] != next(p for p in ex_profiles if p["id"] == "policy-first-chat") or snap["route_policy"] != next(r for r in load("examples/route-policies.json") if r["route"] == "support-chat") \
+            or snap["renderer"] != "cwa-messages/v1":
+        problem("examples/messages-snapshot.json does not carry policy-first-chat, the support-chat route policy and cwa-messages/v1")
+    if mpayload.decode("utf-8") != render_messages(snap, items)[0]: problem("examples/messages-payload.json is not the cwa-messages/v1 rendering of every item in its snapshot")
+    if (e := first_error(V_TRACE, mtrace)): problem(f"examples/messages-trace.json: invalid: {e}")
+    if sorted((r["item_id"] for r in mtrace["included"]), key=utf16) != sorted((i["id"] for i in items), key=utf16) \
+            or [mtrace["excluded"], mtrace["compressed"], mtrace["conflicts"], mtrace["refused"]] != [[], [], [], {"bool": False, "reason": None}] \
+            or mtrace["profile"] != {"id": snap["profile"]["id"], "version": snap["profile"]["version"]} or mtrace["budget"] != snap["budget"] \
+            or [mtrace["context"][k] for k in ("assembly_time", "tokenizer", "renderer", "route_policy_version")] != [snap["assembly_time"], snap["tokenizer"], snap["renderer"], snap["route_policy"]["version"]] \
+            or mtrace["context"]["snapshot_digest"] != snapshot_digest(snap) or mtrace["result"]["hash"] != hashlib.sha256(mpayload).hexdigest():
+        problem("examples/messages-trace.json is not the trace of examples/messages-snapshot.json")
+    # SPEC.md §1 gives part of these requirements to producers or the application, so none is an assembler row.
+    spec = read("SPEC.md")
+    cited = lambda start, end: re.findall(r"\bR-\d+\b", spec.split(start)[1].split(end)[0]) if start in spec else []
+    duties = cited("plus the MUSTs aimed at producers:", "A **conformant application**") + cited("meets the MUSTs no component can meet for it:", ". It renders with")
+    if not duties: problem("SPEC.md §1 no longer lists the producer and application duties this check reads")
+    scope_of = {s["id"]: s["scope"] for s in load("contract/assembler-scope.json")}
+    for rid in sorted(set(duties), key=lambda r: int(r[2:])):
+        if scope_of.get(rid) == "assembler": problem(f"{rid}: SPEC.md §1 gives part of it to a producer or the application, but contract/assembler-scope.json scopes it assembler")
+
+
 # ---------------------------------------------------------------------------------------------- implementations
 # implementations/ holds each listed implementation's report as conformance/import_report.py stored it, and the Python
 # reference assembler's status claims. Counts are never stored: --implementations prints them from the cases as they are now.
@@ -453,6 +618,7 @@ def main():
     args = ap.parse_args()
     check_or_write(args.write)
     check_guides(args.write)
+    check_examples()
     index, entries = implementations()
     if args.implementations: print_implementations(index, entries)
     print(f"{len(case_dirs)} cases, {len(rejection_dirs)} rejections, {len(requirements)} requirements, {len(reasons)} reason codes")
