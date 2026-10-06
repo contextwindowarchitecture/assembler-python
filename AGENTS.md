@@ -62,7 +62,7 @@ Rules:
 
 ## The contract is vendored, not edited
 
-`src/cwa/contract/data/` and `conformance/` are copies of the website repo's `schema/`, `contract/` and `conformance/`, pinned by SHA-256 in `contract.lock.json`. `tests/test_contract_lock.py` fails if they are edited here. To change the spec:
+`src/cwa/contract/data/` and `conformance/` are copies of the files the website repo's git tracks in `schema/`, `contract/` and `conformance/` (never its untracked or ignored files, such as `__pycache__`), pinned by SHA-256 in `contract.lock.json`. `tests/test_contract_lock.py` fails if they are edited here. To change the spec:
 
 1. Change the website repo and run its `npm test`.
 2. Commit there on branch `assembler-v0.0.1`, following the same commit rules: incremental, Conventional Commits, `-s`, never push. This is standing permission; no need to ask.

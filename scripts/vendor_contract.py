@@ -24,12 +24,20 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def tracked(website: Path) -> set[Path]:
+    """The files the website's git tracks: a checkout's untracked and ignored files (__pycache__) are not the contract."""
+    out = subprocess.run(["git", "-C", str(website), "ls-files", "-z", "--", "schema", "contract", "conformance"],
+                         capture_output=True, text=True, check=True).stdout
+    return {website / name for name in out.split("\0") if name}
+
+
 def sources(website: Path) -> dict[Path, Path]:
     """Map each vendored destination to its website source."""
-    mapping = {DATA / "schema" / p.name: p for p in sorted((website / "schema").glob("*.schema.json"))}
+    files = tracked(website)
+    mapping = {DATA / "schema" / p.name: p for p in sorted((website / "schema").glob("*.schema.json")) if p in files}
     mapping |= {DATA / name: website / "contract" / name for name in CONTRACT_FILES}
     for p in sorted((website / "conformance").rglob("*")):
-        if p.is_file():
+        if p in files:
             mapping[CONFORMANCE / p.relative_to(website / "conformance")] = p
     return mapping
 
