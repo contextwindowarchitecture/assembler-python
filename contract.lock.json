@@ -1,7 +1,7 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "d6397de7e8d5d622ea9c4e54b15b68276eef1759",
+    "commit": "d5ef9d6d91623624bcfcf42c7bda4ba0465e9bf0",
     "dirty": false
   },
   "files": {
@@ -228,7 +228,7 @@
     "conformance/cases/tokenizer-estimate-utf8/expected.payload.txt": "ab80692164867aa12cabec2f37ebaa26d614276dbfb9728e6e4070bfbebed920",
     "conformance/cases/tokenizer-estimate-utf8/expected.trace.json": "1b15e40572180340ff216317ec39fd29608ec000174203ce6b9509c05c198024",
     "conformance/cases/tokenizer-estimate-utf8/snapshot.json": "c16376993a01699cc41a0849aa1e6c2106c33d0019fb703ee7e9b220f7f40c38",
-    "conformance/check.py": "da503ebab4400ec828412270db005d0f8dea7f90886db9ddc4eec90eeed6438f",
+    "conformance/check.py": "e1d7287e16906a56f15a11c52560ee971e204e392370b1d57319c8ce903e3c2c",
     "conformance/generators/admission-reasons.py": "71561fb9c55ea90ff8ee64e86044ab7fb17d954bb3af3e69b7986312c7d6b8c8",
     "conformance/generators/capability-kind.py": "b94b4af43083392d5d910b48c799c98df860934b519a182ccc9a9940f3dc8d12",
     "conformance/generators/conflicts.py": "f4f28e8e5ffc095fb6fc406a88cd74683077007cb3884354b5c574b6f413e050",
@@ -244,6 +244,7 @@
     "conformance/generators/rejections.py": "328edfd9e6acaeee590b6f5955af3bbce454e1e912e695a522257762ac55b6fd",
     "conformance/generators/route-slots.py": "5c8519b8e45509bb51aae4f8b0a090356e8dd996bca9554799194aaae47f9211",
     "conformance/generators/supersede.py": "1004bcf373898ce67c5469ea7ead756ce1e547e1d9492db8a47618e17dcdd4e1",
+    "conformance/import_report.py": "1a13998b40fe0348d3b5d95730a45140dc3564e116145631a5153bff1be5f434",
     "conformance/registry/lock.json": "6b9eec2b81458799dd42ee739dd63d8d5b69e7e48e39a740b7082c248438f214",
     "conformance/registry/profiles.json": "bc1115351060e1777178873039c385d421da2d3612f484f5d7c96bc2276a6a5f",
     "conformance/registry/route-policies.json": "a6b6ae3cd8e241078a7741b7ed27aa02770b7084cf843a77551893a55546963c",
@@ -297,6 +298,7 @@
     "conformance/rejections/superseded-by-unknown/snapshot.json": "4f7eabc922b04c112ad8786785e2a291619b663b361356a972292e7cc2107afe",
     "conformance/rejections/unpaired-surrogate/case.json": "cf6f46233de822becd93340b6c4af019ebd6b8664c07f43f466ea444e1d09268",
     "conformance/rejections/unpaired-surrogate/snapshot.json": "d69e654715f43abc9b728d32accdca3e16459caeeb169834701935c980d79918",
+    "conformance/tests/test_import_report.py": "64f056dc20db389bc4cee70eb531192eb787472500ece4e27df689686bb4474a",
     "src/cwa/contract/data/assembler-scope.json": "7ab26481de2854257547d9b3a2da7740789039cecda873ef8c2b133ffae6b3d1",
     "src/cwa/contract/data/reasons.json": "43f26fd33c53851e7177263676a73e232df4964a1d421f655cbbc173df88fd9e",
     "src/cwa/contract/data/requirements.json": "b8b7a9fb675ca60a3fcc88ac78770efaf5f31180b1d5e1545c7645636f97db88",

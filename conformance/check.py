@@ -22,8 +22,12 @@ It checks, in this order:
   revisions run newest first, its sections 1 to 6 in order with each requirement once in its own, and every file it
   links beside it.
 
-The two assembler reports under contract/ are checked for schema validity and coverage of the cases now on disk, and any
-problem there is a warning, since the reports are artifacts of another repository.
+- implementations/: every entry listed in index.json, stored whole as conformance/import_report.py writes it, from a
+  clean checkout, valid against the report schema of the commit it ran against, with the digests that commit's cases
+  had when the report names this repository; and the status claims each fitting its requirement's scope.
+
+--implementations also prints how many published cases each listed implementation passes, counted as conformance/README.md
+(Reporting results) says: a case changed or published since the run does not count.
 
 Needs the jsonschema package (with referencing). Run from anywhere; paths resolve from this file.
 """
@@ -352,28 +356,47 @@ def check_or_write(write):
         if not os.path.exists(os.path.join(ROOT, target.split("#")[0])): problem(f"SPEC.md links {target}, which is not beside it")
 
 
-# ---------------------------------------------------------------------------------------------- assembler reports (warnings)
-disk_cases = {os.path.basename(d.rstrip("/")) for d in case_dirs}
-disk_rejections = {os.path.basename(d.rstrip("/")) for d in rejection_dirs}
-for path in sorted(glob.glob(os.path.join(ROOT, "contract", "assembler*-conformance.json"))):
-    rel = os.path.relpath(path, ROOT)
-    stored = json.load(open(path, encoding="utf-8"))  # {source, cases_at_run, report}: scripts/conformance-reports.mjs
-    report = stored.get("report") if isinstance(stored, dict) else None
-    if not isinstance(report, dict): warn(f"{rel}: holds no report; import it again with scripts/import-conformance-report.mjs"); continue
-    if (e := first_error(V_REPORT, report)): warn(f"{rel}: report not valid against conformance_report.schema.json: {e}")
-    ran = {c["id"] for c in report.get("cases", [])}
-    ran_rej = {c["id"] for c in report.get("rejections", [])}
-    if disk_cases - ran: warn(f"{rel}: cases not in the report: {sorted(disk_cases - ran)}")
-    if disk_rejections - ran_rej: warn(f"{rel}: rejections not in the report: {sorted(disk_rejections - ran_rej)}")
-    failed = [c["id"] for c in report.get("cases", []) if c.get("outcome") != "passed"] + [c["id"] for c in report.get("rejections", []) if c.get("outcome") != "rejected"]
-    if failed: warn(f"{rel}: not passing: {failed}")
+# ---------------------------------------------------------------------------------------------- implementations
+# implementations/ holds each listed implementation's report as conformance/import_report.py stored it, and the Python
+# reference assembler's status claims. Counts are never stored: --implementations prints them from the cases as they are now.
+import import_report  # noqa: E402
+
+def implementations():
+    index = load("implementations/index.json")
+    ids = [i.get("id") for i in index]
+    if len(ids) != len(set(ids)) or any(sorted(i) != ["id", "label"] or not re.fullmatch(r"[a-z0-9][a-z0-9-]*", i["id"]) or not i["label"].strip() for i in index):
+        problem("implementations/index.json: each entry needs a distinct lowercase id and a label")
+    allowed = {"index.json", *(f"{i}.json" for i in ids), *(f"{i}.status.json" for i in ids)}
+    for name in sorted(os.listdir(os.path.join(ROOT, "implementations"))):
+        if name not in allowed: problem(f"implementations/{name}: not an entry implementations/index.json lists")
+    entries = {}
+    for i in ids:
+        path = f"implementations/{i}.json"
+        if not os.path.exists(os.path.join(ROOT, path)): problem(f"{path}: implementations/index.json lists {i}, which has no report"); continue
+        entries[i] = load(path)
+        for p in import_report.entry_problems(entries[i], ROOT): problem(f"{path}: {p}")
+        status = f"implementations/{i}.status.json"
+        if os.path.exists(os.path.join(ROOT, status)):
+            for p in import_report.status_problems(load(status), load("contract/assembler-scope.json")): problem(f"{status}: {p}")
+    return index, entries
+
+def print_implementations(index, entries):
+    published = import_report.case_digests_now(ROOT)
+    for i in index:
+        if i["id"] not in entries: continue
+        outcomes = list(import_report.tally(entries[i["id"]]["report"], entries[i["id"]]["cases_at_run"], published).values())
+        note = ", ".join(f"{outcomes.count(k)} {k}" for k in ("stale", "failed", "not run") if outcomes.count(k))
+        print(f"{i['label']}: {outcomes.count('passed')} of {len(outcomes)} published cases and rejections pass{'; ' + note if note else ''}")
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--write", action="store_true", help="rewrite SPEC.md's generated blocks and draft date")
+    ap.add_argument("--implementations", action="store_true", help="print how many published cases each listed implementation passes")
     args = ap.parse_args()
     check_or_write(args.write)
+    index, entries = implementations()
+    if args.implementations: print_implementations(index, entries)
     print(f"{len(case_dirs)} cases, {len(rejection_dirs)} rejections, {len(requirements)} requirements, {len(reasons)} reason codes")
     for w in warnings: print("warning:", w)
     for p in problems: print("PROBLEM:", p)
