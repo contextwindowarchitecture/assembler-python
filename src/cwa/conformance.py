@@ -124,13 +124,19 @@ def _by_id(directory: Path) -> list[Path]:
     return sorted((p for p in directory.iterdir() if p.is_dir()), key=lambda p: utf16(p.name))
 
 
+# The repository a lock that records none was vendored from.
+WEBSITE = "contextwindowarchitecture/website"
+
+
 def report(cases: Path, lock: Mapping[str, Any], rejections: Path | None = None) -> dict[str, Any]:
     """The conformance_report.schema.json document for every case under `cases` and every rejection case under
-    `rejections` (by default the rejections folder beside `cases`), each by id."""
+    `rejections` (by default the rejections folder beside `cases`), each by id, naming the repository and commit
+    `lock` vendored them from."""
     rejections = rejections or cases.parent / "rejections"
     return {
         "implementation": {"name": "contextwindowarchitecture-assembler", "version": version("contextwindowarchitecture-assembler"), "language": "python"},
-        "contract": {"website_commit": lock["source"]["commit"], "dirty": lock["source"]["dirty"]},
+        "contract": {"repository": lock["source"].get("repository", WEBSITE), "commit": lock["source"]["commit"],
+                     "dirty": lock["source"]["dirty"]},
         "cases": [run_case(d) for d in _by_id(cases)],
         "rejections": [run_rejection(d) for d in _by_id(rejections)],
     }

@@ -219,9 +219,22 @@ def test_the_report_covers_every_case_in_id_order_and_names_the_vendored_commit(
     lacked = {f"no renderer {name}" for field, name in PUBLISHED_OPTIONAL if field == "renderer" and name not in RENDERERS}
     assert all(c["outcome"] == "rejected" or (c["outcome"] == "skipped" and c["detail"] in lacked)
                for c in produced["rejections"])
-    assert produced["contract"] == {"website_commit": LOCK["source"]["commit"], "dirty": LOCK["source"]["dirty"]}
+    assert produced["contract"] == {"repository": LOCK["source"]["repository"], "commit": LOCK["source"]["commit"],
+                                    "dirty": LOCK["source"]["dirty"]}
     assert produced["implementation"] == {"name": "contextwindowarchitecture-assembler", "version": "0.0.1", "language": "python"}
 
+
+@pytest.mark.parametrize("repository, named", [
+    ("contextwindowarchitecture/contextwindowarchitecture", "contextwindowarchitecture/contextwindowarchitecture"),
+    (None, "contextwindowarchitecture/website"),
+])
+def test_the_report_names_the_repository_the_lock_records_or_else_the_website(repository, named):
+    """A lock written before it recorded its source repository came from the website."""
+    source = {k: v for k, v in LOCK["source"].items() if k != "repository"}
+    if repository:
+        source["repository"] = repository
+    produced = report(CASES, {**LOCK, "source": source}, REJECTIONS)
+    assert produced["contract"] == {"repository": named, "commit": LOCK["source"]["commit"], "dirty": LOCK["source"]["dirty"]}
 
 def test_the_committed_report_is_current():
     """Regenerate with: uv run python -m cwa.conformance > conformance-report.json"""
