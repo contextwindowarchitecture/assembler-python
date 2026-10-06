@@ -5,8 +5,8 @@
     "language": "python"
   },
   "contract": {
-    "repository": "contextwindowarchitecture/website",
-    "commit": "b37f444ca09c5c1c807c3e7911dbc0dc963b046c",
+    "repository": "contextwindowarchitecture/contextwindowarchitecture",
+    "commit": "161ed75c318b7e8cb5ebc3f4deb379b98381fa37",
     "dirty": false
   },
   "cases": [

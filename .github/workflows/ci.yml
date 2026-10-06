@@ -1,5 +1,5 @@
-# The suite on every supported Python, and the vendored contract against the website commit it pins. A tag runs
-# it through release.yml, on the tagged commit.
+# The suite on every supported Python, and the vendored contract against the specification repository commit it
+# pins. A tag runs it through release.yml, on the tagged commit.
 name: ci
 
 on:
@@ -35,7 +35,7 @@ jobs:
       - run: uv run pytest
 
   contract:
-    name: vendored contract matches the website
+    name: vendored contract matches the specification
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -43,10 +43,10 @@ jobs:
           ref: ${{ inputs.ref }}
       - id: lock
         run: echo "commit=$(python3 -c 'import json; print(json.load(open("contract.lock.json"))["source"]["commit"])')" >> "$GITHUB_OUTPUT"
-      # The locked commit must be pushed to the website repository for this checkout to find it.
+      # The locked commit must be pushed to the specification repository for this checkout to find it.
       - uses: actions/checkout@v5
         with:
-          repository: contextwindowarchitecture/website
+          repository: contextwindowarchitecture/contextwindowarchitecture
           ref: ${{ steps.lock.outputs.commit }}
-          path: website
-      - run: python3 scripts/vendor_contract.py --spec website --check
+          path: spec
+      - run: python3 scripts/vendor_contract.py --spec spec --check

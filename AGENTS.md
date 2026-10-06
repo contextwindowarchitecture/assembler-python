@@ -25,12 +25,12 @@ All behavior changes follow red → green → refactor:
 Rules:
 
 - No production code without a failing test that demanded it. Bug fixes start with a test that reproduces the bug.
-- Conformance cases (`conformance/cases/`) come from the website repo. When a milestone needs a new spec-level case, add it there first (with its own website tests), re-vendor, and let it fail here before implementing.
+- Conformance cases (`conformance/cases/`) come from the specification repository. When a milestone needs a new spec-level case, add it there first (with its own checks there), re-vendor, and let it fail here before implementing.
 - While its milestone is in progress, a vendored case that cannot pass yet goes in `PENDING` in `tests/test_conformance.py`. `PENDING` holds a gap, never a wrong answer: a pending case must fail by raising one of `GAPS` there, which are `NotImplementedError` for a feature not built yet, `SnapshotError` for a snapshot the code still rejects, `TraceError` for a trace the newer schema rejects, and `UnsupportedComponentError` for a tokenizer or renderer not provided yet. A case whose code runs and returns a wrong payload or trace is a regression. `PENDING` cannot hold it (the marker accepts only `GAPS`), so the suite fails until it is fixed. It is a strict expected failure, so the suite also fails as soon as a pending case starts passing; remove it from `PENDING` in the commit that makes it pass. Rejection cases (`conformance/rejections/`) have no `PENDING`: a vendored one this assembler does not reject yet is fixed in its vendor commit. One that stops for an optional renderer this assembler does not provide is skipped instead, as the README's Reporting results describes (`tests/test_rejections.py`).
 - Before claiming a test protects something, break the code on purpose and watch the test fail. Restore the code afterwards:
   - Copy the file outside the repo first, and restore it with `cp`. Never use `git checkout` or `git restore`, which also discard uncommitted work.
   - Then delete `__pycache__`. A same-length edit restored within the same second leaves bytecode that Python still trusts, and the suite then fails on correct code.
-- A conformance-matrix row moves to *implemented* (or *boundary-checked*) only when tests cover every assembler-scoped clause of that requirement. Record the claim in `status.json` and cite the tests. `tests/test_status.py` rejects statuses that don't fit the scope, claims whose cited tests don't exist, and claims for a requirement while any case tagged with it fails in `conformance-report.json`. Regenerate that report with `uv run python -m cwa.conformance > conformance-report.json` whenever a case or the code changes; `tests/test_report.py` fails while it is stale. The website imports both files into its matrix.
+- A conformance-matrix row moves to *implemented* (or *boundary-checked*) only when tests cover every assembler-scoped clause of that requirement. Record the claim in `status.json` and cite the tests. `tests/test_status.py` rejects statuses that don't fit the scope, claims whose cited tests don't exist, and claims for a requirement while any case tagged with it fails in `conformance-report.json`. Regenerate that report with `uv run python -m cwa.conformance > conformance-report.json` whenever a case or the code changes; `tests/test_report.py` fails while it is stale. The specification repository lists both files under its `implementations/`, from which the website shows its matrix.
 
 ## Commits
 
@@ -53,19 +53,19 @@ Rules:
 - **Validate at the boundary, once.** `Snapshot.from_json` validates against the published schemas. Code after it trusts the model types and does not re-validate.
 - **Determinism.** Order anything that reaches the payload or trace by explicit keys. Never iterate a `set` into output. Compare timestamps at full precision (R-2).
 - **Don't guess.** If a snapshot needs behavior from a later milestone, raise `NotImplementedError` naming that milestone. Never emit a payload the spec would not allow.
-- **Reason codes come from the registry.** Exclusions and refusals use codes in `contract/data/reasons.json` (R-21). A new condition needs a new code in the website repo first.
+- **Reason codes come from the registry.** Exclusions and refusals use codes in `contract/data/reasons.json` (R-21). A new condition needs a new code in the specification repository first.
 
 ## Documentation
 
-- **Update documentation incrementally.** A commit that changes behavior also updates the docs that describe it: `README.md` status, `docs/DESIGN.md` (milestone status, divergences from the design, diagrams), `status.json` claims, and AGENTS.md when a rule changes. Never batch doc updates at the end of a milestone. When a step needs a spec change, the website docs change in the website commit that makes it.
+- **Update documentation incrementally.** A commit that changes behavior also updates the docs that describe it: `README.md` status, `docs/DESIGN.md` (milestone status, divergences from the design, diagrams), `status.json` claims, and AGENTS.md when a rule changes. Never batch doc updates at the end of a milestone. When a step needs a spec change, the spec's docs change in the specification repository's commit that makes it.
 - Use Mermaid diagrams in docs and design notes wherever a flow, ordering, structure or plan reads faster as a picture than as prose or a table. Check that every new diagram parses with Mermaid 12 (the current major, 12.0.0) before committing.
 
 ## The contract is vendored, not edited
 
-`src/cwa/contract/data/` and `conformance/` are copies of the files the website repo's git tracks in `schema/`, `contract/` and `conformance/` (never its untracked or ignored files, such as `__pycache__`), pinned by SHA-256 in `contract.lock.json`. `tests/test_contract_lock.py` fails if they are edited here. To change the spec:
+`src/cwa/contract/data/` and `conformance/` are copies of the files the git of the specification repository ([contextwindowarchitecture/contextwindowarchitecture](https://github.com/contextwindowarchitecture/contextwindowarchitecture)), the spec's author and home, tracks in `schema/`, `contract/` and `conformance/` (never its untracked or ignored files, such as `__pycache__`), pinned by SHA-256 in `contract.lock.json`. `tests/test_contract_lock.py` fails if they are edited here. To change the spec:
 
-1. Change the website repo and run its `npm test`.
-2. Commit there on branch `assembler-v0.0.1`, following the same commit rules: incremental, Conventional Commits, `-s`, never push. This is standing permission; no need to ask.
-3. Re-vendor here and commit the lock update: `build(contract): vendor website <short-sha>`. If the new contract makes existing code fail in a way `PENDING` cannot hold (a wrong payload or trace, or any error outside `GAPS`), no vendor-only commit can pass: vendor and fix in one commit, and say why in its body.
+1. Change the specification repository (checkout `../contextwindowarchitecture`) as its CONTRIBUTING.md says, and run its checks: `uv run python conformance/check.py` and `uv run python -m unittest discover -s conformance/tests`.
+2. Commit there following the same commit rules: incremental, Conventional Commits, `-s`, never push. This is standing permission; no need to ask.
+3. Re-vendor here and commit the lock update: `build(contract): vendor spec <short-sha>`. If the new contract makes existing code fail in a way `PENDING` cannot hold (a wrong payload or trace, or any error outside `GAPS`), no vendor-only commit can pass: vendor and fix in one commit, and say why in its body.
 
-Re-vendor only from a committed website state. The lock records `"dirty": true` otherwise.
+Re-vendor only from a committed state of the specification repository. The lock records `"dirty": true` otherwise.

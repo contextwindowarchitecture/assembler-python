@@ -1,11 +1,11 @@
 {
   "source": {
-    "repository": "contextwindowarchitecture/website",
-    "commit": "b37f444ca09c5c1c807c3e7911dbc0dc963b046c",
+    "repository": "contextwindowarchitecture/contextwindowarchitecture",
+    "commit": "161ed75c318b7e8cb5ebc3f4deb379b98381fa37",
     "dirty": false
   },
   "files": {
-    "conformance/README.md": "1753f8febde6515fc3f23e87cd8cff103b3fcb966faed035a611f3bc9a2bb2de",
+    "conformance/README.md": "95612837c677e6395af7583d9c3f67b7da46ae93b60939ec5187bd5e9cb0f949",
     "conformance/cases/admission-reasons/case.json": "51f506b50fb36f72e8824848527f14e51616a4d350fe41ca6056f65299434e56",
     "conformance/cases/admission-reasons/expected.payload.txt": "06179cbc8206a76ab393bfab41e5b5eb4f3f0e7c15842b720fa45a1b34a7d695",
     "conformance/cases/admission-reasons/expected.trace.json": "c7c0816696f50d406334141fa284835b956836d015d3a4ceb66467e8c1751f7e",
@@ -241,11 +241,11 @@
     "conformance/generators/history.py": "10fc254167d6dc8be77ecac89fd008b036503cd6dfcb7cdac1d6afd1241d225a",
     "conformance/generators/messages.py": "f7f02cc06ae60619676e896f30599800fbe67275b42fe655c07214dd17081ed3",
     "conformance/generators/order.py": "1f2e5560f0ed544d8f60a2d9ac90e6d85bf6d040f30c137dc8d5a851bc8bb243",
-    "conformance/generators/registry.py": "09ba73de7b72424ff9123b122898f5e808b3d837fd25e73ed796ce3a76e5c832",
-    "conformance/generators/rejections.py": "328edfd9e6acaeee590b6f5955af3bbce454e1e912e695a522257762ac55b6fd",
+    "conformance/generators/registry.py": "ef258fe1a2bd79a7e7c35044456e1c3c22f05da271565a9bbd94d197c4cd613a",
+    "conformance/generators/rejections.py": "f88e6c5fe03a3967e5fff3ab80d478df5388d7abb254e9770c8f764c72540ef9",
     "conformance/generators/route-slots.py": "5c8519b8e45509bb51aae4f8b0a090356e8dd996bca9554799194aaae47f9211",
     "conformance/generators/supersede.py": "1004bcf373898ce67c5469ea7ead756ce1e547e1d9492db8a47618e17dcdd4e1",
-    "conformance/import_report.py": "1a13998b40fe0348d3b5d95730a45140dc3564e116145631a5153bff1be5f434",
+    "conformance/import_report.py": "6125d93477193e0756ffc1cef9bc2650fedf0687f0ccde4dbacb9d6252586afb",
     "conformance/registry/lock.json": "6b9eec2b81458799dd42ee739dd63d8d5b69e7e48e39a740b7082c248438f214",
     "conformance/registry/profiles.json": "bc1115351060e1777178873039c385d421da2d3612f484f5d7c96bc2276a6a5f",
     "conformance/registry/route-policies.json": "a6b6ae3cd8e241078a7741b7ed27aa02770b7084cf843a77551893a55546963c",
@@ -299,7 +299,7 @@
     "conformance/rejections/superseded-by-unknown/snapshot.json": "4f7eabc922b04c112ad8786785e2a291619b663b361356a972292e7cc2107afe",
     "conformance/rejections/unpaired-surrogate/case.json": "cf6f46233de822becd93340b6c4af019ebd6b8664c07f43f466ea444e1d09268",
     "conformance/rejections/unpaired-surrogate/snapshot.json": "d69e654715f43abc9b728d32accdca3e16459caeeb169834701935c980d79918",
-    "conformance/tests/test_import_report.py": "64f056dc20db389bc4cee70eb531192eb787472500ece4e27df689686bb4474a",
+    "conformance/tests/test_import_report.py": "136aa99165e80693d9cea265920966828526a10f6ae2ca22fbbcbc018d8965bc",
     "conformance/tests/test_regenerate.py": "80f15378e6a21914845c0404f27828b21be8d24d11a7afeb238fd9792edd21b2",
     "conformance/tests/test_schemas.py": "ef255539c802f25ebb541b24fa88f601486fe9aa71356cb868aa275129aa9dd6",
     "src/cwa/contract/data/assembler-scope.json": "7ab26481de2854257547d9b3a2da7740789039cecda873ef8c2b133ffae6b3d1",

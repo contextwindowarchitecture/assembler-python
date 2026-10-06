@@ -1,7 +1,8 @@
-# A GitHub release for each tag, made once ci passes on the tagged commit. The notes name the website commit the
-# contract is vendored from, then list the tag's own commits, written by git-cliff from cliff.toml. A tag that is
-# not vX.Y.Z, such as draft-release, is a prerelease. A tag pushed before this workflow existed is released by
-# hand: gh workflow run release.yml -f tag=<tag>
+# A GitHub release for each tag, made once ci passes on the tagged commit. The notes name the repository and
+# commit the contract is vendored from, as contract.lock.json records them (the website for a lock that records
+# none), then list the tag's own commits, written by git-cliff from cliff.toml. A tag that is not vX.Y.Z, such as
+# draft-release, is a prerelease. A tag pushed before this workflow existed is released by hand:
+# gh workflow run release.yml -f tag=<tag>
 name: release
 
 on:
@@ -38,8 +39,8 @@ jobs:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@v6
       - run: |
-          commit=$(python3 -c 'import json; print(json.load(open("contract.lock.json"))["source"]["commit"])')
-          printf 'Vendors the published contract at website [`%s`](https://github.com/contextwindowarchitecture/website/commit/%s).\n\n' "${commit::7}" "$commit" > notes.md
+          read -r repository commit < <(python3 -c 'import json; s = json.load(open("contract.lock.json"))["source"]; print(s.get("repository", "contextwindowarchitecture/website"), s["commit"])')
+          printf 'Vendors the published contract at %s [`%s`](https://github.com/%s/commit/%s).\n\n' "$repository" "${commit::7}" "$repository" "$commit" > notes.md
           uvx git-cliff@2.14.2 --current --strip all >> notes.md
       - env:
           GH_TOKEN: ${{ github.token }}
