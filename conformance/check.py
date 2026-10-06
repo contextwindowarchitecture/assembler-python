@@ -2,7 +2,7 @@
 """Checks the CWA contract's own consistency, and regenerates the copies derived from it.
 
     python3 conformance/check.py          # verify; exit 1 on any contract problem
-    python3 conformance/check.py --write  # also rewrite SPEC.md's generated blocks and draft date
+    python3 conformance/check.py --write  # also rewrite the generated blocks in SPEC.md and guides/, and SPEC.md's date
 
 It checks, in this order:
 
@@ -20,7 +20,10 @@ It checks, in this order:
 - SPEC.md, the normative text: each block between `generated` markers equal to what contract/requirements.json,
   contract/model.json and examples/profiles.json write there, its draft date the newest revision's in CHANGES.md, whose
   revisions run newest first, its sections 1 to 6 in order with each requirement once in its own, and every file it
-  links beside it.
+  links beside it;
+- guides/producers.md and guides/assemblers.md: each block between `generated` markers equal to what the contract files
+  and implementations/ write there, every requirement and snake_case identifier they cite defined by the contract, and
+  every file they link in this repository.
 
 - implementations/: every entry listed in index.json, stored whole as conformance/import_report.py writes it, from a
   clean checkout, valid against the report schema of the commit it ran against, with the digests that commit's cases
@@ -325,6 +328,60 @@ def generated_blocks():
         "profile": "```json\n" + json.dumps(load("examples/profiles.json")[0], indent=2, ensure_ascii=False) + "\n```",
     }
 
+js = lambda v: "null" if v is None else "true" if v is True else "false" if v is False else str(v)  # as JavaScript's String()
+def plain_table(head, rows): return md_table(head, [[js(c) for c in row] for row in rows])
+
+def guide_blocks():
+    """The blocks between generated markers in guides/: what the guide for producers and the guide for assemblers list."""
+    ordered = sorted(requirements, key=lambda r: int(r["id"][2:]))
+    scopes = load("contract/assembler-scope.json")
+    plane = {p["id"]: p["name"] for p in model["planes"]}
+    holds = {s["id"]: s["holds"] for s in model["slots"]}
+    reason_table = lambda kind: plain_table(["Code", "Rule", "When"], [[code(r["code"]), r["rule"], r["text"]] for r in reasons if r["kind"] == kind])
+    listed = [(i, load(f"implementations/{i['id']}.json")) for i in load("implementations/index.json")]
+    return {
+        "guides/producers.md": {
+            "stages": "\n".join(f"{n}. {s['name']} ({s['owner']}): {s['text']}" for n, s in enumerate(model["stages"], 1)),
+            "batch": "```json\n" + json.dumps(load("examples/producer-batch.json"), indent=2, ensure_ascii=False) + "\n```",
+            "slots": plain_table(["Slot", "Plane", "Holds", "Authority", "Tier", "Lineage", "injection_risk", "conflict_policy"],
+                                 [[code(slot), plane[slot.split(".")[0]], holds[slot], code(d["authority"]), d["tier"], d["lineage"], d["injection_risk"], d["conflict_policy"]] for slot, d in slot_defaults.items()]),
+            "authority": plain_table(["Authority", "Role", "Meaning"], [[code(a["value"]), a["name"], a["text"]] for a in model["authority"]]),
+            "exclusions": reason_table("exclusion"),
+        },
+        "guides/assemblers.md": {
+            "refusals": reason_table("refusal"),
+            "scope": plain_table(["Rule", "Summary", "Scope", "What an assembler checks"], [[r["id"], r["summary"], s["scope"], s["note"]] for r, s in zip(ordered, scopes)]),
+            "implementations": plain_table(["Language", "Package", "Repository"], [[i["label"], f"{code(e['report']['implementation']['name'])} {e['report']['implementation']['version']}",
+                                                                                  f"https://github.com/{e['source']['repository']}"] for i, e in listed]),
+        },
+    }
+
+def rewrite_blocks(path, want, write):
+    """Rewrites a file's generated blocks to what want holds; returns the text it holds afterwards, or holds now."""
+    text = read(path)
+    found = [m.group(1) for m in GENERATED.finditer(text)]
+    if sorted(found) != sorted(want): problem(f"{path}'s generated blocks are {found}; it needs one each of {sorted(want)}")
+    rewritten = GENERATED.sub(lambda m: f"<!-- generated:{m.group(1)} -->\n\n{want.get(m.group(1), m.group(2))}\n\n<!-- /generated:{m.group(1)} -->", text)
+    if rewritten != text:
+        stale = [n for n, body in GENERATED.findall(text) if n in want and body != want[n]]
+        if write: open(os.path.join(ROOT, path), "w", encoding="utf-8").write(rewritten); print(f"wrote {path}'s generated blocks")
+        else: problem(f"{path} differs from the contract files at {', '.join(stale)}; run check.py --write")
+    return rewritten if write else text
+
+def check_guides(write):
+    """The guides' generated blocks current, and every requirement and identifier they cite defined by the contract."""
+    defined = "\n".join([*(json.dumps(s) for s in schemas.values()), *(read(f) for f in ("contract/reasons.json", "contract/slot-defaults.json", "contract/requirements.json", "conformance/README.md"))])
+    for path, want in guide_blocks().items():
+        text = rewrite_blocks(path, want, write)
+        for n in re.findall(r"\bR-(\d+)\b", text):
+            if not 1 <= int(n) <= len(requirements): problem(f"{path} cites R-{n}, which does not exist")
+        for name in sorted(set(re.findall(r"`([a-z]+(?:_[a-z0-9]+)+)`", text))):
+            if name not in defined: problem(f"{path} names {name}, which the contract does not define")
+        for target in re.findall(r"\]\(([^)\s]+)\)", text):
+            if not re.match(r"^[a-z]+:|^#", target) and not os.path.exists(os.path.join(ROOT, os.path.dirname(path), target.split("#")[0])):
+                problem(f"{path} links {target}, which is not in this repository")
+
+
 def check_or_write(write):
     spec, changes = read("SPEC.md"), read("CHANGES.md")
     want = generated_blocks()
@@ -395,6 +452,7 @@ def main():
     ap.add_argument("--implementations", action="store_true", help="print how many published cases each listed implementation passes")
     args = ap.parse_args()
     check_or_write(args.write)
+    check_guides(args.write)
     index, entries = implementations()
     if args.implementations: print_implementations(index, entries)
     print(f"{len(case_dirs)} cases, {len(rejection_dirs)} rejections, {len(requirements)} requirements, {len(reasons)} reason codes")

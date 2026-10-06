@@ -1,7 +1,7 @@
 {
   "source": {
     "repository": "contextwindowarchitecture/website",
-    "commit": "d5ef9d6d91623624bcfcf42c7bda4ba0465e9bf0",
+    "commit": "408c8886fa74f625086735b39e854eabc06c4afb",
     "dirty": false
   },
   "files": {
@@ -228,7 +228,7 @@
     "conformance/cases/tokenizer-estimate-utf8/expected.payload.txt": "ab80692164867aa12cabec2f37ebaa26d614276dbfb9728e6e4070bfbebed920",
     "conformance/cases/tokenizer-estimate-utf8/expected.trace.json": "1b15e40572180340ff216317ec39fd29608ec000174203ce6b9509c05c198024",
     "conformance/cases/tokenizer-estimate-utf8/snapshot.json": "c16376993a01699cc41a0849aa1e6c2106c33d0019fb703ee7e9b220f7f40c38",
-    "conformance/check.py": "e1d7287e16906a56f15a11c52560ee971e204e392370b1d57319c8ce903e3c2c",
+    "conformance/check.py": "b86e33f73f915743726469d658efdf0a48a510c4646774bc10e21ffdc5add07a",
     "conformance/generators/admission-reasons.py": "71561fb9c55ea90ff8ee64e86044ab7fb17d954bb3af3e69b7986312c7d6b8c8",
     "conformance/generators/capability-kind.py": "b94b4af43083392d5d910b48c799c98df860934b519a182ccc9a9940f3dc8d12",
     "conformance/generators/conflicts.py": "f4f28e8e5ffc095fb6fc406a88cd74683077007cb3884354b5c574b6f413e050",
