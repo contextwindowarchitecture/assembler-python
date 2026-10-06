@@ -13,6 +13,9 @@ It checks, in this order:
 - the registry: profiles and route policies valid, and lock.json pinning each with the digest the README defines;
 - contract/reasons.json against the schemas that list its codes and against the requirements that cite them: each code is
   named by the rule it is attributed to, so R-21's "the conditions those codes name" always has a home;
+- contract/model.json, the lists the Spec page shows: its slots the same set as contract/slot-defaults.json's and the item
+  schema's, its authority values that schema's enum, its required fields that schema's, its recommended fields the six R-3
+  names, each test citing a requirement that exists, and each stage owned by the producer or the assembler;
 - every requirement exercised by at least one case, except those listed in UNTESTABLE;
 - the spec page's RULES block equal to what contract/requirements.json generates, and SPEC.md, which
   `npm run build:contract` writes from the spec page, holding every requirement once, worded as that file words it.
@@ -251,6 +254,38 @@ item_slots = schemas["https://contextwindowarchitecture.io/schema/context_item.s
 if list(slot_defaults) != item_slots: problem("contract/slot-defaults.json's slots differ from context_item.schema.json's slot enum, in content or order")
 for slot, d in slot_defaults.items():
     if set(POLICY_FIELDS) - set(d): problem(f"slot default {slot}: missing a policy field")
+
+
+# ---------------------------------------------------------------------------------------------- model
+# contract/model.json holds the lists the Spec page shows, in its order; that order is not the schema's, so slots and
+# required fields are compared as sets.
+model = load("contract/model.json")
+item_schema = schemas["https://contextwindowarchitecture.io/schema/context_item.schema.json"]
+MODEL_SHAPE = {"planes": ["id", "name", "answers"], "slots": ["id", "holds", "rule"], "authority": ["name", "value", "text"],
+               "conflicts": ["when", "then"], "stages": ["name", "owner", "text"], "tests": ["name", "text", "requirement"]}
+if sorted(model) != sorted([*MODEL_SHAPE, "item_fields"]): problem(f"contract/model.json: members {sorted(model)}")
+for name, keys in MODEL_SHAPE.items():
+    for row in model.get(name, []):
+        if sorted(row) != sorted(keys) or not all(isinstance(row[k], str) and row[k].strip() for k in keys): problem(f"contract/model.json {name}: {row.get(keys[0])!r} needs exactly {keys}, each a non-blank string")
+fields = model.get("item_fields", {})
+if sorted(fields) != ["described", "must", "should"]: problem("contract/model.json item_fields: needs must, should and described")
+planes = [p.get("id") for p in model.get("planes", [])]
+slots = [s.get("id") for s in model.get("slots", [])]
+if len(planes) != len(set(planes)) or len(slots) != len(set(slots)): problem("contract/model.json repeats a plane or a slot")
+if set(slots) != set(slot_defaults) or set(slots) != set(item_slots): problem(f"contract/model.json slots differ from contract/slot-defaults.json and context_item.schema.json's slot enum: {sorted(set(slots) ^ set(item_slots))}")
+for s in slots:
+    if str(s).split(".")[0] not in planes: problem(f"contract/model.json slot {s}: its plane is not one of {planes}")
+for p in planes:
+    if not any(str(s).startswith(p + ".") for s in slots): problem(f"contract/model.json plane {p}: holds no slot")
+if [a.get("value") for a in model.get("authority", [])] != item_schema["properties"]["authority"]["enum"]: problem("contract/model.json authority values differ from context_item.schema.json's authority enum, in content or order")
+if sorted(fields.get("must", [])) != sorted(item_schema["required"]): problem("contract/model.json item_fields.must differs from context_item.schema.json's required fields")
+if fields.get("should") != POLICY_FIELDS: problem(f"contract/model.json item_fields.should is not the six policy fields of R-3, in order: {POLICY_FIELDS}")
+for f in fields.get("described", []):
+    if sorted(f) != ["key", "text"]: problem(f"contract/model.json item_fields.described: {f.get('key')!r} needs exactly key and text")
+for t in model.get("tests", []):
+    if t.get("requirement") not in texts: problem(f"contract/model.json test {t.get('name')!r}: cites {t.get('requirement')}, which does not exist")
+for s in model.get("stages", []):
+    if s.get("owner") not in ("producer", "assembler"): problem(f"contract/model.json stage {s.get('name')!r}: owner {s.get('owner')!r} is neither producer nor assembler")
 
 
 # ---------------------------------------------------------------------------------------------- derived copies
