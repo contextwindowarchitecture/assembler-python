@@ -65,9 +65,12 @@ The package ships `py.typed`, and the suite runs mypy over `src/cwa`, so its ann
 Schemas, slot defaults, reason codes and conformance cases come from the website repository, which owns the spec. They are copied into `src/cwa/contract/data/` and `conformance/`, and every file is pinned by SHA-256 in `contract.lock.json`. Don't edit them here; change them in the website repo, then:
 
 ```sh
-python scripts/vendor_contract.py --website ../website          # re-vendor and rewrite the lock
-python scripts/vendor_contract.py --website ../website --check  # fail on drift
+python scripts/vendor_contract.py                                      # re-vendor from ../contextwindowarchitecture and rewrite the lock
+python scripts/vendor_contract.py --check                              # fail on drift
+python scripts/vendor_contract.py --spec ../contextwindowarchitecture  # name the checkout explicitly
 ```
+
+The lock names its source as the checkout's GitHub `origin`, `owner/name`, and the conformance report repeats it.
 
 ## License
 

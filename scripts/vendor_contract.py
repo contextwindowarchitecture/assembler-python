@@ -1,13 +1,15 @@
-"""Copy the CWA contract and conformance cases from the website repo, pinned by SHA-256.
+"""Copy the CWA contract and conformance cases from the specification repository, pinned by SHA-256.
 
-    python scripts/vendor_contract.py --website ../website          # vendor and rewrite contract.lock.json
-    python scripts/vendor_contract.py --website ../website --check  # fail if vendored files drift from the website
+    python scripts/vendor_contract.py                                        # vendor ../contextwindowarchitecture
+    python scripts/vendor_contract.py --check                                # fail if vendored files drift from it
+    python scripts/vendor_contract.py --spec ../contextwindowarchitecture    # name the checkout explicitly
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -18,6 +20,8 @@ DATA = ROOT / "src" / "cwa" / "contract" / "data"
 CONFORMANCE = ROOT / "conformance"
 LOCK = ROOT / "contract.lock.json"
 CONTRACT_FILES = ("slot-defaults.json", "reasons.json", "requirements.json", "assembler-scope.json")
+SPEC = ROOT.parent / "contextwindowarchitecture"
+GITHUB = re.compile(r"github\.com[:/](?P<repository>[^/]+/[^/]+?)(?:\.git)?/?$")
 
 
 def sha256(path: Path) -> str:
@@ -25,14 +29,14 @@ def sha256(path: Path) -> str:
 
 
 def tracked(website: Path) -> set[Path]:
-    """The files the website's git tracks: a checkout's untracked and ignored files (__pycache__) are not the contract."""
+    """The files the spec checkout's git tracks: its untracked and ignored files (__pycache__) are not the contract."""
     out = subprocess.run(["git", "-C", str(website), "ls-files", "-z", "--", "schema", "contract", "conformance"],
                          capture_output=True, text=True, check=True).stdout
     return {website / name for name in out.split("\0") if name}
 
 
 def sources(website: Path) -> dict[Path, Path]:
-    """Map each vendored destination to its website source."""
+    """Map each vendored destination to its source in the spec checkout."""
     files = tracked(website)
     mapping = {DATA / "schema" / p.name: p for p in sorted((website / "schema").glob("*.schema.json")) if p in files}
     mapping |= {DATA / name: website / "contract" / name for name in CONTRACT_FILES}
@@ -45,15 +49,24 @@ def sources(website: Path) -> dict[Path, Path]:
 def git_state(website: Path) -> dict:
     run = lambda *args: subprocess.run(["git", "-C", str(website), *args], capture_output=True, text=True, check=True).stdout.strip()
     tracked = ["schema", "contract", "conformance"]
-    return {"commit": run("rev-parse", "HEAD"), "dirty": bool(run("status", "--porcelain", "--", *tracked))}
+    origin = subprocess.run(["git", "-C", str(website), "remote", "get-url", "origin"], capture_output=True, text=True).stdout.strip()
+    match = GITHUB.search(origin)
+    if not match:
+        raise SystemExit(f"{website}: origin {origin or '(none)'} is not a GitHub repository; the lock names its source as owner/name")
+    return {"repository": match["repository"], "commit": run("rev-parse", "HEAD"),
+            "dirty": bool(run("status", "--porcelain", "--", *tracked))}
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--spec", type=Path, default=SPEC, help="the specification repository's checkout (default: %(default)s)")
+    parser.add_argument("--check", action="store_true")
+    return parser.parse_args(argv)
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--website", type=Path, required=True)
-    parser.add_argument("--check", action="store_true")
-    args = parser.parse_args()
-    mapping = sources(args.website.resolve())
+    args = parse_args()
+    mapping = sources(args.spec.resolve())
 
     if args.check:
         drift = [str(dest.relative_to(ROOT)) for dest, src in mapping.items() if not dest.exists() or sha256(dest) != sha256(src)]
@@ -70,7 +83,7 @@ def main() -> int:
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(src, dest)
     lock = {
-        "source": {"repository": "contextwindowarchitecture/website", **git_state(args.website)},
+        "source": git_state(args.spec),
         "files": {str(dest.relative_to(ROOT)): sha256(dest) for dest in sorted(mapping)},
     }
     LOCK.write_text(json.dumps(lock, indent=2) + "\n")

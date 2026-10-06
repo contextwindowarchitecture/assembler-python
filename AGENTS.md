@@ -8,8 +8,8 @@ Instructions for coding agents and contributors working in `contextwindowarchite
 uv sync                                                          # install
 uv run pytest                                                    # full suite; must pass before every commit
 uv run pytest tests/test_x.py::test_name                         # one test
-python scripts/vendor_contract.py --website ../website           # re-vendor the contract after a website change
-python scripts/vendor_contract.py --website ../website --check   # fail on drift
+python scripts/vendor_contract.py                                # re-vendor the contract from ../contextwindowarchitecture
+python scripts/vendor_contract.py --check                        # fail on drift (--spec <checkout> names another checkout)
 uv run python -m cwa.conformance > conformance-report.json         # regenerate the committed conformance report
 uv run python scripts/bench.py                                     # time assemble(); record changes in DESIGN.md §7
 ```
