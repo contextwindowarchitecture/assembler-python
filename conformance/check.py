@@ -2,7 +2,7 @@
 """Checks the CWA contract's own consistency, and regenerates the copies derived from it.
 
     python3 conformance/check.py          # verify; exit 1 on any contract problem
-    python3 conformance/check.py --write  # also rewrite the spec page's RULES block from contract/requirements.json
+    python3 conformance/check.py --write  # also rewrite SPEC.md's generated blocks and draft date
 
 It checks, in this order:
 
@@ -17,8 +17,10 @@ It checks, in this order:
   schema's, its authority values that schema's enum, its required fields that schema's, its recommended fields the six R-3
   names, each test citing a requirement that exists, and each stage owned by the producer or the assembler;
 - every requirement exercised by at least one case, except those listed in UNTESTABLE;
-- the spec page's RULES block equal to what contract/requirements.json generates, and SPEC.md, which
-  `npm run build:contract` writes from the spec page, holding every requirement once, worded as that file words it.
+- SPEC.md, the normative text: each block between `generated` markers equal to what contract/requirements.json,
+  contract/model.json and examples/profiles.json write there, its draft date the newest revision's in CHANGES.md, whose
+  revisions run newest first, its sections 1 to 6 in order with each requirement once in its own, and every file it
+  links beside it.
 
 The two assembler reports under contract/ are checked for schema validity and coverage of the cases now on disk, and any
 problem there is a warning, since the reports are artifacts of another repository.
@@ -288,32 +290,66 @@ for s in model.get("stages", []):
     if s.get("owner") not in ("producer", "assembler"): problem(f"contract/model.json stage {s.get('name')!r}: owner {s.get('owner')!r} is neither producer nor assembler")
 
 
-# ---------------------------------------------------------------------------------------------- derived copies
-def spec_md_blocks():
-    """Each requirement as SPEC.md holds it, escaped as scripts/spec-markdown.mjs escapes text for Markdown."""
-    md = lambda text: re.sub(r"[\\*<]", lambda m: "\\" + m.group(0), text)
-    return {r["id"]: f"### {r['id']}: {md(r['summary'])}\n\n{md(r['text'])}\n" for r in requirements}
+# ---------------------------------------------------------------------------------------------- SPEC.md
+# SPEC.md is written by hand, except the blocks between its generated markers. Each is written here the way
+# scripts/spec-markdown.mjs reads the same list back from the Spec page, so the page and this file can be compared.
+SECTIONS = {"model": 2, "gov": 3, "fit": 4, "prof": 5, "trace": 6}
+RULE_LISTS = {"rulesModel": "model", "rulesGov": "gov", "rulesFit": "fit", "rulesProf": "prof", "rulesTrace": "trace"}
+GENERATED = re.compile(r"<!-- generated:(\w+) -->\n\n([\s\S]*?)\n\n<!-- /generated:\1 -->")
+md = lambda text: re.sub(r"[\\*<]", lambda m: "\\" + m.group(0), text)
+code = lambda text: f"`{text}`"
+names = lambda fields: ", ".join(code(f) for f in fields)
+def md_table(head, rows):
+    return "\n".join("| " + " | ".join(str(c).replace("|", "\\|") for c in row) + " |" for row in [head, ["---"] * len(head), *rows])
 
-def render_rules_block():
-    rules = [[r["section"], r["keyword"], r["summary"], r["text"]] for r in requirements]
-    return "const RULES = " + json.dumps(rules, indent=2, ensure_ascii=False) + ";"
+def generated_blocks():
+    ordered = sorted(requirements, key=lambda r: int(r["id"][2:]))
+    plane_slots = lambda p: [s["id"] for s in model["slots"] if s["id"].split(".")[0] == p["id"]]
+    return {
+        "index": md_table(["Requirement", "Keyword", "Summary"], [[r["id"], r["keyword"], md(r["summary"])] for r in ordered]),
+        "planes": md_table(["Plane", "Answers", "Slots"], [[p["name"], md(p["answers"]), names(plane_slots(p))] for p in model["planes"]]),
+        "slots": "\n".join(f"- {code(s['id'])}: {md(s['holds'])} {md(s['rule'])}" for s in model["slots"]),
+        "mustFields": names(fields["must"]),
+        "shouldFields": names(fields["should"]),
+        "itemFields": "\n".join(f"- **{md(f['key'])}**: {md(f['text'])}" for f in fields["described"]),
+        "authority": md_table(["Role", "Authority", "Meaning"], [[md(a["name"]), code(a["value"]), md(a["text"])] for a in model["authority"]]),
+        "conflicts": md_table(["When", "Then"], [[md(c["when"]), md(c["then"])] for c in model["conflicts"]]),
+        "stages": "\n".join(f"{i}. **{md(s['name'])}**: {md(s['text'])}" for i, s in enumerate(model["stages"], 1)),
+        "tests": md_table(["Test", "What it shows", "Requirement"], [[md(t["name"]), md(t["text"]), t["requirement"]] for t in model["tests"]]),
+        **{name: "\n\n".join(f"### {r['id']}: {md(r['summary'])}\n\n{md(r['text'])}" for r in ordered if r["section"] == section)
+           for name, section in RULE_LISTS.items()},
+        "profile": "```json\n" + json.dumps(load("examples/profiles.json")[0], indent=2, ensure_ascii=False) + "\n```",
+    }
 
-RULES_RE = re.compile(r"const RULES = \[[\s\S]*?\n\];")
 def check_or_write(write):
-    spec_md, html = read("SPEC.md"), read("spec.html")
-    want_rules = render_rules_block()
-    m = RULES_RE.search(html)
-    if not m: problem("spec.html: RULES block not found"); return
-    if write:
-        if m.group(0) != want_rules:
-            open(os.path.join(ROOT, "spec.html"), "w", encoding="utf-8").write(html[:m.start()] + want_rules + html[m.end():]); print("wrote spec.html RULES block")
-    else:
-        if m.group(0) != want_rules: problem("spec.html's RULES block differs from contract/requirements.json; run check.py --write")
-    if not re.search(r"Specification · draft · \d{4}-\d{2}-\d{2}", html): problem("spec.html: draft date header not found")
-    blocks = spec_md_blocks()
-    stale = [rid for rid, block in blocks.items() if block not in spec_md]
-    if stale or sorted(re.findall(r"^### (R-\d+):", spec_md, re.M)) != sorted(blocks):
-        problem(f"SPEC.md differs from contract/requirements.json{' at ' + ', '.join(stale) if stale else ''}; run npm run build:contract")
+    spec, changes = read("SPEC.md"), read("CHANGES.md")
+    want = generated_blocks()
+    found = [m.group(1) for m in GENERATED.finditer(spec)]
+    if sorted(found) != sorted(want): problem(f"SPEC.md's generated blocks are {found}; it needs one each of {sorted(want)}")
+    dates = re.findall(r"^## (\d{4}-\d{2}-\d{2})\b", changes, re.M)
+    if not dates: problem("CHANGES.md has no revision"); return
+    if dates != sorted(dates, reverse=True): problem("CHANGES.md: revisions are not newest first")
+    if not re.search(r"^Draft of \d{4}-\d{2}-\d{2},", spec, re.M): problem("SPEC.md: no 'Draft of <date>,' line")
+    rewritten = GENERATED.sub(lambda m: f"<!-- generated:{m.group(1)} -->\n\n{want.get(m.group(1), m.group(2))}\n\n<!-- /generated:{m.group(1)} -->", spec)
+    rewritten = re.sub(r"^Draft of \d{4}-\d{2}-\d{2},", f"Draft of {dates[0]},", rewritten, count=1, flags=re.M)
+    if rewritten != spec:
+        if write:
+            open(os.path.join(ROOT, "SPEC.md"), "w", encoding="utf-8").write(rewritten); print("wrote SPEC.md's generated blocks and draft date")
+        else:
+            stale = [n for n, body in GENERATED.findall(spec) if n in want and body != want[n]]
+            problem(f"SPEC.md differs from the contract files{' at ' + ', '.join(stale) if stale else ''} or from CHANGES.md's newest date; run check.py --write")
+    text = rewritten if write else spec
+    headings = [(int(m.group(1)), m.start()) for m in re.finditer(r"^## (\d) ", text, re.M)]
+    if [n for n, _ in headings] != [1, 2, 3, 4, 5, 6]: problem(f"SPEC.md: sections are {[n for n, _ in headings]}, not 1 to 6 in order")
+    section_at = lambda at: next((n for n, start in reversed(headings) if start < at), None)
+    for m in GENERATED.finditer(text):
+        if m.group(1) in RULE_LISTS and section_at(m.start()) != SECTIONS[RULE_LISTS[m.group(1)]]:
+            problem(f"SPEC.md: the {m.group(1)} block is not in section {SECTIONS[RULE_LISTS[m.group(1)]]}")
+    held = re.findall(r"^### (R-\d+):", text, re.M)
+    if sorted(held) != sorted(rule_ids): problem(f"SPEC.md holds requirements {sorted(set(held) ^ set(rule_ids))} other than once each")
+    for target in re.findall(r"\]\(([^)\s]+)\)", text):
+        if re.match(r"^[a-z]+:|^#", target): continue
+        if not os.path.exists(os.path.join(ROOT, target.split("#")[0])): problem(f"SPEC.md links {target}, which is not beside it")
 
 
 # ---------------------------------------------------------------------------------------------- assembler reports (warnings)
@@ -335,7 +371,7 @@ for path in sorted(glob.glob(os.path.join(ROOT, "contract", "assembler*-conforma
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--write", action="store_true", help="rewrite the spec page's RULES block from contract/requirements.json")
+    ap.add_argument("--write", action="store_true", help="rewrite SPEC.md's generated blocks and draft date")
     args = ap.parse_args()
     check_or_write(args.write)
     print(f"{len(case_dirs)} cases, {len(rejection_dirs)} rejections, {len(requirements)} requirements, {len(reasons)} reason codes")
