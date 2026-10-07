@@ -3,7 +3,7 @@ take the SHA-256 of the RFC 8785 serialization. Imported by the generators; run 
 prints the digest of each case's snapshot.json."""
 import copy, decimal, hashlib, json, math, os, re, sys
 
-NONBLANK = re.compile(r"[^\t\n\v\f\r    -     　﻿]")
+NONBLANK = re.compile(r"[^\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]")
 U16 = lambda s: s.encode("utf-16-be")
 
 
@@ -31,7 +31,9 @@ def jcs(value):
         value = float(value)  # RFC 8785 numbers are doubles; beyond 2^53 an integer rounds as JavaScript rounds it
     if isinstance(value, float):
         assert math.isfinite(value)
-        if value == int(value) and abs(value) < 1e21:
+        # Up to 2^53 a whole double's exact value is its shortest digits. Beyond, ECMAScript writes the shortest
+        # round-trip digits and pads with zeros: 12345678901234567168.0 is 12345678901234567000.
+        if value == int(value) and abs(value) <= 2 ** 53:
             return str(int(value))
         return es_number(value)
     if isinstance(value, str):
