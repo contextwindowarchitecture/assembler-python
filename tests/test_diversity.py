@@ -108,3 +108,14 @@ def test_a_route_that_needs_evidence_refuses_when_the_cap_leaves_too_little():
     assert trace["refused"]["reason"] == "evidence_required"
     assert trace["recovery"] == {"action": "request_context"}
     assert [row["reason"] for row in trace["excluded"]] == ["source_diversity_cap"]
+
+
+def test_float_max_per_source_does_not_crash():
+    """max_per_source as a JSON number (2.0) is parsed as float; must convert to int."""
+    snapshot = case("diversity-cap")
+    snapshot["route_policy"]["slots"]["evidence.knowledge"]["max_per_source"] = 2.0
+    # Should not raise TypeError: slice indices must be integers or None or have an __index__ method
+    trace = assemble(Snapshot.from_json(snapshot)).trace
+    # Same behaviour as integer 2: kb:a3 and kb:a4 are capped
+    excluded_ids = [row["item_id"] for row in trace["excluded"] if row["reason"] == "source_diversity_cap"]
+    assert excluded_ids == ["kb:a3", "kb:a4"]
