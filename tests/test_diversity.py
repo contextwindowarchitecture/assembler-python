@@ -62,6 +62,14 @@ def test_a_source_at_or_under_the_cap_is_untouched(cap, expected):
     assert capped(snapshot) == expected
 
 
+@pytest.mark.parametrize("cap, expected", [(2.0, ["kb:a3", "kb:a4"]), (2**53 + 1, [])])
+def test_a_cap_read_as_a_double_caps_like_its_integer(cap, expected):
+    """conformance/README.md, Numbers: 2.0 is 2, and 2^53 + 1 is the double 2^53, which the boundary makes a float."""
+    snapshot = case("diversity-cap")
+    snapshot["route_policy"]["slots"]["evidence.knowledge"]["max_per_source"] = cap
+    assert capped(snapshot) == expected
+
+
 @pytest.mark.parametrize("rules", [None, {"supersede": "source", "dedupe": "exact"}])
 def test_a_slot_without_max_per_source_is_not_capped(rules):
     snapshot = case("diversity-cap")

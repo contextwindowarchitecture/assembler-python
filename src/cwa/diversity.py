@@ -31,11 +31,12 @@ def cap_sources(snapshot: Snapshot, items: tuple[Item, ...], producers: Mapping[
     for slot, rules in snapshot.route_policy.document.get("slots", {}).items():
         if "max_per_source" not in rules:
             continue
+        cap = int(rules["max_per_source"])  # read as a double, so 2.0 caps like 2 (conformance/README.md, Numbers)
         sources: dict[tuple[str, str], list[Item]] = {}
         for item in ranked(snapshot, slot, items):
             sources.setdefault((producers[item.id], item.source), []).append(item)
         for members in sources.values():
-            places = max(0, rules["max_per_source"] - sum(map(exempt, members)))
+            places = max(0, cap - sum(map(exempt, members)))
             over.update({item.id: item for item in [m for m in members if not exempt(m)][places:]})
     return Diversity(items=tuple(item for item in items if item.id not in over),
                      excluded=tuple(over[i] for i in sorted(over, key=utf16)))

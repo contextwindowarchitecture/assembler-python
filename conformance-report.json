@@ -6,7 +6,7 @@
   },
   "contract": {
     "repository": "contextwindowarchitecture/contextwindowarchitecture",
-    "commit": "359bdabf4b7b5657a59ea7801bf98b4192e9e4cf",
+    "commit": "c252494af79720d23c95d54c0cf9c638d3e43557",
     "dirty": false
   },
   "cases": [
@@ -378,6 +378,25 @@
       "outcome": "passed"
     },
     {
+      "id": "doubles-largest",
+      "rules": [
+        "R-2",
+        "R-13",
+        "R-17",
+        "R-22"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "doubles-nearest",
+      "rules": [
+        "R-2",
+        "R-13",
+        "R-22"
+      ],
+      "outcome": "passed"
+    },
+    {
       "id": "evidence-cap-omitted",
       "rules": [
         "R-12",
@@ -443,6 +462,14 @@
       "id": "history-freshness-order",
       "rules": [
         "R-7"
+      ],
+      "outcome": "passed"
+    },
+    {
+      "id": "integer-written-as-double",
+      "rules": [
+        "R-2",
+        "R-26"
       ],
       "outcome": "passed"
     },

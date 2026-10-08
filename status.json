@@ -475,6 +475,7 @@
         "tests/test_diversity.py::test_a_duplicate_takes_no_place",
         "tests/test_diversity.py::test_another_producers_items_with_the_same_source_count_apart",
         "tests/test_diversity.py::test_a_source_at_or_under_the_cap_is_untouched",
+        "tests/test_diversity.py::test_a_cap_read_as_a_double_caps_like_its_integer",
         "tests/test_diversity.py::test_a_slot_without_max_per_source_is_not_capped",
         "tests/test_diversity.py::test_exempt_items_take_places_first",
         "tests/test_diversity.py::test_a_source_with_as_many_exempt_items_as_the_cap_keeps_no_other",
