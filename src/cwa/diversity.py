@@ -35,7 +35,7 @@ def cap_sources(snapshot: Snapshot, items: tuple[Item, ...], producers: Mapping[
         for item in ranked(snapshot, slot, items):
             sources.setdefault((producers[item.id], item.source), []).append(item)
         for members in sources.values():
-            places = max(0, rules["max_per_source"] - sum(map(exempt, members)))
+            places = max(0, int(rules["max_per_source"]) - sum(map(exempt, members)))
             over.update({item.id: item for item in [m for m in members if not exempt(m)][places:]})
     return Diversity(items=tuple(item for item in items if item.id not in over),
                      excluded=tuple(over[i] for i in sorted(over, key=utf16)))
