@@ -1,12 +1,19 @@
-"""The examples/ tokenizer adapters satisfy cwa.Tokenizer without their libraries installed (R-16, R-23)."""
+"""The examples/ run as the README shows them.
+
+The tokenizer adapters satisfy cwa.Tokenizer without their libraries installed (R-16, R-23). The quickstart the README
+mirrors admits relevant evidence and leaves out the rest (R-13), renders governance apart from untrusted material
+(R-7, R-10), and refuses when the evidence is missing (R-12).
+"""
 from __future__ import annotations
 
+import json
 import sys
 
 from cwa import Snapshot, Tokenizer, assemble
 from conftest import ROOT
 
 sys.path.insert(0, str(ROOT / "examples"))
+import quickstart  # noqa: E402
 from tiktoken_tokenizer import TiktokenTokenizer  # noqa: E402
 
 
@@ -37,3 +44,33 @@ def test_the_adapter_counts_an_assembly(fixture_snapshot):
     fixture_snapshot["tokenizer"] = tokenizer.id
     result = assemble(Snapshot.from_json(fixture_snapshot, tokenizers={tokenizer.id: tokenizer}))
     assert result.trace["result"]["input_tokens"] == len(result.payload.decode())
+
+
+def test_the_quickstart_sends_the_relevant_chunk_and_traces_the_weak_one():
+    result = assemble(quickstart.build_snapshot(quickstart.DOCS))
+    request = json.loads(result.payload)
+    assert [entry["id"] for entry in request["system"]] == ["policy:tone"]
+    [message] = request["messages"]
+    assert message["role"] == "user" and "kb:refunds" in message["content"] and "kb:pricing" not in message["content"]
+    assert [(row["item_id"], row["reason"]) for row in result.trace["excluded"]] == [("kb:pricing", "below_threshold")]
+
+
+def test_the_quickstart_refuses_before_any_model_call_without_evidence():
+    result = assemble(quickstart.build_snapshot([]))
+    assert result.payload is None
+    assert result.trace["refused"]["reason"] == "evidence_required"
+    assert result.trace["recovery"]["action"] == "request_context"
+
+
+def test_the_quickstart_maps_the_payload_to_provider_requests():
+    request = json.loads(assemble(quickstart.build_snapshot(quickstart.DOCS)).payload)
+    anthropic, openai = quickstart.to_anthropic(request), quickstart.to_openai(request)
+    assert anthropic["system"] == request["system"][0]["text"] and anthropic["messages"] == request["messages"]
+    assert openai["messages"] == [{"role": "system", "content": request["system"][0]["text"]}, *request["messages"]]
+    assert "tools" not in anthropic and "tools" not in openai
+
+
+def test_the_quickstart_runs(capsys):
+    quickstart.main()
+    out = capsys.readouterr().out
+    assert "kb:pricing  below_threshold" in out and "refused: evidence_required" in out
