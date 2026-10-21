@@ -7,6 +7,7 @@ mirrors admits relevant evidence and leaves out the rest (R-13), renders governa
 from __future__ import annotations
 
 import json
+import re
 import sys
 
 from cwa import Snapshot, Tokenizer, assemble
@@ -74,3 +75,10 @@ def test_the_quickstart_runs(capsys):
     quickstart.main()
     out = capsys.readouterr().out
     assert "kb:pricing  below_threshold" in out and "refused: evidence_required" in out
+
+
+def test_the_readme_shows_what_the_quickstart_prints(capsys):
+    quickstart.main()
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    shown = re.search(r"uv run python examples/quickstart.py\n```\n\n```text\n(.*?)```", readme, re.S)
+    assert shown and shown.group(1) == capsys.readouterr().out
