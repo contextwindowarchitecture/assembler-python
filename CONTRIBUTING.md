@@ -26,7 +26,7 @@ uv run pytest    # the full suite, mypy over src/cwa included; it must pass befo
 - One behavior, or one refactor, per commit, and every commit passes the full suite. When you pipe pytest's output, run `set -o pipefail` first, or a failing run looks green.
 - Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/): `type(scope): summary`, lower case, imperative, at most 72 characters. The body says why and lists the requirement IDs affected. AGENTS.md lists the types and scopes.
 - Sign off every commit (`git commit -s`).
-- `CHANGELOG.md` is generated from commit subjects by [git-cliff](https://git-cliff.org), so never edit it by hand. Regenerate it at a release with `uvx git-cliff --tag vX.Y.Z -o CHANGELOG.md`.
+- Never create or edit a changelog file. The release workflow ([.github/workflows/release.yml](.github/workflows/release.yml)) writes each tag's release notes from the commit subjects with [git-cliff](https://git-cliff.org) (`cliff.toml`), so a commit's subject line is its changelog entry.
 
 ## Conformance
 

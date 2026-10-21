@@ -1,7 +1,6 @@
-# git-cliff builds CHANGELOG.md from the Conventional Commit history (AGENTS.md, Commits).
-#   uvx git-cliff -o CHANGELOG.md                  # everything so far, as Unreleased
-#   uvx git-cliff --tag v1.0.0 -o CHANGELOG.md     # at release
-# A commit cannot list itself, so regenerate at release rather than in every commit.
+# git-cliff writes each tag's release notes from the Conventional Commit history, in .github/workflows/release.yml:
+#   uvx git-cliff@2.14.2 --current --strip all
+# Only the release workflow runs it; never write a CHANGELOG.md (AGENTS.md).
 
 [changelog]
 header = """

@@ -234,7 +234,6 @@ assemble(snapshot, clock=time.perf_counter).trace["timings"]
 | [Assembler guide](https://github.com/contextwindowarchitecture/contextwindowarchitecture/blob/main/guides/assemblers.md) | How an assembler behaves, renderer by renderer |
 | [docs/DESIGN.md](docs/DESIGN.md) | How this assembler is built, and the decisions behind it |
 | [status.json](status.json), [conformance-report.json](conformance-report.json) | What is claimed for each requirement, and the result for each conformance case |
-| [CHANGELOG.md](CHANGELOG.md) | Changes, generated from the commit history |
 
 The docstrings of `Snapshot.from_json`, `assemble`, `SnapshotError` and `UnsupportedComponentError` give the exact rules for what is raised and when.
 

@@ -9,3 +9,6 @@ build/
 .claude/
 .idea/
 .mypy_cache/
+.mcp.json
+.codex/config.toml
+.serena/
