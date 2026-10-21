@@ -57,7 +57,11 @@ Rules:
 
 ## Documentation
 
-- **Update documentation incrementally.** A commit that changes behavior also updates the docs that describe it: `README.md` status, `docs/DESIGN.md` (milestone status, divergences from the design, diagrams), `status.json` claims, and AGENTS.md when a rule changes. Never batch doc updates at the end of a milestone. When a step needs a spec change, the spec's docs change in the specification repository's commit that makes it.
+- **Update documentation incrementally.** A commit that changes behavior also updates the docs that describe it: the docstrings of the API it changes, `docs/DESIGN.md` (milestone status, divergences from the design, diagrams), `status.json` claims, the README section a caller would read, and AGENTS.md or CONTRIBUTING.md when a rule changes. Never batch doc updates at the end of a milestone. When a step needs a spec change, the spec's docs change in the specification repository's commit that makes it.
+- **The README is for application developers, not a log of work done.** Keep its sections, in this order: What is assembler-python, Status, Install, Quickstart, Core concepts, Sending the payload to a model, Framework-agnostic and compatibility, Security model, Extending, Examples, Documentation, Developing, Other implementations, License.
+  - Status is three sentences at most and quotes no counts of cases, rejections or requirements. It links `conformance-report.json` and `status.json`, which hold them and cannot go stale.
+  - A change a caller can see gets a sentence or two in the section it affects. The exact rule (what raises what, and when) goes in the docstring of the API it belongs to, and how it was built goes in `docs/DESIGN.md`. Never append clauses to Status.
+  - Code in the README must run. Quickstart mirrors `examples/quickstart.py`, which `tests/test_examples.py` runs.
 - Use Mermaid diagrams in docs and design notes wherever a flow, ordering, structure or plan reads faster as a picture than as prose or a table. Check that every new diagram parses with Mermaid 12 (the current major, 12.0.0) before committing.
 
 ## The contract is vendored, not edited
