@@ -197,8 +197,9 @@ class Snapshot:
         UnsupportedComponentError instead, which is not a rejection.
 
         tokenizers and renderers add the caller's own, each under its own id, to the built-in ones for this call
-        only. A built-in id cannot be redefined, since conformance/README.md fixes what it counts or renders (R-16),
-        and a key must be its object's id, since the trace names the tokenizer and renderer by that id."""
+        only. A published id cannot be redefined, since conformance/README.md fixes what it counts or renders (R-16),
+        and a key must be its object's id, since the trace names the tokenizer and renderer by that id. Either raises
+        ValueError, not SnapshotError, before the snapshot is read, since the snapshot itself is fine."""
         tokenizers = _with_built_ins("tokenizer", tokenizers, TOKENIZERS, TOKENIZERS)
         renderers = _with_built_ins("renderer", renderers, RENDERERS, PUBLISHED_RENDERERS)
         data: dict[str, Any] = json.loads(json.dumps(document))

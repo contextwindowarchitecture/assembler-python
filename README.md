@@ -185,7 +185,7 @@ The assembler enforces the structural rules the spec gives it. It cannot see eve
 
 ## Extending
 
-**Your own tokenizer.** Any object with an `id` and a `count(text)` method works. Pass it under its own id. That id can't be one the spec publishes, because a trace naming a published tokenizer must mean that tokenizer's count.
+**Your own tokenizer.** Any object with an `id` and a `count(text)` method works. Pass it under its own id. That id can't be one the spec publishes, because a trace naming a published tokenizer must mean that tokenizer's count. A published id, or a key that isn't the object's own `id`, raises `ValueError` rather than `SnapshotError`, since the snapshot itself is fine.
 
 ```python
 class Chars:
@@ -204,10 +204,13 @@ Load any data it needs, such as an encoding file or a vocabulary, before freezin
 ```python
 from cwa.registry import Registry, lock
 
+# profiles and route_policies are lists of the same dicts you would pass to Snapshot.freeze
 pinned = lock(profiles, route_policies)                     # or lock(new, existing=pinned) to add versions
 registry = Registry.from_json(pinned, profiles, route_policies)
-profile = registry.profile("support-chat-default", 1, deployment=True)   # evaluated profiles only
+profile = registry.profile("support-chat-default", 1)       # any pinned profile
 ```
+
+In production, ask for `registry.profile("support-chat-default", 1, deployment=True)`. It raises `cwa.registry.RegistryError` unless the profile's `evaluation.status` is `"evaluated"`, so the quickstart's unevaluated profile can't be deployed by mistake.
 
 **Stage timings.** Lend `assemble()` a clock to get stage timings in the trace. Nothing the clock returns reaches the payload.
 
