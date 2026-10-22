@@ -102,7 +102,7 @@ uv run python examples/quickstart.py
 refused: evidence_required, recovery: request_context
 ```
 
-The low-scoring chunk was left out, and the trace says why. When the retriever finds nothing, the route requires evidence, so the assembler refuses before any model is called. The trace then suggests what to do next.
+The example prints the request after mapping it for the Anthropic Messages API, so `system` is one string here rather than the renderer's list (see [Sending the payload to a model](#sending-the-payload-to-a-model)). The low-scoring chunk was left out, and the trace says why. When the retriever finds nothing, the route requires evidence, so the assembler refuses before any model is called. The trace then suggests what to do next.
 
 A snapshot that is malformed, or breaks a rule the spec checks up front, raises `cwa.SnapshotError` with a list of `problems`. It produces no payload and no trace. A snapshot that names a tokenizer or renderer this package doesn't provide raises `cwa.UnsupportedComponentError` instead, because that isn't a flaw in the snapshot.
 
@@ -130,7 +130,7 @@ The `cwa-messages/v1` renderer writes a provider-neutral request as JSON:
 {"system": [{"id": "...", "text": "..."}], "tools": [{"id": "...", "text": "..."}], "messages": [{"role": "user", "content": "..."}]}
 ```
 
-Only governance items reach `system` and `tools`. Everything else, prior turns included, is escaped into a single user message. Mapping that onto a provider's SDK takes a few lines. [examples/quickstart.py](examples/quickstart.py) has both mappings:
+Only governance items reach `system` and `tools`. Everything else, prior turns included, is escaped into a single user message. Mapping that onto a provider's SDK takes a few lines. The package doesn't ship them; [examples/quickstart.py](examples/quickstart.py) defines both, `to_anthropic` and `to_openai`, for you to copy:
 
 ```python
 request = json.loads(result.payload)
